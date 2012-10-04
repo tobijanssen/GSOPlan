@@ -12,7 +12,6 @@ public class SpecialDownload implements Runnable{
 	private final int ONLYSELECTORS=2;
 	private PlanActivity parent;
 	
-	
 	public SpecialDownload(PlanActivity parent)
 	{
 		this.parent=parent;
@@ -20,6 +19,7 @@ public class SpecialDownload implements Runnable{
 	
 	@Override
 	public void run() {
+		
 		//Erst die Ressourcen Auffrischen
 		//Dazu die Selectoren downloaden(quasi prüfen, ob neue Wochen verfügbar sind)
 		downloader(ONLYSELECTORS);	

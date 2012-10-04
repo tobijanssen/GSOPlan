@@ -8,6 +8,8 @@
     <string name="clear_cache">Cache leeren</string>
     <string name="menu_save">Speichern</string>
     <string name="menu_gotoDate">Gehe zu Datum</string>
+    <string name="menu_refresh">Jetzt aktualisieren</string>
+    <string name="menu_today">Heute</string>
     
     
     <!-- Meldungen -->

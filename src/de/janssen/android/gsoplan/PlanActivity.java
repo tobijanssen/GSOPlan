@@ -52,7 +52,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	public TimeTableIndex[] myTimeTableIndex;
 	private Boolean selfCheckIsRunning=false;
 	public int weekDataIndexToShow;
-	private ExecutorService exec = Executors.newSingleThreadExecutor();
+	private ExecutorService exec = Executors.newScheduledThreadPool(10);//  newFixedThreadPool(10);//   newSingleThreadExecutor();
 	private SerialExecutor exec2 = new SerialExecutor(exec);
 
 	public Future<?>[] future = new Future<?>[10];
@@ -77,18 +77,18 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     @Override
 	protected void onResume() 
 	{
-	    super.onResume();/*
+	    super.onResume();
 	    if(stupid.dataIsDirty)
 	    {
 	    	stupid.clearData();
 	    }
 	    if(stupid.setupIsDirty)
-	    {*/
+	    {
 	    	stupid.setupIsDirty=false;
 	    	weekOfYearToDisplay=Tools.getWeekOfYearToDisplay(currentDate);
     		selfCheck();
 
-	    //}
+	    }
 	}
     
     @Override
@@ -228,6 +228,14 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
             case R.id.menu_save:
             	Tools.saveFilesWithProgressDialog(this, stupid, exec);
             	return true;
+            case R.id.menu_refresh:
+            	refreshWeek();
+            	return true;
+            case R.id.menu_today:
+            	currentDate=new GregorianCalendar();
+            	weekOfYearToDisplay=Tools.getWeekOfYearToDisplay(currentDate);
+            	checkAvailibilityOfWeek();
+            	return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -293,6 +301,42 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     	
     	//TODO: Ein Methode entwickeln, die alle verfügbaren Timetables nacheinander downloadet.
     }
+    
+    
+    /*	4.10.12
+     * 	Tobias Janssen
+     * 	Aktualisiert die aktuelle Woche
+     */
+    public void refreshWeek()
+    {
+    	//eine Übersicht erstellen, welche Daten für die aktuelle Klasse überhaupt vorliegen
+    	try
+    	{
+    		myTimeTableIndex = stupid.timeTableIndexer();
+    	}
+    	catch(Exception e)
+    	{
+    		//Keine Klasse ausgewählt!
+    		gotoSetup();
+    	}
+    	weekOfYearToDisplay = stupid.getWeekToDisplay(currentDate);
+        //aus dieser Liste mithilfer der selektierten KalenderWoche den richtigen Index heraussuchen
+        weekDataIndexToShow = stupid.getIndexOfTimeTableWeekId(currentDate, myTimeTableIndex);
+        //prüfen, ob diese Woche bereits im Datenbestand ist
+        if(weekDataIndexToShow ==-1)
+        {
+        	//Woche ist nicht im Index enthalten        	
+        	//Downloader starten, dieser prüft, ob diese Woche erhältlich ist und unternimmt alle weitern Maßnahmen
+        	executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
+        	
+        }
+        else
+        {
+        	executeWithDialog(new SpecialDownload(this),getString(R.string.msg_searchingNewData));
+        }
+        
+    }
+    
     
     public void checkAvailibilityOfWeek()
     {
@@ -541,13 +585,15 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
   	/// 
     public void executeWithDialog(Runnable run,String text)
     {
-    	stupid.progressDialog =  new ProgressDialog(this);
+    	stupid.progressDialog =  new ProgressDialog(PlanActivity.this);
     	stupid.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
     	stupid.progressDialog.setMessage(text);
     	stupid.progressDialog.setCancelable(true);
     	stupid.progressDialog.setProgress(0);
     	stupid.progressDialog.show();
-    	exec.submit(run);
+    	
+		exec2.execute(run);
+    	
     }
     
 }

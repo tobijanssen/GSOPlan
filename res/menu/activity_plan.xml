@@ -3,11 +3,20 @@
         android:title="@string/menu_setup"
         android:orderInCategory="100"
         android:showAsAction="never" 
-        android:enabled="true" android:visible="true"/>
-        <item android:id="@+id/menu_gotoDate" android:title="@string/menu_gotoDate" android:orderInCategory="100" android:showAsAction="never" /><item android:id="@+id/menu_save"
+        android:enabled="true" android:visible="true" android:menuCategory="system"/>
+        <item android:id="@+id/menu_gotoDate" android:title="@string/menu_gotoDate" android:orderInCategory="100" android:showAsAction="never" android:menuCategory="container"/>
+        <item android:id="@+id/menu_save"
         android:title="@string/menu_save"
         android:orderInCategory="100"
-        android:showAsAction="never" />
+        android:showAsAction="never" android:menuCategory="system"/>
+        <item android:id="@+id/menu_refresh"
+              android:title="@string/menu_refresh"
+        android:orderInCategory="100"
+        android:showAsAction="never" android:menuCategory="container"/>
+        <item android:id="@+id/menu_today"
+              android:title="@string/menu_today"
+        android:orderInCategory="100"
+        android:showAsAction="never" android:menuCategory="container"/>
         
         
 </menu>

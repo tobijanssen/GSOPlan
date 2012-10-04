@@ -26,7 +26,7 @@ public class StupidCore {
 	public Boolean setupIsDirty=false;
 	public ProgressDialog progressDialog;
 	public String[] resyncAfterStrings=new String[]{"sofort","1h","2h","3h","5h","10h","24h","48h","nie"};
-	public long[] resyncAfterMinutes=new long[]      {0,60,120,180,300,600,1440,2880,Long.MAX_VALUE};
+	public long[] resyncAfterMinutes=new long[]      {0,60,120,180,300,600,1440,2880,5256000};
 	public String[] timeslots =new String[]{"","7.45 - 8.30","8.30 - 9.15","9.35 - 10.20","10.20 - 11.05","11.25 - 12.10","12.10 - 12.55","13.15 - 14.00","14.00 - 14.45","15.05 - 15.50","15.50 - 16.35","16.55 - 17.40","17.40 - 18.25","18.25 - 19.10","19.30 - 20.15","20.15 - 21.00"};
 	public long myResyncAfter=1;
 	

@@ -79,7 +79,6 @@ public class UpdateTimeTableScreen implements Runnable{
 			
 			if(parent.stupid.progressDialog != null)
 			{
-				if(parent.stupid.progressDialog.isShowing())
 					parent.stupid.progressDialog.dismiss();
 			}
     	}
