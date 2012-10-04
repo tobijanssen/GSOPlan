@@ -1,0 +1,37 @@
+<resources>
+
+    <string name="app_name">GSOPlan</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_setup">Setup</string>
+    <string name="title_activity_setup">Setup</string>
+    <string name="title_activity_plan">GSO-Plan</string>
+    <string name="clear_cache">Cache leeren</string>
+    <string name="menu_save">Speichern</string>
+    <string name="menu_gotoDate">Gehe zu Datum</string>
+    
+    
+    <!-- Meldungen -->
+    <string name="msg_weekNotAvailable">Die Woche ist auf dem GSO-Server nicht verfügbar!</string>
+    <string name="msg_searchingNewData">Suche nach aktuelleren Daten…</string>
+    <string name="msg_loadingData">Lade Daten vom Server…</string>
+    <string name="msg_noWlan">Keine Wlan Verbindung!</string>
+    <string name="msg_saving">Speichern…</string>
+    <string name="msg_error_timeout_onDestroy">Ein Task reagiert nicht mehr!</string>
+    <string name="msg_error_timeout_task">Ein Task reagiert nicht mehr!</string>
+    
+    
+    
+    
+    
+    
+    <!-- Setup Section -->
+    
+    <string name="title_element">Element</string>
+    <string name="title_type">Art</string>
+    <string name="title_resyncafter">Aktualisierungsrate des Stundeplans</string>
+    <string name="setup_message_dlElements_title">Downloade Elementenliste…</string>
+    <string name="setup_message_dlElements_body"></string>
+    <string name="setup_message_error_dlElements_1">Beim downloaden der Elemente ist ein Fehler aufgetreten!</string>
+    <string name="title_ask4net">Datenübertragung nur über WLAN zulassen</string>
+
+</resources>

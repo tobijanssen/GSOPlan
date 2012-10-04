@@ -1,0 +1,13 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_setup"
+        android:title="@string/menu_setup"
+        android:orderInCategory="100"
+        android:showAsAction="never" 
+        android:enabled="true" android:visible="true"/>
+        <item android:id="@+id/menu_gotoDate" android:title="@string/menu_gotoDate" android:orderInCategory="100" android:showAsAction="never" /><item android:id="@+id/menu_save"
+        android:title="@string/menu_save"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+        
+        
+</menu>
