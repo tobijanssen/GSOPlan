@@ -92,6 +92,7 @@ public class SetupActivity extends Activity implements Runnable{
 	@Override
 	public void finish() 
 	{
+		super.finish();
 		  // Prepare data intent 
 		if(task!=null)
 			task.cancel(true);
@@ -100,7 +101,7 @@ public class SetupActivity extends Activity implements Runnable{
 
 			Tools.saveSetupWithProgressDialog(this, stupid, exec);
 
-			stupid.setupIsDirty=true;
+			
 			exec.shutdown();
 			try 
 			{
@@ -111,6 +112,7 @@ public class SetupActivity extends Activity implements Runnable{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+			stupid.setupIsDirty=true;
 		}
 		Intent returnData = new Intent();
 		returnData.putExtra("dataIsDirty", stupid.dataIsDirty);
@@ -124,7 +126,7 @@ public class SetupActivity extends Activity implements Runnable{
 		    getParent().setResult(Activity.RESULT_OK, returnData);
 		}
 		stupid.setupIsDirty=false;
-		super.finish();
+		
 	}
 
 	@Override
