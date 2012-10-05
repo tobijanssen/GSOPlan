@@ -9,11 +9,13 @@ import java.util.concurrent.TimeUnit;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.RemoteException;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -50,6 +52,8 @@ public class SetupActivity extends Activity implements Runnable{
         //prüfen, ob die Selectoren bereits geladen wurden:
         if(!checkSetupFiles())
         {
+        	stupid.dataIsDirty=true;
+        	stupid.setupIsDirty=true;
         	Tools.fetchOnlineSelectors(this, stupid, exec,this);
         }
         else
@@ -83,35 +87,44 @@ public class SetupActivity extends Activity implements Runnable{
 	            return super.onOptionsItemSelected(item);
 	    }
 	}
+	/*
 	@Override
 	public void onPause() 
 	{
 		super.onPause();
-	}
+	}*/
 
 	@Override
 	public void finish() 
 	{
+		super.finish();
+		
 		  // Prepare data intent 
 		if(task!=null)
 			task.cancel(true);
 		if(stupid.setupIsDirty || stupid.dataIsDirty)
 		{
-
-			Tools.saveSetupWithProgressDialog(this, stupid, exec);
-
-			stupid.setupIsDirty=true;
+			try {
+				Tools.saveSetup(this, stupid, exec);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			exec.shutdown();
 			try 
 			{
 				exec.awaitTermination(120, TimeUnit.SECONDS);
+				
 			} 
 			catch (InterruptedException e1) 
 			{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+			stupid.setupIsDirty=true;
 		}
+		
 		Intent returnData = new Intent();
 		returnData.putExtra("dataIsDirty", stupid.dataIsDirty);
 		returnData.putExtra("setupIsDirty", stupid.setupIsDirty);
@@ -124,13 +137,14 @@ public class SetupActivity extends Activity implements Runnable{
 		    getParent().setResult(Activity.RESULT_OK, returnData);
 		}
 		stupid.setupIsDirty=false;
-		super.finish();
+		
 	}
-
+/*
 	@Override
 	protected void onDestroy() 
 	{
 	    super.onDestroy();
+	    /*
 	    try {
 			exec.shutdown();
 			exec.awaitTermination(120, TimeUnit.SECONDS);
@@ -140,7 +154,7 @@ public class SetupActivity extends Activity implements Runnable{
 			e.printStackTrace();
 		}
 	
-	}
+	}*/
 	
 	public void clearCache() {
     	
@@ -262,7 +276,6 @@ public class SetupActivity extends Activity implements Runnable{
         spinnerType.setAdapter(adapterType);
         spinnerResyncAfter = (Spinner) findViewById(R.id.spinnerResyncAfter);
         spinnerResyncAfter.setAdapter(adapterResyncAfter);
-        
     }
     
     public void setupSpinnerResyncAfter()
@@ -464,6 +477,7 @@ public class SetupActivity extends Activity implements Runnable{
 			public void run() {
 		    	setupSpinnerElement();
 		        setupSpinnerType();
+		        setupSpinnerResyncAfter();
 		        stupid.progressDialog.dismiss();
 			}
 	        

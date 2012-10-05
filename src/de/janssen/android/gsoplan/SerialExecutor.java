@@ -4,13 +4,15 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 
-class SerialExecutor implements Executor 
+public class SerialExecutor implements Executor, Runnable 
 {
+
 	final Queue<Runnable> tasks = new ArrayDeque<Runnable>();
 	final Executor executor;
 	Runnable active;
+	Runnable r;
 
-	SerialExecutor(Executor executor) 
+	public SerialExecutor(Executor executor) 
 	{
 		this.executor = executor;
 	}
@@ -19,33 +21,39 @@ class SerialExecutor implements Executor
 	@Override
 	public synchronized void execute(final Runnable r) 
 	{
-		tasks.offer(new Runnable() 
+		this.r=r;
+		tasks.add(this);
+		if (active == null) 
 		{
-			public void run() 
-	    	{
-				try 
-	    		{
-					r.run();
-	    		} 
-	    		finally 
-	    		{
-	    			scheduleNext();
-	    		}
-			}
-	     });
-	     
-	     if (active == null) 
-	     {
-	    	 scheduleNext();
-	     }
+			scheduleNext();
+		}
+
 	   }
 
 	   protected synchronized void scheduleNext() 
 	   {
-		   if ((active = tasks.poll()) != null) 
+		   active = tasks.poll();
+		   if (active != null) 
 		   {
 			   executor.execute(active);
 		   }
 	   }
-	 }
+
+
+	@Override
+	public void run() 
+	{
+			try 
+			{
+				r.run();
+			} 
+			finally 
+			{
+				scheduleNext();
+			}
+			
+		}
+		
+	}
+
 

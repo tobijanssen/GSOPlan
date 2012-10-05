@@ -52,7 +52,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	private AsyncTask<Integer, Void, Void> task;
 	private Boolean selfCheckIsRunning=false;
 	public int weekDataIndexToShow;
-	private ExecutorService exec = Executors.newScheduledThreadPool(10);//  newFixedThreadPool(10);//   newSingleThreadExecutor();
+	private ExecutorService exec = Executors.newSingleThreadExecutor();
 	private SerialExecutor exec2 = new SerialExecutor(exec);
 
 	public Future<?>[] future = new Future<?>[10];
@@ -78,14 +78,22 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	protected void onResume() 
 	{
 	    super.onResume();
+
 	    if(stupid.dataIsDirty)
 	    {
 	    	stupid.clearData();
 	    	stupid.dataIsDirty=false;
+	    	stupid.setupIsDirty=false;
 	    	indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
-    		selfCheck();
+	    	handler.postDelayed(new Runnable(){
+
+				@Override
+				public void run() {
+					PlanActivity.this.selfCheck();
+					
+				}}, 2000);
 	    }
-	    if(stupid.setupIsDirty)
+	    else if(stupid.setupIsDirty)
 	    {
 	    	stupid.setupIsDirty=false;
 	    	indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
@@ -95,23 +103,32 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	}
     
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-      if (resultCode == RESULT_OK && requestCode == 1) 
-      {
-        if (data.hasExtra("setupIsDirty")) 
-        {
-        	stupid.setupIsDirty = data.getExtras().getBoolean("setupIsDirty");
-        }
-        if (data.hasExtra("dataIsDirty")) 
-        {
-        	stupid.dataIsDirty = data.getExtras().getBoolean("dataIsDirty");
-        }
-      }
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) 
+    {
+    	if (resultCode == RESULT_OK && requestCode == 1) 
+    	{
+    		if (data.hasExtra("setupIsDirty")) 
+    		{
+    			stupid.setupIsDirty = data.getExtras().getBoolean("setupIsDirty");
+    		}
+    		if (data.hasExtra("dataIsDirty")) 
+    		{
+    			stupid.dataIsDirty = data.getExtras().getBoolean("dataIsDirty");
+    		}
+    	}
+    	else
+    	{
+    	    Intent intent = getIntent();
+    	    finish();
+    	    startActivity(intent);
+    	}
+    
     } 
     
     @Override
 	protected void onStop()
 	{
+    	super.onStop();
     	if(stupid.dataIsDirty)
 		{
 			if(task!=null)
@@ -130,13 +147,13 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 			}
 			
 		}
-    	super.onStop();
+    	
 	}
     
     @Override
     protected void onDestroy()
     {
-
+    	super.onDestroy();
     	try {
     		
 			exec.shutdown();
@@ -165,7 +182,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    	super.onDestroy();
+    	
     }
 
     
@@ -250,7 +267,8 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
             	Tools.saveFilesWithProgressDialog(this, stupid, exec, stupid.currentDate);
             	return true;
             case R.id.menu_refresh:
-            	refreshWeek();
+            	selfCheck();
+            	//refreshWeek();
             	return true;
             case R.id.menu_today:
             	stupid.currentDate=new GregorianCalendar();
@@ -497,8 +515,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         			//neuen anlegen
         			java.io.File elementDir = new java.io.File(this.getFilesDir(),stupid.myElement);
         			elementDir.mkdir();
-        			//Download durchführen
-        			executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
+        			checkAvailibilityOfWeek();
     		break;
         	case 7:	//Keine Daten für diese Klasse vorhanden
         		checkAvailibilityOfWeek();
@@ -609,16 +626,16 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 
     public boolean gotoSetup() {
     	Tools.saveFilesWithProgressDialog(this,stupid,exec, stupid.currentDate);
-    	exec.execute(new Runnable(){
-
-			@Override
-			public void run() {
-	    		Intent intent = new Intent(PlanActivity.this,SetupActivity.class);
-	       		startActivityForResult(intent,1);	
-				
-			}
-
-    	});
+    	exec.shutdown();
+    	try {
+			exec.awaitTermination(20, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    Intent intent = new Intent(PlanActivity.this,SetupActivity.class);
+	    startActivityForResult(intent,1);	
+    	
     	
 
         return true;

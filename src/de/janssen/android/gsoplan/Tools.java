@@ -96,7 +96,8 @@ public class Tools{
     	}
    		
     }
-  /// Datum: 14.09.12
+    
+    /// Datum: 14.09.12
   	/// Autor: Tobias Janﬂen
   	///
   	///	Beschreibung:
@@ -135,6 +136,26 @@ public class Tools{
     		stupid.progressDialog.dismiss();
     	}
    		
+    }
+    
+    /// Datum: 14.09.12
+  	/// Autor: Tobias Janﬂen
+  	///
+  	///	Beschreibung:
+  	///	Speichert den aktuellen StupidCore
+  	///	
+  	///
+  	///	Parameter:
+  	///	
+  	/// 
+  	/// 
+    public static void saveSetup(Context context,StupidCore stupid,ExecutorService exec)
+    {
+    	if(stupid.setupIsDirty)
+    	{
+    		SaveSetup saveSetup = buildSaveSetup(context,stupid);
+    		exec.execute(saveSetup);    		
+    	}
     }
     
     /// Datum: 2.10.12
