@@ -42,14 +42,14 @@ public class Xml
 	///	StupidCore, der alle Daten enthält
 	/// 
 	/// 
-	public static String convertStupidToXml(StupidCore core,ProgressDialog pd)
+	public static String convertWeekDataToXml(WeekData data,ProgressDialog pd)
 	{
 		int pdvalue=pd.getProgress();
 		String result="<xml version='"+VERSION+"'/>\n";
-		for(int i=0;i<core.stupidData.length;i++)
-		{
+		//for(int i=0;i<stupid.stupidData.length;i++)
+		//{
 			pd.setProgress(pdvalue++);
-			WeekData data = core.stupidData[i];
+			//WeekData data = stupid.stupidData[i];
 			result+="<week date='"+data.date.get(Calendar.DAY_OF_MONTH)+"."+(data.date.get(Calendar.MONTH)+1)+"."+data.date.get(Calendar.YEAR)+"'";
 			for(int p=0;p<data.parameters.length;p++)
 			{
@@ -73,7 +73,7 @@ public class Xml
 				result+="\t\t</row"+y+">\n";
 			}
 			result+="\t</timetable>\n</week>\n";
-		}
+		//}
 		return result;
 	}
 	

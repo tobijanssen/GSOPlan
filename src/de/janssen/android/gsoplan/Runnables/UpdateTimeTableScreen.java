@@ -23,8 +23,8 @@ public class UpdateTimeTableScreen implements Runnable{
     		parent.adapter.clear();
 	        int nullCounter=0;
 	        Boolean entryFound=false;
-	        int currentIndex = parent.myTimeTableIndex[parent.weekDataIndexToShow].indexKey;
-	        int dayOfWeek=Tools.getSetCurrentWeekDay(parent.currentDate)-1;
+	        int currentIndex = parent.stupid.myTimetables[parent.weekDataIndexToShow].indexKey;
+	        int dayOfWeek=Tools.getSetCurrentWeekDay(parent.stupid.currentDate)-1;
 			for(int y=1;y<parent.stupid.stupidData[currentIndex].timetable.length;y++)
 			{	
 				if(parent.stupid.stupidData[currentIndex].timetable[y][dayOfWeek].dataContent==null && !entryFound)

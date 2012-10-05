@@ -1,5 +1,6 @@
 package de.janssen.android.gsoplan;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -96,37 +97,20 @@ public class SetupActivity extends Activity implements Runnable{
 			task.cancel(true);
 		if(stupid.setupIsDirty || stupid.dataIsDirty)
 		{
-			if(stupid.dataIsDirty)
-			{
-				//Damit die Daten nicht überschrieben werden
-				stupid.dataIsDirty=false;
-				Tools.saveFilesWithProgressDialog(this, stupid, exec);
-				stupid.dataIsDirty=true;
-				
-			}
-			else
-			{
-				Tools.saveFilesWithProgressDialog(this, stupid, exec);
-			}
+
+			Tools.saveSetupWithProgressDialog(this, stupid, exec);
+
 			stupid.setupIsDirty=true;
 			exec.shutdown();
-			try {
+			try 
+			{
 				exec.awaitTermination(120, TimeUnit.SECONDS);
-			} catch (InterruptedException e1) {
+			} 
+			catch (InterruptedException e1) 
+			{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			/*
-			int timer=0;
-			while(!File.ready && timer < 15)
-			{
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-		
-				}
-				timer++;
-			}*/
 		}
 		Intent returnData = new Intent();
 		returnData.putExtra("dataIsDirty", stupid.dataIsDirty);
@@ -207,7 +191,8 @@ public class SetupActivity extends Activity implements Runnable{
     	// die SetupDatei Laden
     	try {
     		Xml xml = new Xml();
-    		xml.container = File.readFromFile(this, Tools.FILESETUP);
+    		File setupFile = Tools.getFileSaveSetup(this, stupid);
+    		xml.container = FileOPs.readFromFile(this,setupFile);
     		stupid.clearSetup();
     		stupid.fetchSetupFromXml(xml);
     		return true;
@@ -242,8 +227,8 @@ public class SetupActivity extends Activity implements Runnable{
     public Boolean checkSetupFiles()
     {
 		// Prüfen, ob die benötigten Dateien existieren:
-		java.io.File testFile = new java.io.File(this.getFilesDir(), Tools.FILESETUP);
-		if (!testFile.exists())
+		File setupFile = Tools.getFileSaveSetup(this, stupid);
+		if (!setupFile.exists())
 			return false;
 
     	return true;
