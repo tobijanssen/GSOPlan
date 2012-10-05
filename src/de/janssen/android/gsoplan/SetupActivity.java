@@ -98,7 +98,7 @@ public class SetupActivity extends Activity implements Runnable{
 	public void finish() 
 	{
 		super.finish();
-		
+
 		  // Prepare data intent 
 		if(task!=null)
 			task.cancel(true);
@@ -110,7 +110,8 @@ public class SetupActivity extends Activity implements Runnable{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+			Tools.saveSetupWithProgressDialog(this, stupid, exec);
+
 			exec.shutdown();
 			try 
 			{
