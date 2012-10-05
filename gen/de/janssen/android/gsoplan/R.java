@@ -16,13 +16,15 @@ public final class R {
     }
     public static final class id {
         public static final int bottom=0x7f080001;
-        public static final int clear_cache=0x7f080012;
+        public static final int clear_cache=0x7f080014;
         public static final int gestureOverlayView1=0x7f080000;
         public static final int label=0x7f08000d;
         public static final int listTimetable=0x7f080002;
         public static final int menu_gotoDate=0x7f080010;
+        public static final int menu_refresh=0x7f080012;
         public static final int menu_save=0x7f080011;
         public static final int menu_setup=0x7f08000f;
+        public static final int menu_today=0x7f080013;
         public static final int scrollView1=0x7f080004;
         public static final int spinnerElement=0x7f080008;
         public static final int spinnerResyncAfter=0x7f08000c;
@@ -52,28 +54,30 @@ public final class R {
         public static final int clear_cache=0x7f050005;
         public static final int hello_world=0x7f050001;
         public static final int menu_gotoDate=0x7f050007;
+        public static final int menu_refresh=0x7f050008;
         public static final int menu_save=0x7f050006;
         public static final int menu_setup=0x7f050002;
-        public static final int msg_error_timeout_onDestroy=0x7f05000d;
-        public static final int msg_error_timeout_task=0x7f05000e;
-        public static final int msg_loadingData=0x7f05000a;
-        public static final int msg_noWlan=0x7f05000b;
-        public static final int msg_saving=0x7f05000c;
-        public static final int msg_searchingNewData=0x7f050009;
+        public static final int menu_today=0x7f050009;
+        public static final int msg_error_timeout_onDestroy=0x7f05000f;
+        public static final int msg_error_timeout_task=0x7f050010;
+        public static final int msg_loadingData=0x7f05000c;
+        public static final int msg_noWlan=0x7f05000d;
+        public static final int msg_saving=0x7f05000e;
+        public static final int msg_searchingNewData=0x7f05000b;
         /**  Meldungen 
          */
-        public static final int msg_weekNotAvailable=0x7f050008;
-        public static final int setup_message_dlElements_body=0x7f050013;
-        public static final int setup_message_dlElements_title=0x7f050012;
-        public static final int setup_message_error_dlElements_1=0x7f050014;
+        public static final int msg_weekNotAvailable=0x7f05000a;
+        public static final int setup_message_dlElements_body=0x7f050015;
+        public static final int setup_message_dlElements_title=0x7f050014;
+        public static final int setup_message_error_dlElements_1=0x7f050016;
         public static final int title_activity_plan=0x7f050004;
         public static final int title_activity_setup=0x7f050003;
-        public static final int title_ask4net=0x7f050015;
+        public static final int title_ask4net=0x7f050017;
         /**  Setup Section 
          */
-        public static final int title_element=0x7f05000f;
-        public static final int title_resyncafter=0x7f050011;
-        public static final int title_type=0x7f050010;
+        public static final int title_element=0x7f050011;
+        public static final int title_resyncafter=0x7f050013;
+        public static final int title_type=0x7f050012;
     }
     public static final class style {
         public static final int AppTheme=0x7f060000;

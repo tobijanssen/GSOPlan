@@ -30,7 +30,7 @@ public class SpecialDownload implements Runnable{
     	for(int i=0;i<parent.stupid.weekList.length && isOnlineAvailableIndex == -1 ;i++)
     	{
     		//und prüfen, ob die gesuchte Woche dabei ist
-    		if(parent.weekOfYearToDisplay == Integer.decode(parent.stupid.weekList[i].index))
+    		if(parent.indexOfWeekIdToDisplay == Integer.decode(parent.stupid.weekList[i].index))
     			isOnlineAvailableIndex=i;
     	}
     	//wenn diese online verfügbar ist
@@ -67,7 +67,7 @@ public class SpecialDownload implements Runnable{
         		//den Index neu erstellen lassen
         		try
         		{
-        			parent.myTimeTableIndex = parent.stupid.timeTableIndexer();
+        			parent.stupid.timeTableIndexer();
         		}
         		catch(Exception e)
         		{
@@ -75,7 +75,7 @@ public class SpecialDownload implements Runnable{
         			parent.gotoSetup();
         		}
         		//Den neuen Index der angeforderten Woche heraussuchen
-        		parent.weekDataIndexToShow = parent.stupid.getIndexOfTimeTableWeekId(parent.currentDate, parent.myTimeTableIndex);
+        		parent.weekDataIndexToShow = parent.stupid.getIndexOfWeekData(parent.stupid.currentDate);
         		
         		parent.handler.post(new UpdateTimeTableScreen(parent));
     		}
@@ -86,10 +86,10 @@ public class SpecialDownload implements Runnable{
     		//es gibt dieses Datum noch nicht
     		//oder Daten konnten nich abgerufen werden
     		//alles wieder zurück
-    		parent.currentDate=(Calendar) parent.dateBackup.clone();
-    		parent.weekOfYearToDisplay = parent.stupid.getWeekToDisplay(parent.currentDate);
+    		parent.stupid.currentDate=(Calendar) parent.dateBackup.clone();
+    		parent.indexOfWeekIdToDisplay = parent.stupid.getWeekOfYear(parent.stupid.currentDate);
 
-    		parent.weekDataIndexToShow = parent.stupid.getIndexOfTimeTableWeekId(parent.currentDate, parent.myTimeTableIndex);
+    		parent.weekDataIndexToShow = parent.stupid.getIndexOfWeekData(parent.stupid.currentDate);
     		parent.stupid.progressDialog.dismiss();
     		
     		if(parent.stupid.onlyWlan)

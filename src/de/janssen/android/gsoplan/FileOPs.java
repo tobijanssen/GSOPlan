@@ -1,5 +1,6 @@
 package de.janssen.android.gsoplan;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -8,7 +9,7 @@ import java.io.IOException;
 import android.app.ProgressDialog;
 import android.content.Context;
 
-public class File {
+public class FileOPs {
 	public static Boolean ready = true;
 	
 	/// Datum: 12.09.12
@@ -22,14 +23,16 @@ public class File {
 	///	
 	/// 
 	/// 
-	public static void saveToFile(Context context, String fileContent, String filename, ProgressDialog pd)
+	public static void saveToFile(Context context, String fileContent,String dir, String filename, ProgressDialog pd)
 	{
 		ready = false;
-		java.io.File file = new java.io.File(context.getFilesDir(),filename);
+		java.io.File theFile = new java.io.File(context.getFilesDir()+"/"+dir, filename);
+		
 		
 		try
 		{
-			FileOutputStream fos = context.openFileOutput(file.getName(), Context.MODE_PRIVATE);
+			//FileOutputStream fos = context.openFileOutput(file.getName(), Context.MODE_PRIVATE);
+			FileOutputStream fos = new FileOutputStream(theFile);
 			fos.write(fileContent.getBytes());
 			pd.setProgress(pd.getProgress()+50);
 			fos.close();
@@ -55,15 +58,16 @@ public class File {
 	// /
 	// /
 	// /
-	public static void saveToFile(Context context, String fileContent,String filename) throws Exception 
+	public static void saveToFile(Context context, String fileContent,File file) throws Exception 
 	{
 		ready = false;
-		java.io.File file = new java.io.File(context.getFilesDir(), filename);
-
+		
+		FileOutputStream fos = new FileOutputStream(file);
+		
+		//java.io.File file = new java.io.File(context.getFilesDir()+"/"+dir, filename);
 		try 
 		{
-			FileOutputStream fos = context.openFileOutput(file.getName(),
-					Context.MODE_PRIVATE);
+			//FileOutputStream fos = context.openFileOutput(theFile.getName(),Context.MODE_PRIVATE);
 			fos.write(fileContent.getBytes());
 			fos.close();
 			ready = true;
@@ -74,7 +78,6 @@ public class File {
 			throw new Exception("Fehler beim schreiben der Dateien"); 
 		}
 		ready = true;
-
 	}
 	
 	
@@ -90,14 +93,14 @@ public class File {
 	///	
 	/// 
 	/// 
-	public static String readFromFile(Context context, String filename) throws Exception
+	public static String readFromFile(Context context, File file) throws Exception
 	{
 		ready = false;
 		String output="";
 		try
 		{
-			java.io.File file = new java.io.File(context.getFilesDir(),filename);
-			FileInputStream fis = context.openFileInput(file.getName());
+			FileInputStream fis = new FileInputStream(file);
+			
 			long length = file.length();
 			//TODO Files größer als int können nicht gelesen werden!!!
 			byte[] buffer = new byte[(int)length];

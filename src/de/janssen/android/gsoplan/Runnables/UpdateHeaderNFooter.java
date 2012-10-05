@@ -19,12 +19,12 @@ public class UpdateHeaderNFooter implements Runnable {
 	public void run() {
 
 		//Calendar weekDate = myTimeTableIndex[weekDataIndexToShow].date;
-		int actDay = parent.currentDate.get(Calendar.DAY_OF_MONTH);
-		int actMonth = parent.currentDate.get(Calendar.MONTH)+1;
-		int actYear = parent.currentDate.get(Calendar.YEAR);
+		int actDay = parent.stupid.currentDate.get(Calendar.DAY_OF_MONTH);
+		int actMonth = parent.stupid.currentDate.get(Calendar.MONTH)+1;
+		int actYear = parent.stupid.currentDate.get(Calendar.YEAR);
 
-		int currentIndex = parent.myTimeTableIndex[parent.weekDataIndexToShow].indexKey;
-		String dayName = parent.stupid.stupidData[currentIndex].timetable[0][parent.currentDate.get(Calendar.DAY_OF_WEEK)-1].dataContent
+		int currentIndex = parent.stupid.myTimetables[parent.weekDataIndexToShow].indexKey;
+		String dayName = parent.stupid.stupidData[currentIndex].timetable[0][parent.stupid.currentDate.get(Calendar.DAY_OF_WEEK)-1].dataContent
 				.replace("\n", "");
 		Date time = new Date(
 				parent.stupid.stupidData[currentIndex].syncTime);

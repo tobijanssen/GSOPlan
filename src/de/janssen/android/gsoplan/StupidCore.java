@@ -29,6 +29,8 @@ public class StupidCore {
 	public long[] resyncAfterMinutes=new long[]      {0,60,120,180,300,600,1440,2880,5256000};
 	public String[] timeslots =new String[]{"","7.45 - 8.30","8.30 - 9.15","9.35 - 10.20","10.20 - 11.05","11.25 - 12.10","12.10 - 12.55","13.15 - 14.00","14.00 - 14.45","15.05 - 15.50","15.50 - 16.35","16.55 - 17.40","17.40 - 18.25","18.25 - 19.10","19.30 - 20.15","20.15 - 21.00"};
 	public long myResyncAfter=1;
+	public Calendar currentDate = new GregorianCalendar();
+	public TimeTableIndex[] myTimetables;
 	
 	final String NAVBARURL = "http://stupid.gso-koeln.de/frames/navbar.htm"; 
 	final String URLMOOODLE = "http://stupid.gso-koeln.de/";
@@ -999,14 +1001,14 @@ public class StupidCore {
 	// /
 	// /
 	// /
-	public TimeTableIndex[] timeTableIndexer() throws Exception
+	public void timeTableIndexer() throws Exception
 	{
 		//Prüfen, ob ein Element ausgewählt wurde
 		//Es ist für den Indexer essentiell wichtig, dass dieser festgelegt ist!
 		if(myElement.equalsIgnoreCase(""))
 			throw new Exception("Keine Element festgelegt.Indexer kann nicht gestartet werden!");
 		
-		TimeTableIndex[] myTimetables = new TimeTableIndex[0];
+		myTimetables = new TimeTableIndex[0];
 		
 		//den gesamten geladenen Datenbestand durchsuchen
 		for (int i = 0; i < stupidData.length; i++) 
@@ -1020,21 +1022,19 @@ public class StupidCore {
 						new TimeTableIndex(i,stupidData[i].date,stupidData[i].syncTime));
 			}
 		}
-		return myTimetables;
 	}
 	// / Datum: 135.09.12
 	// / Autor: Tobias Janßen
 	// /
 	// / Beschreibung:
-	// / TODO
-	// /
+	// / Liefert den Index der WeekData des angegebenen Datums
+	// / Wenn nicht vorhanden(also bereits im Speicher geladen), wird -1 zurückgeliefert 
 	// /
 	// / Parameter:
 	// /
-	public int getIndexOfTimeTableWeekId(Calendar aquiredDate,TimeTableIndex[] myTimetables)
+	public int getIndexOfWeekData(Calendar aquiredDate)
 	{
-		
-		int weekOfYear = getWeekToDisplay(aquiredDate);
+		int weekOfYear = getWeekOfYear(aquiredDate);
 		for(int i=0;i<myTimetables.length;i++)
 		{
 			if(weekOfYear == myTimetables[i].date.get(Calendar.WEEK_OF_YEAR))
@@ -1046,7 +1046,13 @@ public class StupidCore {
 		return -1;
 	}
 	
-	public int getWeekToDisplay(Calendar aquiredDate)
+	/* 5.10.12
+	 * Tobias Janssen
+	 * Ruft zu dem angegebenen Datum die entsprechende Kalenderwoche ab
+	 * 
+	 * 
+	 */
+	public int getWeekOfYear(Calendar aquiredDate)
 	{
 		Calendar calcopy = (Calendar) aquiredDate.clone();
 		int weekOfYear=0;
@@ -1064,16 +1070,16 @@ public class StupidCore {
 	// / Autor: Tobias Janßen
 	// /
 	// / Beschreibung:
-	// / TODO
-	// /
+	// / Liefert den Index passenend zu der angegebenen KW aus den Online verfügaberen Wochen zurück
+	// / Wenn online nicht verfügbar, wird -1 zurückgeliefert
 	// /
 	// / Parameter:
 	// /
-	public int getIndexFromWeekList(String weekId)
+	public int getIndexFromWeekList(String weekOfYear)
 	{
 		for(int i=0;i<this.weekList.length;i++)
 		{
-			if(weekId.equalsIgnoreCase(this.weekList[i].index))
+			if(weekOfYear.equalsIgnoreCase(this.weekList[i].index))
 				return i;
 		}
 		return -1;

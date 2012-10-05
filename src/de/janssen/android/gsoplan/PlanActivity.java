@@ -1,5 +1,6 @@
 package de.janssen.android.gsoplan;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -44,12 +45,11 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	public Exception exception;
 	private GestureLibrary gestureLib;
 	public MyArrayAdapter adapter;
-	public int weekOfYearToDisplay=0;		//Weekto display ist nach wie vor noch in gebraucht
-	public Calendar currentDate = new GregorianCalendar();
+	public int indexOfWeekIdToDisplay=0;		//Weekto display ist nach wie vor noch in gebraucht
+	
 	public Calendar dateBackup;
 	public Handler handler;
 	private AsyncTask<Integer, Void, Void> task;
-	public TimeTableIndex[] myTimeTableIndex;
 	private Boolean selfCheckIsRunning=false;
 	public int weekDataIndexToShow;
 	private ExecutorService exec = Executors.newScheduledThreadPool(10);//  newFixedThreadPool(10);//   newSingleThreadExecutor();
@@ -67,7 +67,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         handler = new Handler();
 
         
-        weekOfYearToDisplay=Tools.getWeekOfYearToDisplay(currentDate);
+        indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
         setupGesture();
         setupviewList();
         if(!selfCheckIsRunning)
@@ -81,11 +81,14 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	    if(stupid.dataIsDirty)
 	    {
 	    	stupid.clearData();
+	    	stupid.dataIsDirty=false;
+	    	indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
+    		selfCheck();
 	    }
 	    if(stupid.setupIsDirty)
 	    {
 	    	stupid.setupIsDirty=false;
-	    	weekOfYearToDisplay=Tools.getWeekOfYearToDisplay(currentDate);
+	    	indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
     		selfCheck();
 
 	    }
@@ -174,31 +177,49 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     	{
     		if (prediction.score > 1.0) 
     		{
-    			dateBackup=(Calendar) currentDate.clone();
+    			dateBackup=(Calendar) stupid.currentDate.clone();
     			
-    			if(prediction.name.equalsIgnoreCase("left") && currentDate.get(Calendar.DAY_OF_WEEK) > 2)
+    			if(prediction.name.equalsIgnoreCase("left") && stupid.currentDate.get(Calendar.DAY_OF_WEEK) > 2)
     			{
-    				currentDate.setTimeInMillis(currentDate.getTimeInMillis()-(86400000*1));
+    				stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()-(86400000*1));
     				handler.post(new UpdateTimeTableScreen(this));
     			}
     			else if(prediction.name.equalsIgnoreCase("left"))
     			{
-    				currentDate.setTimeInMillis(currentDate.getTimeInMillis()-(86400000*3));
+    				//die aktuelle Woche abspeichern
+    				try 
+    				{
+						Tools.saveFiles(PlanActivity.this, stupid, exec);
+						
+					} 
+    				catch (Exception e) 
+    				{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+    				stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()-(86400000*3));
     				//Prüfen, ob diese Woche existiert/on- oder offline
     				checkAvailibilityOfWeek();
 
     			}
     			
-    			if(prediction.name.equalsIgnoreCase("right")&& currentDate.get(Calendar.DAY_OF_WEEK) < 6)
+    			if(prediction.name.equalsIgnoreCase("right")&& stupid.currentDate.get(Calendar.DAY_OF_WEEK) < 6)
     			{
     				
-    				currentDate.setTimeInMillis(currentDate.getTimeInMillis()+(86400000*1));
+    				stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(86400000*1));
     				handler.post(new UpdateTimeTableScreen(this));
     			}
     			else if(prediction.name.equalsIgnoreCase("right"))
     			{
+    				//die aktuelle Woche abspeichern
+    				try {
+						Tools.saveFiles(PlanActivity.this, stupid, exec);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
     				//Das Datum um drei Tag erhöhen
-    				currentDate.setTimeInMillis(currentDate.getTimeInMillis()+(1000*60*60*24*3));
+    				stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(1000*60*60*24*3));
     				
     				checkAvailibilityOfWeek();
     				
@@ -226,14 +247,14 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
             	gotoDate();
             	return true;
             case R.id.menu_save:
-            	Tools.saveFilesWithProgressDialog(this, stupid, exec);
+            	Tools.saveFilesWithProgressDialog(this, stupid, exec, stupid.currentDate);
             	return true;
             case R.id.menu_refresh:
             	refreshWeek();
             	return true;
             case R.id.menu_today:
-            	currentDate=new GregorianCalendar();
-            	weekOfYearToDisplay=Tools.getWeekOfYearToDisplay(currentDate);
+            	stupid.currentDate=new GregorianCalendar();
+            	indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
             	checkAvailibilityOfWeek();
             	return true;
             default:
@@ -260,28 +281,28 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 					public void onDateSet(DatePicker view, int year,
 							int monthOfYear, int dayOfMonth) {
 						//Backup vom Datum erstellen, falls es das neue Datum nicht gibt
-						PlanActivity.this.dateBackup = (Calendar) PlanActivity.this.currentDate.clone();
+						PlanActivity.this.dateBackup = (Calendar) PlanActivity.this.stupid.currentDate.clone();
 						//das Ausgewählte Datum einstellen
-						PlanActivity.this.currentDate.set(year, monthOfYear, dayOfMonth);
+						PlanActivity.this.stupid.currentDate.set(year, monthOfYear, dayOfMonth);
 						//prüfen, ob es sich dabei um wochenend tage handelt:
-						switch(PlanActivity.this.currentDate.get(Calendar.DAY_OF_WEEK))
+						switch(PlanActivity.this.stupid.currentDate.get(Calendar.DAY_OF_WEEK))
 						{
 							case Calendar.SATURDAY:
-								PlanActivity.this.currentDate.setTimeInMillis(currentDate.getTimeInMillis()+(1000*60*60*24*2));
+								PlanActivity.this.stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(1000*60*60*24*2));
 								break;
 							case Calendar.SUNDAY:
-								PlanActivity.this.currentDate.setTimeInMillis(currentDate.getTimeInMillis()+(1000*60*60*24*1));
+								PlanActivity.this.stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(1000*60*60*24*1));
 						}
 						
 						//Die KalenderWoche herausfinden:
-						PlanActivity.this.weekOfYearToDisplay=Tools.getWeekOfYearToDisplay(PlanActivity.this.currentDate);
+						PlanActivity.this.indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(PlanActivity.this.stupid.currentDate);
 						checkAvailibilityOfWeek();
 						
 					}
 			    },
-			    PlanActivity.this.currentDate.get(Calendar.YEAR) ,
-			    PlanActivity.this.currentDate.get(Calendar.MONTH),
-			    PlanActivity.this.currentDate.get(Calendar.DAY_OF_MONTH));
+			    PlanActivity.this.stupid.currentDate.get(Calendar.YEAR) ,
+			    PlanActivity.this.stupid.currentDate.get(Calendar.MONTH),
+			    PlanActivity.this.stupid.currentDate.get(Calendar.DAY_OF_MONTH));
 				picker.show();
 				
 			}
@@ -312,16 +333,16 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     	//eine Übersicht erstellen, welche Daten für die aktuelle Klasse überhaupt vorliegen
     	try
     	{
-    		myTimeTableIndex = stupid.timeTableIndexer();
+    		stupid.timeTableIndexer();
     	}
     	catch(Exception e)
     	{
     		//Keine Klasse ausgewählt!
     		gotoSetup();
     	}
-    	weekOfYearToDisplay = stupid.getWeekToDisplay(currentDate);
+    	indexOfWeekIdToDisplay = stupid.getWeekOfYear(stupid.currentDate);
         //aus dieser Liste mithilfer der selektierten KalenderWoche den richtigen Index heraussuchen
-        weekDataIndexToShow = stupid.getIndexOfTimeTableWeekId(currentDate, myTimeTableIndex);
+        weekDataIndexToShow = stupid.getIndexOfWeekData(stupid.currentDate);
         //prüfen, ob diese Woche bereits im Datenbestand ist
         if(weekDataIndexToShow ==-1)
         {
@@ -337,37 +358,89 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         
     }
     
-    
+    /*	5.10.12
+     * 	Tobias Janssen
+     * 
+     * 	Prüft, ob die eingestellte Woche(laut stupid.currentDate) bereits verfügbar ist 
+     * 	unternimmt weitere Maßnahmen, wenn nicht, oder veraltet
+     * 
+     */
     public void checkAvailibilityOfWeek()
     {
     	//eine Übersicht erstellen, welche Daten für die aktuelle Klasse überhaupt vorliegen
     	try
     	{
-    		myTimeTableIndex = stupid.timeTableIndexer();
+    		stupid.timeTableIndexer();
     	}
     	catch(Exception e)
     	{
     		//Keine Klasse ausgewählt!
     		gotoSetup();
     	}
-    	weekOfYearToDisplay = stupid.getWeekToDisplay(currentDate);
+    	indexOfWeekIdToDisplay = stupid.getWeekOfYear(stupid.currentDate);
         //aus dieser Liste mithilfer der selektierten KalenderWoche den richtigen Index heraussuchen
-        weekDataIndexToShow = stupid.getIndexOfTimeTableWeekId(currentDate, myTimeTableIndex);
+        weekDataIndexToShow = stupid.getIndexOfWeekData(stupid.currentDate);
         //prüfen, ob diese Woche bereits im Datenbestand ist
         if(weekDataIndexToShow ==-1)
         {
-        	//Woche ist nicht im Index enthalten        	
-        	//Downloader starten, dieser prüft, ob diese Woche erhältlich ist und unternimmt alle weitern Maßnahmen
-        	executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
+        	//prüfen, ob es eine Datei dazu gibt
+        	File myDirectory = new File(this.getFilesDir()+"/"+stupid.myElement);
+        	File[] myDirectoryFileList = myDirectory.listFiles();
+        	String actualFileName="";
+        	String weekId="";
+        	String year="";
+        	Boolean fileFound =false;
+        	for(int i=0;i<myDirectoryFileList.length && !fileFound;i++)
+        	{
+        		actualFileName =	myDirectoryFileList[i].getName();
+        		int endPosWeek = actualFileName.indexOf("_");
+        		int endPosYear = actualFileName.indexOf("_",endPosWeek+1);
+        		if(endPosWeek !=-1 && endPosYear != -1)
+        		{
+	        		weekId = actualFileName.substring(0,endPosWeek);
+	        		year = actualFileName.substring(endPosWeek+1,endPosYear);
+	        		if(String.valueOf(indexOfWeekIdToDisplay).equalsIgnoreCase(weekId) && String.valueOf(stupid.currentDate.get(Calendar.YEAR)).equalsIgnoreCase(year))
+	        		{
+	        			//passende Datei gefunden, Datei nun dazuladen
+	        			Tools.loadNAppendFile(this, stupid, new File(myDirectory,actualFileName));
+	        			
+	        			fileFound=true;
+	        		}
+        		}
+//        		else
+//        		{	//TODO: dies ist nur debug bereinigung und dieser else weg muss wieder entfernt werden
+//        			myDirectoryFileList[i].delete();
+//        			
+//        		}
+        		
+        	}
+        	if(fileFound)
+        	{
+        		try 
+        		{
+					stupid.timeTableIndexer();
+					weekDataIndexToShow = stupid.getIndexOfWeekData(stupid.currentDate);
+				} 
+        		catch (Exception e) 
+        		{
+        			executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
+				}
+        	}
+        	else
+        	{
+	        	//Woche ist nicht lokal verfügbar       	
+	        	//Downloader starten, dieser prüft, ob diese Woche erhältlich ist und unternimmt alle weitern Maßnahmen
+	        	executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
+        	}
         	
         }
-        else
+        if(weekDataIndexToShow !=-1)
         {
         	//Woche ist im Datenbestand vorhanden
         	
             //Nun prüfen, wie alt diese Daten sind:
         	
-        	if(weekOfYearToDisplay < new GregorianCalendar().get(Calendar.WEEK_OF_YEAR))
+        	if(indexOfWeekIdToDisplay < new GregorianCalendar().get(Calendar.WEEK_OF_YEAR))
         	{
         		//diese Woche liegt bereits in der vergangenheit und muss nicht aktualisiert werden
         		handler.post(new UpdateTimeTableScreen(this));
@@ -375,7 +448,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         	else
         	{
 	            Date date = new Date();
-	        	if(myTimeTableIndex[weekDataIndexToShow].syncTime + (stupid.myResyncAfter*60*1000) < date.getTime())	
+	        	if(stupid.myTimetables[weekDataIndexToShow].syncTime + (stupid.myResyncAfter*60*1000) < date.getTime())	
 	        	{
 	        		//veraltet sollte neu heruntergeladen werden!
 	        		executeWithDialog(new SpecialDownload(this),getString(R.string.msg_searchingNewData));
@@ -420,18 +493,15 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         	case 3:	//Keine Klasse ausgewählt
         		gotoSetup();
         		break;
-        		
-        	case 4:
-        			//FILEDATA Datei fehlt & //Keine Timetable in Datei gefunden
+        	case 6:	//Elementenordner existiert nicht
+        			//neuen anlegen
+        			java.io.File elementDir = new java.io.File(this.getFilesDir(),stupid.myElement);
+        			elementDir.mkdir();
+        			//Download durchführen
         			executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
-        		break;
-        	
-        	case 5:	//FILEDATA laden fehlgeschlagen
-        			executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
-        		break;
+    		break;
         	case 7:	//Keine Daten für diese Klasse vorhanden
         		checkAvailibilityOfWeek();
-    			
         		break;
         }
     	selfCheckIsRunning=false;
@@ -449,14 +519,14 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     	Xml xml = new Xml();
     	
     	//Prüfen, ob die benötigten Dateien existieren:
-    	java.io.File testFile = new java.io.File(this.getFilesDir(),Tools.FILESETUP);
-    	if(!testFile.exists())
+    	File setupFile = Tools.getFileSaveSetup(this, stupid);
+    	if(!setupFile.exists())
     		return 1;
     		
     	//die SetupDatei Laden
     	try
     	{
-    		xml.container = File.readFromFile(this,Tools.FILESETUP);
+    		xml.container = FileOPs.readFromFile(this,setupFile);
     		stupid.clearSetup();
     		stupid.fetchSetupFromXml(xml);
     	}
@@ -471,29 +541,11 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         	return 3;
         }
     	
-        //Prüfen, ob die DatenDatei existiert
-    	testFile = new java.io.File(this.getFilesDir(),stupid.myElement+Tools.FILEDATA);
-    	if(!testFile.exists())
-    		return 4;
+        //Prüfen, ob der Elementenordner existiert
+        File elementDir = new java.io.File(this.getFilesDir()+"/"+stupid.myElement);
+    	if(!elementDir.exists())
+    		return 6;
         
-    	//Die DatenDatei Laden:
-        try
-        {
-    		xml.container = File.readFromFile(this,stupid.myElement+Tools.FILEDATA);
-    		stupid.clearData();
-    		stupid.stupidData=xml.convertXmlToStupid(xml);
-    	}
-    	catch(Exception e)
-        {
-        	return 5;
-        }
-        
-        //prüfen, ob daten vorhanden sind
-        if(stupid.stupidData.length<1)
-        {
-        	//nein keine daten vorhanden
-        	return 4;
-        }
         
         //prüfen, ob daten für die ausgewählte klasse vorhanden sind
         //zählt wie viele Timetables für die ausgewählt Klasse vorhanden sind
@@ -556,7 +608,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 
 
     public boolean gotoSetup() {
-    	Tools.saveFilesWithProgressDialog(this,stupid,exec);
+    	Tools.saveFilesWithProgressDialog(this,stupid,exec, stupid.currentDate);
     	exec.execute(new Runnable(){
 
 			@Override
