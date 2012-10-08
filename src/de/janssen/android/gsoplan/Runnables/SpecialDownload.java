@@ -1,6 +1,10 @@
 package de.janssen.android.gsoplan.Runnables;
 
 import java.util.Calendar;
+
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.widget.Toast;
 import de.janssen.android.gsoplan.PlanActivity;
 import de.janssen.android.gsoplan.R;
@@ -11,6 +15,7 @@ public class SpecialDownload implements Runnable{
 	private final int ONLYTIMETABLE=1;
 	private final int ONLYSELECTORS=2;
 	private PlanActivity parent;
+	public Exception  exception = null;
 	
 	public SpecialDownload(PlanActivity parent)
 	{
@@ -22,7 +27,14 @@ public class SpecialDownload implements Runnable{
 		
 		//Erst die Ressourcen Auffrischen
 		//Dazu die Selectoren downloaden(quasi prüfen, ob neue Wochen verfügbar sind)
-		downloader(ONLYSELECTORS);	
+		try
+		{
+			downloader(ONLYSELECTORS);
+		}
+		catch (Exception e)
+		{
+			exception = e;
+		}
 		
 		//Erstmal davon ausgehen, dass der TimeTable nicht verfügbar ist
 		int isOnlineAvailableIndex=-1;
@@ -62,16 +74,25 @@ public class SpecialDownload implements Runnable{
     		//nun prüfen, ob die verbindung hergestellt werden darf
     		if(connectionAllowed)
     		{
-    			//Jetzt den Stundplan mit der gesuchten Wochennummer downloaden
-        		downloader(isOnlineAvailableIndex,ONLYTIMETABLE);
-        		//den Index neu erstellen lassen
+    			try
+        		{
+        			//Jetzt den Stundplan mit der gesuchten Wochennummer downloaden
+        			downloader(isOnlineAvailableIndex,ONLYTIMETABLE);
+    			
+	    		}
+	    		catch (Exception e)
+	    		{
+	    			exception = e;
+	    		}
+        		
         		try
         		{
+        			//den Index neu erstellen lassen
         			parent.stupid.timeTableIndexer();
         		}
         		catch(Exception e)
         		{
-        			//Keine Klasse ausgewählt!
+        			//Keine Klasse ausgewählt!        			
         			parent.gotoSetup();
         		}
         		//Den neuen Index der angeforderten Woche heraussuchen
@@ -115,12 +136,12 @@ public class SpecialDownload implements Runnable{
 	}
 	
 	
-	private void downloader(int params) 
+	private void downloader(int params) throws Exception 
 	{
 		downloader(0, params);
 	}
 	
-	private void downloader(int weekIndex, int params) {
+	private void downloader(int weekIndex, int params) throws Exception {
     	try
     	{
     		Boolean connectionAllowed=false;
@@ -143,19 +164,20 @@ public class SpecialDownload implements Runnable{
     		if(connectionAllowed)
 	    	{
 	    		//aktuelle Daten aus dem Netz laden:
+    		
 	    		switch(params)
 	    		{
 	    			case BOTH:
 	    				parent.stupid.progressDialog.setMax(80000);
 	    				parent.stupid.fetchSelectorsFromNet();
 	    				parent.stupid.progressDialog.setProgress(15000);
-	    				parent.stupid.fetchStupidPlanFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index );
+	    				parent.stupid.fetchTimeTableFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index );
 	    				parent.stupid.progressDialog.setProgress(80000);
 	    				parent.handler.post(new UpdateTimeTableScreen(parent));
 	            		break;
 	    			case ONLYTIMETABLE:
 	    				parent.stupid.progressDialog.setMax(65000);
-	    				parent.stupid.fetchStupidPlanFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index);
+	    				parent.stupid.fetchTimeTableFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index);
 	    				parent.stupid.progressDialog.setProgress(65000);
 	            		break;
 	    			case ONLYSELECTORS:
@@ -166,7 +188,10 @@ public class SpecialDownload implements Runnable{
 	    		}
 	    	}
     	}
-    	catch(Exception e) {}
+    	catch(Exception e) 
+    	{
+    		throw e;			
+		}
     }
 	
 }

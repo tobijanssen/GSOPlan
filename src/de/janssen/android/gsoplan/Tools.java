@@ -351,7 +351,8 @@ public class Tools{
      */
     public static File getFileSaveData(Context context,StupidCore stupid)
     {
-    	String filename=stupid.currentDate.get(Calendar.WEEK_OF_YEAR)+"_"+stupid.currentDate.get(Calendar.YEAR)+"_"+FILEDATA;
+    	
+    	String filename=Tools.getWeekOfYearToDisplay(stupid.currentDate)+"_"+stupid.currentDate.get(Calendar.YEAR)+"_"+FILEDATA;
     	return new File(context.getFilesDir()+"/"+stupid.myElement,filename);
     }
 

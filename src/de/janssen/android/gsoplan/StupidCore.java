@@ -221,24 +221,18 @@ public class StupidCore {
     	}
 	}
 
-	/// Datum: 30.08.12
-	/// Autor: Tobias Janßen
-	///
-	///	Beschreibung:
-	///	Lädt die Selectoren von der GSO Seite und parsed diese in die availableOnline Arrays
-	///	
-	///
-	///	Parameter:
-	///	
-	/// 
-	/// 
+	/*	Datum: 30.08.12
+	 * 	Tobias Janßen
+	 *  
+	 *  Lädt die Selectoren von der GSO Seite und parsed diese in den StupidCore
+	 *  
+	 */
 	public void fetchSelectorsFromNet() throws Exception
 	{
 		XmlTag[] xmlTagArray = new XmlTag[0];
 		try
         {
         	URL url = new URL(NAVBARURL);
-			//URL url = new URL("http://eqtain.de/stupid/frames/navbar.htm");
         	Xml xml = new Xml();
         	xml.container = Xml.readFromHTML(url,this.progressDialog);
         	xmlTagArray = Xml.xmlToArray(xml);
@@ -246,9 +240,12 @@ public class StupidCore {
         catch (MalformedURLException e)
         {
         	throw new MalformedURLException("Die Url ist fehlerhaft");
-        
         }
         catch(IOException e)
+        {
+        	throw e;
+        }
+		catch(Exception e)
         {
         	throw e;
         }
@@ -262,7 +259,7 @@ public class StupidCore {
         }
         catch(Exception e)
         {
-        	//TODO: Exception no options found!
+        	throw e;
         }
         
         
@@ -274,7 +271,7 @@ public class StupidCore {
         }
         catch(Exception e)
         {
-        	//TODO: Exception no options found!
+        	throw e;
         }
         
         if(typeList.length==0)
@@ -314,8 +311,13 @@ public class StupidCore {
 	}
 	
 	
-	
-	public int fetchStupidPlanFromNet(String selectedStringDate, String selectedElement, String selectedType) throws Exception
+	/*	Datum: 15.08.12
+	 * 	Tobias Janßen
+	 *  
+	 *  Lädt den angegebenen TimeTable von der GSO Seite und parsed diesen in den StupidCore
+	 *  
+	 */	
+	public int fetchTimeTableFromNet(String selectedStringDate, String selectedElement, String selectedType) throws Exception
 	{
 		Exception error = null;
 		int dataIndex = -1;
@@ -332,31 +334,36 @@ public class StupidCore {
 		}
 
 		
-		XmlTag[] htmlArray = new XmlTag[0];
+		XmlTag[] xmlArray = new XmlTag[0];
 		try
         {
 			URL url = new URL(URLMOOODLE+selectedDateIndex+"/"+selectedType+"/"+selectedType+"000"+selectedClassIndex+".htm");
 			Xml xml = new Xml();
 			xml.container = Xml.readFromHTML(url,this.progressDialog);
-        	htmlArray = Xml.xmlToArray(xml,this.progressDialog);
+        	xmlArray = Xml.xmlToArray(xml,this.progressDialog);
         }
         catch (MalformedURLException e)
         {
-        	//TODO:MalformedURLException
+        	throw e;
         }
         catch(IOException e)
         {
-        	//TODO:IOException
+        	throw e;
+        }
+		catch(Exception e)
+        {
+        	throw e;
         }
 
         
         XmlTag highTag = new XmlTag();
         highTag.type="highTag";
-        highTag.childTags = htmlArray;
+        highTag.childTags = xmlArray;
         
         //TODO: ein ordentliches Abfangen:
        
-        //Herausfiltern des angezeigten Elements
+        //Herausfiltern des angezeigten Elements aus dem XML Array
+        //Leider gibt es nicht viele wiedererkennungswerte des XML Tags
         XmlTag  elementSearchResult = highTag.tagCrawlerFindFirstOf(highTag, "font","size","5", new XmlTag());
         String shownElement = elementSearchResult.dataContent.replaceAll(" ", "");
         shownElement = shownElement.replaceAll("\n", "");
@@ -364,12 +371,22 @@ public class StupidCore {
         
         if(!shownElement.contains(selectedElement))
         {
-        	//TODO: Aufgerufene Klasse stimmt nicht mit angezeigter überein!
-        	error = new Exception("Die angezeigte Klasse ist falsch");
+        	//es kann sein, dass sich dieses Tag nicht mehr mit den angegeben suchparametern finden lässt("font","size","5")
+        	//daher muss nun geprüft werden, ob das gesuchte Element überhaupt im Quelltext auftritt, also alles durchsuchen
+        	elementSearchResult = highTag.tagCrawlerFindFirstOf(highTag, "font", selectedElement, new XmlTag());
+        	shownElement = elementSearchResult.dataContent.replaceAll(" ", "");
+            shownElement = shownElement.replaceAll("\n", "");
+            shownElement = shownElement.replaceAll("&nbsp;", "");
+            
+        	if(!shownElement.contains(selectedElement))
+        	{
+        		//Nein, leider konnte es so auch nicht gefunden werden
+        		error = new Exception("Die angezeigte Klasse ist falsch");
+        	}
         }
         
-        //TODO: intelligenteres Finden des richtigen Tables
-        XmlTag  xmlTimeTable = highTag.tagCrawlerFindFirstEntryOf(highTag, "table", new XmlTag());//den HauptStundenplan-Table abrufen
+        //den Timetable Tag finden
+        XmlTag  xmlTimeTable = highTag.tagCrawlerFindFirstEntryOf(elementSearchResult.parentTag, "table", new XmlTag());//den HauptStundenplan-Table abrufen
         
         
         //den XmlTimeTable in das WeekData format wandeln:
@@ -490,7 +507,7 @@ public class StupidCore {
 		}
 		else
 		{
-			throw new Exception("No Option Tags found!");
+			throw new Exception("Keine Elemente im Html gefunden!");
 		}
 		return result;
 	}

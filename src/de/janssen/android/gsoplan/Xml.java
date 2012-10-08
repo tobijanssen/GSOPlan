@@ -2,11 +2,15 @@ package de.janssen.android.gsoplan;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -295,20 +299,23 @@ public class Xml
 
 	
 	
-	private static String readFromHtmlStream(InputStream is,ProgressDialog pd) throws IOException 
+	private static String readFromHtmlStream(InputStreamReader is,ProgressDialog pd) throws IOException 
 	{
 		int progress = pd.getProgress();
 		try 
 		{
-			ByteArrayOutputStream bo = new ByteArrayOutputStream();
-			byte data[] = new byte[1024];
-	        int count;
+			
+			//ByteArrayOutputStream bo = new ByteArrayOutputStream();
+			java.io.CharArrayWriter cw = new java.io.CharArrayWriter();
+			char data[] = new char[1024];
+	        int count = 0;
 	        while ((count = is.read(data)) != -1) {
 	        	progress += count;
 	        	pd.setProgress(progress);
-	            bo.write(data, 0, count);
+	        	cw.write(data,0,count);
+	            //bo.write(data, 0, count);
 	        }
-			return bo.toString();
+			return cw.toString();
 		} 
 		catch (IOException e) 
 		{
@@ -319,24 +326,35 @@ public class Xml
 	public static String readFromHTML(URL url,ProgressDialog pd) throws IOException 
 	{
 		
-		InputStream in = null;
-		HttpURLConnection yc = null;
+		InputStreamReader inStream = null;
+		HttpURLConnection conn = null;
 		String xmlString = "";
 		try 
 		{
-			yc = (HttpURLConnection) url.openConnection();
-			yc.connect();
-			InputStream inStream = yc.getInputStream();
-			in = new BufferedInputStream(inStream);
-			xmlString = readFromHtmlStream(in,pd);
-		} catch (IOException e) {
-			in.close();
-			//yc.disconnect();
+			conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestProperty("content-type", "text/plain; charset=iso-8859-1");
+			conn.setConnectTimeout(10000);
+			conn.connect();
+			inStream = new InputStreamReader(conn.getInputStream(),"iso-8859-1");
+
+			xmlString = readFromHtmlStream(inStream,pd);
+		} 
+		catch (SocketTimeoutException e) 
+		{
+			throw new IOException("Timeout! Server nicht erreichbar!");
+		} 
+		catch (IOException e) 
+		{
 			throw new IOException("Kein Verbindung zum Server!");
-		} catch (Exception e) {
-			in.close();
-			//yc.disconnect();
+		}
+		catch (Exception e) {
+			
 			throw new IOException("Kein Verbindung zum Server!");
+		}
+		finally
+		{
+			conn.disconnect();
+			inStream.close();
 		}
 		
 		

@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -46,7 +47,6 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	private GestureLibrary gestureLib;
 	public MyArrayAdapter adapter;
 	public int indexOfWeekIdToDisplay=0;		//Weekto display ist nach wie vor noch in gebraucht
-	
 	public Calendar dateBackup;
 	public Handler handler;
 	private AsyncTask<Integer, Void, Void> task;
@@ -267,8 +267,8 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
             	Tools.saveFilesWithProgressDialog(this, stupid, exec, stupid.currentDate);
             	return true;
             case R.id.menu_refresh:
-            	selfCheck();
-            	//refreshWeek();
+            	//selfCheck();
+            	refreshWeek();
             	return true;
             case R.id.menu_today:
             	stupid.currentDate=new GregorianCalendar();
@@ -421,7 +421,6 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	        		{
 	        			//passende Datei gefunden, Datei nun dazuladen
 	        			Tools.loadNAppendFile(this, stupid, new File(myDirectory,actualFileName));
-	        			
 	        			fileFound=true;
 	        		}
         		}
@@ -438,6 +437,12 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         		{
 					stupid.timeTableIndexer();
 					weekDataIndexToShow = stupid.getIndexOfWeekData(stupid.currentDate);
+					//prüfen, ob die benötigten daten nun geladen sind
+					if(weekDataIndexToShow ==-1)
+					{
+						//nein sind nicht im speicher
+						executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
+					}
 				} 
         		catch (Exception e) 
         		{
@@ -662,6 +667,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     	stupid.progressDialog.show();
     	
 		exec2.execute(run);
+		
     	
     }
     

@@ -34,7 +34,7 @@ public class Download implements Runnable{
 			}
 			if(this.setupData[1])
 			{
-				stupid.fetchStupidPlanFromNet(this.dateClassType[0], this.dateClassType[1], this.dateClassType[2]);
+				stupid.fetchTimeTableFromNet(this.dateClassType[0], this.dateClassType[1], this.dateClassType[2]);
 			}
 	     }
 	     catch(Exception e)
