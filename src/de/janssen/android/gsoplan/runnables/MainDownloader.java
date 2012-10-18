@@ -1,25 +1,30 @@
-package de.janssen.android.gsoplan.Runnables;
+package de.janssen.android.gsoplan.runnables;
 
 import java.util.Calendar;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.widget.Toast;
+import de.janssen.android.gsoplan.DownloadFeedback;
 import de.janssen.android.gsoplan.PlanActivity;
 import de.janssen.android.gsoplan.R;
 import de.janssen.android.gsoplan.Tools;
 
-public class SpecialDownload implements Runnable{
+public class MainDownloader implements Runnable{
 	private final int BOTH=0;
 	private final int ONLYTIMETABLE=1;
 	private final int ONLYSELECTORS=2;
 	private PlanActivity parent;
-	public Exception  exception = null;
+	private String errorMessage;
+	private Calendar requestedDate;
+
 	
-	public SpecialDownload(PlanActivity parent)
+	public MainDownloader(PlanActivity parent,String errorMessage,Calendar requestedDate)
 	{
 		this.parent=parent;
+		this.errorMessage=errorMessage;
+		this.requestedDate=requestedDate;
 	}
 	
 	@Override
@@ -33,16 +38,18 @@ public class SpecialDownload implements Runnable{
 		}
 		catch (Exception e)
 		{
-			exception = e;
+			parent.handler.post(new ErrorMessage(parent,e.getMessage()));
+			return;
 		}
 		
+		int reqWeekOfYear=parent.stupid.getWeekOfYear(requestedDate);
 		//Erstmal davon ausgehen, dass der TimeTable nicht verfügbar ist
 		int isOnlineAvailableIndex=-1;
 		//die neue Liste der verügbaren Wochen durchgehen
     	for(int i=0;i<parent.stupid.weekList.length && isOnlineAvailableIndex == -1 ;i++)
     	{
     		//und prüfen, ob die gesuchte Woche dabei ist
-    		if(parent.indexOfWeekIdToDisplay == Integer.decode(parent.stupid.weekList[i].index))
+    		if(reqWeekOfYear == Integer.decode(parent.stupid.weekList[i].index))
     			isOnlineAvailableIndex=i;
     	}
     	//wenn diese online verfügbar ist
@@ -74,15 +81,17 @@ public class SpecialDownload implements Runnable{
     		//nun prüfen, ob die verbindung hergestellt werden darf
     		if(connectionAllowed)
     		{
+    			DownloadFeedback downloadFeedback = new DownloadFeedback(-1,DownloadFeedback.NO_REFRESH);
     			try
         		{
         			//Jetzt den Stundplan mit der gesuchten Wochennummer downloaden
-        			downloader(isOnlineAvailableIndex,ONLYTIMETABLE);
+    				downloadFeedback=downloader(isOnlineAvailableIndex,ONLYTIMETABLE);
     			
 	    		}
 	    		catch (Exception e)
 	    		{
-	    			exception = e;
+	    			parent.handler.post(new ErrorMessage(parent,e.getMessage()));
+	    			return;
 	    		}
         		
         		try
@@ -94,30 +103,24 @@ public class SpecialDownload implements Runnable{
         		{
         			//Keine Klasse ausgewählt!        			
         			parent.gotoSetup();
+        			return;
         		}
         		//Den neuen Index der angeforderten Woche heraussuchen
-        		parent.weekDataIndexToShow = parent.stupid.getIndexOfWeekData(parent.stupid.currentDate);
+        		//parent.weekDataIndexToShow = parent.stupid.getIndexOfWeekData(parent.stupid.currentDate);
         		
-        		parent.handler.post(new UpdateTimeTableScreen(parent));
+        		parent.handler.post(new UpdateTimeTableList(parent, downloadFeedback));
     		}
 
     	}
     	else
     	{
-    		//es gibt dieses Datum noch nicht
-    		//oder Daten konnten nich abgerufen werden
-    		//alles wieder zurück
-    		parent.stupid.currentDate=(Calendar) parent.dateBackup.clone();
-    		parent.indexOfWeekIdToDisplay = parent.stupid.getWeekOfYear(parent.stupid.currentDate);
-
-    		parent.weekDataIndexToShow = parent.stupid.getIndexOfWeekData(parent.stupid.currentDate);
     		parent.stupid.progressDialog.dismiss();
     		
     		if(parent.stupid.onlyWlan)
             {
              	if(Tools.isWifiConnected(parent))
              	{
-             		parent.handler.post(new Toaster(parent,parent.getString(R.string.msg_weekNotAvailable), Toast.LENGTH_LONG));
+             		parent.handler.post(new Toaster(parent,this.errorMessage, Toast.LENGTH_LONG));
              	}
              	else
                 {
@@ -126,7 +129,7 @@ public class SpecialDownload implements Runnable{
             }
             else
          	{
-            	parent.handler.post(new Toaster(parent,parent.getString(R.string.msg_weekNotAvailable), Toast.LENGTH_LONG));
+            	parent.handler.post(new Toaster(parent,this.errorMessage, Toast.LENGTH_LONG));
          	}
     		
     			
@@ -136,12 +139,12 @@ public class SpecialDownload implements Runnable{
 	}
 	
 	
-	private void downloader(int params) throws Exception 
+	private DownloadFeedback downloader(int params) throws Exception 
 	{
-		downloader(0, params);
+		return downloader(0, params);
 	}
 	
-	private void downloader(int weekIndex, int params) throws Exception {
+	private DownloadFeedback downloader(int weekIndex, int params) throws Exception {
     	try
     	{
     		Boolean connectionAllowed=false;
@@ -164,29 +167,31 @@ public class SpecialDownload implements Runnable{
     		if(connectionAllowed)
 	    	{
 	    		//aktuelle Daten aus dem Netz laden:
-    		
+    			DownloadFeedback downloadFeedback;
+
 	    		switch(params)
 	    		{
 	    			case BOTH:
 	    				parent.stupid.progressDialog.setMax(80000);
 	    				parent.stupid.fetchSelectorsFromNet();
 	    				parent.stupid.progressDialog.setProgress(15000);
-	    				parent.stupid.fetchTimeTableFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index );
+	    				downloadFeedback = parent.stupid.fetchTimeTableFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index );
 	    				parent.stupid.progressDialog.setProgress(80000);
-	    				parent.handler.post(new UpdateTimeTableScreen(parent));
-	            		break;
+	    				parent.handler.post(new UpdateTimeTableList(parent,downloadFeedback));
+	    				return downloadFeedback;
 	    			case ONLYTIMETABLE:
 	    				parent.stupid.progressDialog.setMax(65000);
-	    				parent.stupid.fetchTimeTableFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index);
+	    				downloadFeedback = parent.stupid.fetchTimeTableFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index);
 	    				parent.stupid.progressDialog.setProgress(65000);
-	            		break;
+	    				return downloadFeedback;
 	    			case ONLYSELECTORS:
 	    				parent.stupid.progressDialog.setMax(15000);
 	    				parent.stupid.fetchSelectorsFromNet();
 	    				parent.stupid.progressDialog.setProgress(15000);
-	            		break;
+	    				return new DownloadFeedback(-1,DownloadFeedback.NO_REFRESH);
 	    		}
 	    	}
+    		return new DownloadFeedback(-1,DownloadFeedback.NO_REFRESH);
     	}
     	catch(Exception e) 
     	{

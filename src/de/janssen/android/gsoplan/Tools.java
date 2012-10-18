@@ -1,27 +1,35 @@
 package de.janssen.android.gsoplan;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import de.janssen.android.gsoplan.Runnables.Download;
-import de.janssen.android.gsoplan.Runnables.SaveData;
-import de.janssen.android.gsoplan.Runnables.SaveSetup;
+import de.janssen.android.gsoplan.runnables.DismissProgress;
+import de.janssen.android.gsoplan.runnables.Download;
+import de.janssen.android.gsoplan.runnables.SaveData;
+import de.janssen.android.gsoplan.runnables.SaveSetup;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Resources;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class Tools{
@@ -59,6 +67,7 @@ public class Tools{
     public static void saveFilesWithProgressDialog(Context context,StupidCore stupid,ExecutorService exec, Calendar currentDate )
     {
     	//ProgressDialog initialisieren
+    	
     	stupid.progressDialog =  new ProgressDialog(context);
     	stupid.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
     	stupid.progressDialog.setMessage(context.getString(R.string.msg_saving));
@@ -70,12 +79,21 @@ public class Tools{
     	{
     		stupid.progressDialog.setMax(stupid.elementList.length+stupid.weekList.length+50);
     	}
-    	if(stupid.stupidData.length>0 && stupid.dataIsDirty)
+    	int dataToSaveCounter=0;
+    	for(int d=0;d<stupid.stupidData.size();d++)
     	{
-    		stupid.progressDialog.setMax(stupid.progressDialog.getMax()+stupid.stupidData.length*
-    				(stupid.stupidData[0].timetable.length*stupid.stupidData[0].timetable[0].length+stupid.stupidData[0].timetable.length)
-    				+stupid.stupidData.length);
+    		if(stupid.stupidData.get(d).isDirty)
+    		{
+    			dataToSaveCounter++;
+    		}
     	}
+    	if(dataToSaveCounter>0)
+    	{
+    		stupid.progressDialog.setMax(stupid.progressDialog.getMax()+dataToSaveCounter*
+    				(stupid.stupidData.get(0).timetable.length*stupid.stupidData.get(0).timetable[0].length+stupid.stupidData.get(0).timetable.length)
+    				+dataToSaveCounter);
+    	}
+    	
     	stupid.progressDialog.show();
 
    		
@@ -84,17 +102,17 @@ public class Tools{
     		SaveSetup saveSetup = buildSaveSetup(context,stupid);
     		exec.execute(saveSetup);    		
     	}
-    	if(stupid.dataIsDirty)
-    	{
-        	SaveData saveData = buildSaveData(context,stupid);
-    		exec.execute(saveData);
-    	}
     	
-    	if(!stupid.dataIsDirty && !stupid.setupIsDirty)
+    	SaveData saveData;
+    	WeekData weekData;
+    	for(int d=0;d<stupid.stupidData.size();d++)
     	{
-    		stupid.progressDialog.dismiss();
+    		weekData = stupid.stupidData.get(d);
+    		saveData = buildSaveData(context,weekData);
+    		if(weekData.isDirty)
+    			exec.execute(saveData);
     	}
-   		
+    	exec.execute(new DismissProgress(stupid));
     }
     
     /// Datum: 14.09.12
@@ -173,25 +191,33 @@ public class Tools{
     {
     	
 		SaveSetup saveSetup = buildSaveSetup(context,stupid);
-		SaveData saveData = buildSaveData(context,stupid);
+		SaveData saveData;
     	
     	if(stupid.setupIsDirty)
     	{
     		exec.execute(saveSetup); 
     	}
-    	if(stupid.dataIsDirty)
-    	{
-    		exec.execute(saveData);
-    	}
-
-		if(saveData.exception!=null)
-		{
-			throw saveData.exception;
-		}
-		if(saveSetup.exception!=null)
+    	if(saveSetup.exception!=null)
 		{
 			throw saveSetup.exception;
 		}
+    	
+    	
+    	WeekData weekData;
+    	for(int d=0;d<stupid.stupidData.size();d++)
+    	{
+    		weekData = stupid.stupidData.get(d);
+    		saveData = buildSaveData(context,weekData);
+    		if(weekData.isDirty)
+    		{
+    			exec.execute(saveData);
+    			if(saveData.exception!=null)
+    			{
+    				throw saveData.exception;
+    			}
+    		}
+    	}
+	
     }
     
     
@@ -203,19 +229,18 @@ public class Tools{
   	///	
     public static int getWeekOfYearToDisplay(Calendar date)
     {
-    	
-    	// create a Pacific Standard Time time zone
-    	String[] ids = TimeZone.getAvailableIDs(1 * 60 * 60 * 1000);
-    	SimpleTimeZone pdt = new SimpleTimeZone(1 * 60 * 60 * 1000, ids[0]);
-
-    	// set up rules for daylight savings time
-    	pdt.setStartRule(Calendar.APRIL, 1, Calendar.SUNDAY, 2 * 60 * 60 * 1000);
-    	pdt.setEndRule(Calendar.OCTOBER, -1, Calendar.SUNDAY, 2 * 60 * 60 * 1000);
-    	date = new GregorianCalendar(pdt); 
-    	
-	    //Die Aktuelle KalenderWoche abholen
+    	Calendar copy = (Calendar) date.clone();
+    	int currentDay = copy.get(Calendar.DAY_OF_WEEK);
+   		if(currentDay<5)
+   		{
+   			copy.setTimeInMillis(date.getTimeInMillis()+(86400000*(5-currentDay)));
+   		}
+   		else if(currentDay>5)
+   		{
+   			copy.setTimeInMillis(date.getTimeInMillis()-+(86400000*(currentDay-5)));
+   		}
     	int result = 0;
-	    result=date.get(Calendar.WEEK_OF_YEAR);
+	    result=copy.get(Calendar.WEEK_OF_YEAR);
 	    return result;
     }
     
@@ -321,7 +346,7 @@ public class Tools{
 			xml.container = FileOPs.readFromFile(context,file);
 			WeekData[] weekData = xml.convertXmlToStupid(xml);
 			if(weekData.length >0)
-				stupid.stupidData=(WeekData[]) ArrayOperations.AppendToArray(stupid.stupidData, weekData[0]);
+				stupid.stupidData.add(weekData[0]);
 		} 
     	catch (Exception e) 
     	{
@@ -337,10 +362,10 @@ public class Tools{
      * 
      * 
      */
-    private static SaveData buildSaveData(Context context,StupidCore stupid)
+    private static SaveData buildSaveData(Context context,WeekData weekData)
     {
-    	File file = getFileSaveData(context,stupid);   	
-		return new SaveData(context,stupid,file);
+    	File file = getFileSaveData(context,weekData);   	
+		return new SaveData(context,weekData,file);
     }
     
     /* 5.10.12
@@ -349,11 +374,11 @@ public class Tools{
      * 
      * 
      */
-    public static File getFileSaveData(Context context,StupidCore stupid)
+    public static File getFileSaveData(Context context,WeekData weekData)
     {
     	
-    	String filename=Tools.getWeekOfYearToDisplay(stupid.currentDate)+"_"+stupid.currentDate.get(Calendar.YEAR)+"_"+FILEDATA;
-    	return new File(context.getFilesDir()+"/"+stupid.myElement,filename);
+    	String filename=Tools.getWeekOfYearToDisplay(weekData.date)+"_"+weekData.date.get(Calendar.YEAR)+"_"+FILEDATA;
+    	return new File(context.getFilesDir()+"/"+weekData.elementId,filename);
     }
 
     /* 5.10.12
@@ -379,5 +404,385 @@ public class Tools{
     {
     	String filename=FILESETUP;
     	return new File(context.getFilesDir(),filename);
+    }
+    
+    /* 11.10.12
+     * Tobias Janssen
+     * Lädt alle verfügbaren Daten-Datein
+     * 
+     * 
+     */
+    public static void loadAllDataFiles(Context context,StupidCore stupid)
+    {
+    	File elementDir = new java.io.File(context.getFilesDir()+"/"+stupid.myElement);
+    	File[] files = elementDir.listFiles();
+        for(int f=0;f<files.length;f++)
+        {
+        	loadNAppendFile(context,stupid, files[f]);
+        }
+    	
+    }
+    
+    /*	11.10.12
+     * 	Tobias Janssen
+     * 
+     * 	fügt der Liste der Pages und Headlines den übergebenen TimeTable hinzu 
+     */
+    public static void appendTimeTableToPager(WeekData weekData, StupidCore stupid, PlanActivity parent)
+    {
+    	Calendar currentDay = new GregorianCalendar();
+    	currentDay = (Calendar) weekData.date.clone();
+
+    	int currentDayOfWeek = currentDay.get(Calendar.DAY_OF_WEEK);
+    	//den currentDay auf sonntag setzten
+    	while(currentDayOfWeek!=2)
+    	{
+    		currentDay.roll(Calendar.DAY_OF_YEAR, false);
+    	}
+    		
+		for (int x = 1; x < weekData.timetable[0].length; x++)
+		{
+			List<TimetableViewObject> list = new ArrayList<TimetableViewObject>();
+
+			int nullCounter = 0;
+			Boolean entryFound = false;
+			for (int y = 1; y < weekData.timetable.length; y++) 
+			{
+
+				if (weekData.timetable[y][x].dataContent == null && !entryFound) 
+				{
+					nullCounter++;
+				} 
+				else if (weekData.timetable[y][x].dataContent != null) 
+				{
+					if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")&& !entryFound) 
+					{
+						nullCounter++;
+					} 
+					else if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("")&& !entryFound) 
+					{
+						nullCounter++;
+					}
+					else 
+					{
+						if (y != 0)
+							entryFound = true;
+						if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")) 
+						{
+							list.add(new TimetableViewObject(stupid.timeslots[y], "", "#000000"));
+						} 
+						else 
+						{
+							String color = weekData.timetable[y][x].getColorParameter();
+							list.add(new TimetableViewObject(
+									stupid.timeslots[y],
+									weekData.timetable[y][x].dataContent.replaceAll(
+											"\n", " "), color));
+						}
+					}
+				}
+				else 
+				{
+					list.add(new TimetableViewObject(stupid.timeslots[y], "","#000000"));
+				}
+			}
+			// prüfen, ob gar keine Stunden vorhanden sind
+			if (nullCounter == 15) {
+				list.add(new TimetableViewObject("", "kein Unterricht","#000000"));
+			}
+
+
+			String dayName = weekData.timetable[0][x].dataContent.replace("\n", "")
+					.substring(0, 2);
+
+			String header = dayName + ", " + currentDay.get(Calendar.DAY_OF_MONTH) + "." + (currentDay.get(Calendar.MONTH)+1) + "."	+ currentDay.get(Calendar.YEAR);
+
+			View page = parent.inflater.inflate(R.layout.daylayout, null);
+			ListView listView = (ListView) page.findViewById(R.id.listTimetable);
+			MyArrayAdapter adapter = new MyArrayAdapter(parent, list);
+			listView.setAdapter(adapter);
+			
+			TextView syncTime = (TextView) page.findViewById(R.id. syncTime);
+			Calendar sync = new GregorianCalendar();
+			sync.setTimeInMillis(weekData.syncTime);
+			
+			String minute = String.valueOf(sync.get(Calendar.MINUTE));
+			if(minute.length()==1)
+				minute="0"+minute;
+			
+			syncTime.setText("Stand vom "+sync.get(Calendar.DAY_OF_MONTH)+"."+(sync.get(Calendar.MONTH)+1)+"."+sync.get(Calendar.YEAR)+" "+sync.get(Calendar.HOUR_OF_DAY)+":"+minute+" Uhr");
+			
+			
+			
+			insertPage(parent, currentDay, page, header,0,parent.pageIndex.size());
+			
+			currentDay.roll(Calendar.DAY_OF_YEAR,true);
+		}
+
+	}
+	
+	/*	15.10.12
+	 * 	Tobias Janssen
+	 * 
+	 * 	Fügt die Page an die richtige Position im pager an 
+	 * 
+	 */
+	private static void insertPage(PlanActivity parent, Calendar currentDay,View page,String header,int startIndex,int stopIndex)
+	{
+		//prüfen, an welche stelle die page gehört
+		//dazu die mitte aller bestehenden pages nehmen
+		int midPos=((stopIndex-startIndex)/2)+startIndex;
+		
+		if(midPos == 0)
+		{
+			//es existiert keiner, oder max ein eintrag
+			//daher prüfen, ob ein eintrag besteht
+			if(parent.pageIndex.size() >=1)
+			{
+				//ja, einen eintrag gibt es bereits
+				int pageDayOfYear = parent.pageIndex.get(midPos).get(Calendar.DAY_OF_YEAR);
+				int pageYear = parent.pageIndex.get(midPos).get(Calendar.YEAR);
+				
+				//prüfen, ob die bestehende seite "älter" als die hinzuzufügende ist
+				if(pageDayOfYear < currentDay.get(Calendar.DAY_OF_YEAR) && pageYear <= currentDay.get(Calendar.YEAR))
+				{
+					//die page indexieren
+					parent.pageIndex.add(midPos+1,(Calendar) currentDay.clone());
+					parent.pages.add(midPos+1,page);
+					parent.headlines.add(midPos+1,header);
+				}
+				else
+				{
+					//die page indexieren
+					parent.pageIndex.add(midPos,(Calendar) currentDay.clone());
+					parent.pages.add(midPos,page);
+					parent.headlines.add(midPos,header);
+				}
+			}
+			else
+			{
+				//nein es ist alles leer, daher einfach einfügen
+				//die page indexieren
+				parent.pageIndex.add(midPos,(Calendar) currentDay.clone());
+				parent.pages.add(midPos,page);
+				parent.headlines.add(midPos,header);
+			}
+		}
+		else
+			{
+			//daten Tag des Jahres abrufen
+			int pageDayOfYear = parent.pageIndex.get(midPos).get(Calendar.DAY_OF_YEAR);
+			int pageYear = parent.pageIndex.get(midPos).get(Calendar.YEAR);
+				
+			//prüfen, ob die bestehende seite "älter" als die hinzuzufügende ist
+			if(pageDayOfYear < currentDay.get(Calendar.DAY_OF_YEAR) && pageYear <= currentDay.get(Calendar.YEAR))
+			{
+				//ja, ist älter, daher muss die page auf jeden fall dahinder eingefügt werden
+				//prüfen, ob direkte nachbarschaft besteht
+				//dazu erstmal prüfen, ob der nächste nachbar überhaupt existiert
+				if(midPos+1 >= parent.pageIndex.size())
+				{
+					//existiert gar keiner mehr; daher page hinzufügen 
+	
+					//die page indexieren
+					parent.pageIndex.add(midPos+1,(Calendar) currentDay.clone());
+					parent.pages.add(midPos+1,page);
+					parent.headlines.add(midPos+1,header);
+				}
+				else
+				{
+					//es ist ein nachbar vorhanden
+					//prüfen, ob dieser näher dran liegt als die currentPage
+					if(parent.pageIndex.get(midPos+1).get(Calendar.DAY_OF_YEAR)< currentDay.get(Calendar.DAY_OF_YEAR))
+					{
+						//ja alte page ist ein näherer nachbar
+						insertPage(parent, currentDay,page,header,midPos,stopIndex);
+					}
+					else
+					{
+						//nein, currentPage ist näher
+						//also dazwischen einfügen
+						//die page indexieren
+						parent.pageIndex.add(midPos+1,(Calendar) currentDay.clone());
+						parent.pages.add(midPos+1,page);
+						parent.headlines.add(midPos+1,header);
+						
+					}
+				}
+				
+			}
+			else
+			{
+				//nein,die bestehende seite ist hat ein jüngers Datum als die hinzuzufügende, daher muss die neue page auf jeden fall davor eingefügt werden
+				
+				if(midPos == 0)
+				{
+					//existiert gar kein eintrag; daher page hinzufügen 
+	
+					//die page indexieren
+					parent.pageIndex.add((Calendar) currentDay.clone());
+					parent.pages.add(page);
+					parent.headlines.add(header);
+				}
+				else
+				{
+					//prüfen, ob der vorgänger Nachbar kleiner ist
+					if(parent.pageIndex.get(midPos-1).get(Calendar.DAY_OF_YEAR)< currentDay.get(Calendar.DAY_OF_YEAR) && parent.pageIndex.get(midPos-1).get(Calendar.YEAR)< currentDay.get(Calendar.YEAR))
+					{
+						//ja davorige page ist kleiner
+						//also dazwischen einfügen
+						//die page indexieren
+						parent.pageIndex.add(midPos,(Calendar) currentDay.clone());
+						parent.pages.add(midPos,page);
+						parent.headlines.add(midPos,header);
+						
+					}
+					else
+					{
+						insertPage(parent, currentDay,page,header,0,midPos);
+					}
+				}
+				
+				//insertPage(parent, currentDay,listView,header,midPos,stopIndex);
+			}
+	
+		}
+
+		
+		
+		
+	}
+
+
+    /*	12.10.12
+     * 	Tobias Janssen
+     * 
+     * 	erst in der Liste der Pages und Headlines den übergebenen TimeTable 
+     */
+    public static void replaceTimeTableInPager(WeekData weekData, StupidCore stupid, PlanActivity parent)
+    {
+    	Calendar weekStart = new GregorianCalendar();
+    	weekStart = (Calendar) weekData.date.clone();
+    	int currentDayOfWeek = weekStart.get(Calendar.DAY_OF_WEEK);
+    	while(currentDayOfWeek!=2)
+    	{
+    		weekStart.roll(Calendar.DAY_OF_YEAR, false);
+    	}
+    		
+		for (int x = 1; x < weekData.timetable[0].length; x++)
+		{
+			List<TimetableViewObject> list = new ArrayList<TimetableViewObject>();
+
+			int nullCounter = 0;
+			Boolean entryFound = false;
+			for (int y = 1; y < weekData.timetable.length; y++) 
+			{
+
+				if (weekData.timetable[y][x].dataContent == null && !entryFound) 
+				{
+					nullCounter++;
+				} 
+				else if (weekData.timetable[y][x].dataContent != null) 
+				{
+					if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")&& !entryFound) 
+					{
+						nullCounter++;
+					} 
+					else if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("")&& !entryFound) 
+					{
+						nullCounter++;
+					}
+					else 
+					{
+						if (y != 0)
+							entryFound = true;
+						if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")) 
+						{
+							list.add(new TimetableViewObject(stupid.timeslots[y], "", "#000000"));
+						} 
+						else 
+						{
+							String color = weekData.timetable[y][x].getColorParameter();
+							if (color.equalsIgnoreCase("#000000")) 
+							{
+								color = "#000000";
+							}
+							list.add(new TimetableViewObject(
+									stupid.timeslots[y],
+									weekData.timetable[y][x].dataContent.replaceAll(
+											"\n", " "), color));
+						}
+					}
+				}
+				else 
+				{
+					list.add(new TimetableViewObject(stupid.timeslots[y], "","#000000"));
+				}
+			}
+			// prüfen, ob gar keine Stunden vorhanden sind
+			if (nullCounter == 15) {
+				list.add(new TimetableViewObject("", "kein Unterricht","#000000"));
+			}
+
+
+			String dayName = weekData.timetable[0][x].dataContent.replace("\n", "")
+					.substring(0, 2);
+
+			String header = dayName + ", " + weekStart.get(Calendar.DAY_OF_MONTH) + "." + (weekStart.get(Calendar.MONTH)+1) + "."	+ weekStart.get(Calendar.YEAR);
+			
+			weekStart.roll(Calendar.DAY_OF_YEAR,true);
+
+			View page = parent.inflater.inflate(R.layout.daylayout, null);
+			ListView listView = (ListView) page.findViewById(R.id.listTimetable);
+			MyArrayAdapter adapter = new MyArrayAdapter(parent, list);
+			listView.setAdapter(adapter);
+			
+			TextView syncTime = (TextView) page.findViewById(R.id. syncTime);
+			Calendar sync = new GregorianCalendar();
+			sync.setTimeInMillis(weekData.syncTime);
+			
+			String minute = String.valueOf(sync.get(Calendar.MINUTE));
+			if(minute.length()==1)
+				minute="0"+minute;
+			
+			syncTime.setText("Stand vom "+sync.get(Calendar.DAY_OF_MONTH)+"."+(sync.get(Calendar.MONTH)+1)+"."+sync.get(Calendar.YEAR)+" "+sync.get(Calendar.HOUR_OF_DAY)+":"+minute+" Uhr");
+			
+			
+			//location suchen
+			int location=0;
+			for(int i=0;i<parent.headlines.size();i++)
+			{
+				if(parent.headlines.get(i).equals(header))
+					location=i;
+			}
+			
+			
+			parent.pages.set(location, page);
+			parent.headlines.set(location,header);
+		}
+    }
+    
+    /*	16.10.12
+     * 	Tobias Janssen
+     * 
+     * 	Liefert die page des angegebene Datums
+     */
+    public static int getPage(List<Calendar> pageIndex,Calendar currentDate)
+    {
+    	int dayOfYearcurrent=0;
+    	int dayOfYearpage=0;
+    	int yearCurrent=0;
+    	int yearPage=0;
+    	for (int i=0;i<pageIndex.size();i++)
+    	{
+    		dayOfYearcurrent = currentDate.get(Calendar.DAY_OF_YEAR);
+    		yearCurrent = currentDate.get(Calendar.YEAR);
+    		dayOfYearpage = pageIndex.get(i).get(Calendar.DAY_OF_YEAR);
+    		yearPage = pageIndex.get(i).get(Calendar.YEAR);    		
+    		if((dayOfYearcurrent == dayOfYearpage)&& (yearCurrent == yearPage))
+    			return i;
+    	}
+    	return -1;
+    	
     }
 }

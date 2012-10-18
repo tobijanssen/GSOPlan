@@ -79,10 +79,10 @@ public class SetupActivity extends Activity implements Runnable{
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    // Handle item selection
 	    switch (item.getItemId()) {
-	        case R.id.clear_cache:
-	        	clearCache();
-	        	stupid.setupIsDirty=true;
-	            return true;
+	        //case R.id.clear_cache:
+	        	//clearCache();
+	        	//stupid.setupIsDirty=true;
+	          //  return true;
 	        default:
 	            return super.onOptionsItemSelected(item);
 	    }
@@ -291,7 +291,6 @@ public class SetupActivity extends Activity implements Runnable{
     	adapterResyncAfter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);    
         spinnerResyncAfter.setOnItemSelectedListener(new OnItemSelectedListener(){
 
-			@Override
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
 				
@@ -306,7 +305,6 @@ public class SetupActivity extends Activity implements Runnable{
 				}
 			}
 
-			@Override
 			public void onNothingSelected(AdapterView<?> parent) {
 				// TODO Auto-generated method stub
 				
@@ -335,7 +333,6 @@ public class SetupActivity extends Activity implements Runnable{
 
 		spinnerElement.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
-			@Override
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
 					
@@ -348,7 +345,6 @@ public class SetupActivity extends Activity implements Runnable{
 					}
 			}
 
-			@Override
 			public void onNothingSelected(AdapterView<?> parent) {
 				// TODO Auto-generated method stub
 				
@@ -374,7 +370,6 @@ public class SetupActivity extends Activity implements Runnable{
 
 		spinnerType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
-			@Override
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
 					
@@ -388,7 +383,6 @@ public class SetupActivity extends Activity implements Runnable{
 					}
 			}
 
-			@Override
 			public void onNothingSelected(AdapterView<?> parent) {
 				// TODO Auto-generated method stub
 				
@@ -414,6 +408,8 @@ public class SetupActivity extends Activity implements Runnable{
     	});
     }
     
+    
+    //TODO: Remove:
     /// Datum: 14.09.12
   	/// Autor: Tobias Janﬂen
   	///
@@ -425,6 +421,7 @@ public class SetupActivity extends Activity implements Runnable{
   	///	
   	/// 
   	/// 
+    /*
     public void fetchOnlineSelectorsDepricated()
     {
 
@@ -468,13 +465,11 @@ public class SetupActivity extends Activity implements Runnable{
     	     .show();
 
     	}
-   	}
+   	}*/
 
-	@Override
 	public void run() {
 		handler.post(new Runnable(){
 
-			@Override
 			public void run() {
 		    	setupSpinnerElement();
 		        setupSpinnerType();

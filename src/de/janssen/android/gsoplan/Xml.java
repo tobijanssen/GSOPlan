@@ -1,19 +1,10 @@
 package de.janssen.android.gsoplan;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
-import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -50,34 +41,32 @@ public class Xml
 	{
 		int pdvalue=pd.getProgress();
 		String result="<xml version='"+VERSION+"'/>\n";
-		//for(int i=0;i<stupid.stupidData.length;i++)
-		//{
+		pd.setProgress(pdvalue++);
+
+		result+="<week date='"+data.date.get(Calendar.DAY_OF_MONTH)+"."+(data.date.get(Calendar.MONTH)+1)+"."+data.date.get(Calendar.YEAR)+"'";
+		for(int p=0;p<data.parameters.length;p++)
+		{
+			result+= " "+data.parameters[p].name + "='" + data.parameters[p].value+"'";
+		}
+		result+=">\n\t<timetable>\n";
+		for(int y=0;y<data.timetable.length;y++)
+		{
 			pd.setProgress(pdvalue++);
-			//WeekData data = stupid.stupidData[i];
-			result+="<week date='"+data.date.get(Calendar.DAY_OF_MONTH)+"."+(data.date.get(Calendar.MONTH)+1)+"."+data.date.get(Calendar.YEAR)+"'";
-			for(int p=0;p<data.parameters.length;p++)
-			{
-				result+= " "+data.parameters[p].name + "='" + data.parameters[p].value+"'";
-			}
-			result+=">\n\t<timetable>\n";
-			for(int y=0;y<data.timetable.length;y++)
+			result+="\t\t<row"+y+">\n";
+			for(int x=0;x<data.timetable[y].length;x++)
 			{
 				pd.setProgress(pdvalue++);
-				result+="\t\t<row"+y+">\n";
-				for(int x=0;x<data.timetable[y].length;x++)
+				result+="\t\t\t<day"+x;
+				for(int p=0;p<data.timetable[y][x].parameters.length;p++)
 				{
-					pd.setProgress(pdvalue++);
-					result+="\t\t\t<day"+x;
-					for(int p=0;p<data.timetable[y][x].parameters.length;p++)
-					{
-						result+= " "+data.timetable[y][x].parameters[p].name + "='" + data.timetable[y][x].parameters[p].value+"'";
-					}
-					result+=">"+data.timetable[y][x].dataContent+"</day"+x+">\n";
+					result+= " "+data.timetable[y][x].parameters[p].name + "='" + data.timetable[y][x].parameters[p].value+"'";
 				}
-				result+="\t\t</row"+y+">\n";
+				result+=">"+data.timetable[y][x].dataContent+"</day"+x+">\n";
 			}
-			result+="\t</timetable>\n</week>\n";
-		//}
+			result+="\t\t</row"+y+">\n";
+		}
+		result+="\t</timetable>\n</week>\n";
+
 		return result;
 	}
 	
@@ -93,32 +82,39 @@ public class Xml
 	// /
 	// /
 	
-	public WeekData[] convertXmlToStupid(Xml xml) {
+	public WeekData[] convertXmlToStupid(Xml xml) throws Exception {
 		
 		WeekData[] stupidData = new WeekData[0];
-
+		XmlTag[] xmlArray;
+		try
+		{
+			//xml Header auslesen und version abholen
+			xmlArray = xmlToArray(xml);
+			String xmlVersion = "";
+			for (int i = 0; i < xmlArray[0].parameters.length; i++) {
+				if (xmlArray[0].parameters[i].name.equalsIgnoreCase("version")) {
+					xmlVersion = xmlArray[0].parameters[i].value;
+				}
 	
-		//xml Header auslesen und version abholen
-		XmlTag[] xmlArray = xmlToArray(xml);
-		String xmlVersion = "";
-		for (int i = 0; i < xmlArray[0].parameters.length; i++) {
-			if (xmlArray[0].parameters[i].name.equalsIgnoreCase("version")) {
-				xmlVersion = xmlArray[0].parameters[i].value;
 			}
-
+			//verarbeiten der enthaltenen weeks
+			if (xmlVersion.equalsIgnoreCase("1")) 
+			{
+				for(int weekNo=1;weekNo<xmlArray.length;weekNo++)
+				{
+					WeekData weekData = new WeekData(null);
+					XmlTag timetable = xmlArray[weekNo].childTags[0];// den timetable abrufen
+					weekData = convertXmlVersion1ToWeekData(timetable);
+					stupidData = (WeekData[]) ArrayOperations.AppendToArray(stupidData, weekData);
+				}
+	    	}
+		}
+		catch (Exception e)
+		{
+			throw new Exception("Fehler bei der XML Konvertierung! Code:0x002 \n"+e.getMessage());
 		}
 		
-		//verarbeiten der enthaltenen weeks
-		if (xmlVersion.equalsIgnoreCase("1")) 
-		{
-			for(int weekNo=1;weekNo<xmlArray.length;weekNo++)
-			{
-				WeekData weekData = new WeekData();
-				XmlTag timetable = xmlArray[weekNo].childTags[0];// den timetable abrufen
-				weekData = convertXmlVersion1ToWeekData(timetable);
-				stupidData = (WeekData[]) ArrayOperations.AppendToArray(stupidData, weekData);
-			}
-    	}
+
 		return stupidData;
 	}
 	
@@ -138,7 +134,7 @@ public class Xml
 	private WeekData convertXmlVersion1ToWeekData(XmlTag xmlTimeTableTag) {
 		
 		XmlTag week = xmlTimeTableTag.parentTag;
-		WeekData weekData = new WeekData();
+		WeekData weekData = new WeekData(null);
 
 		String classId = "";
 		String weekId = "";
@@ -305,7 +301,6 @@ public class Xml
 		try 
 		{
 			
-			//ByteArrayOutputStream bo = new ByteArrayOutputStream();
 			java.io.CharArrayWriter cw = new java.io.CharArrayWriter();
 			char data[] = new char[1024];
 	        int count = 0;
@@ -313,7 +308,6 @@ public class Xml
 	        	progress += count;
 	        	pd.setProgress(progress);
 	        	cw.write(data,0,count);
-	            //bo.write(data, 0, count);
 	        }
 			return cw.toString();
 		} 
@@ -323,7 +317,7 @@ public class Xml
 		}
 	}
 	
-	public static String readFromHTML(URL url,ProgressDialog pd) throws IOException 
+	public static String readFromHTML(URL url,ProgressDialog pd, int connectionTimeout) throws Exception 
 	{
 		
 		InputStreamReader inStream = null;
@@ -333,28 +327,30 @@ public class Xml
 		{
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestProperty("content-type", "text/plain; charset=iso-8859-1");
-			conn.setConnectTimeout(10000);
+			conn.setConnectTimeout(connectionTimeout);
 			conn.connect();
 			inStream = new InputStreamReader(conn.getInputStream(),"iso-8859-1");
-
 			xmlString = readFromHtmlStream(inStream,pd);
 		} 
 		catch (SocketTimeoutException e) 
 		{
-			throw new IOException("Timeout! Server nicht erreichbar!");
+			throw new Exception("Verbindungs-Timeout! Server nicht erreichbar!");
+
 		} 
 		catch (IOException e) 
 		{
-			throw new IOException("Kein Verbindung zum Server!");
+			throw new Exception("Keine Verbindung zum Server!");
 		}
-		catch (Exception e) {
-			
-			throw new IOException("Kein Verbindung zum Server!");
+		catch (Exception e) 
+		{
+			throw new Exception("Keine Verbindung zum Server!");
 		}
 		finally
 		{
-			conn.disconnect();
-			inStream.close();
+			if(conn !=null)
+				conn.disconnect();
+			if(inStream != null)
+				inStream.close();
 		}
 		
 		
@@ -377,9 +373,10 @@ public class Xml
             //den nächsten Tag abholen:
         	try
         	{
+        		
         		pd.setProgress(pd.getProgress()+50);
         		tag = XmlTag.parseNextXmlTag(xml);
-
+        		
         	}
         	catch(Exception e)
         	{
@@ -389,8 +386,6 @@ public class Xml
 
         }
         while (xml.container.length() > 1 );
-        //TODO:TEST dieser Bedingung
-        //while (!(tag.type.equalsIgnoreCase("body") && tag.isEndTag) && this.xmlStringResponse.length() > 1 );
         
         return tagArray;
     }
@@ -401,7 +396,7 @@ public class Xml
     /// </summary>
     /// <param name="url">Die Uri zum Quelltext, der konvertiert werden soll</param>
     /// <returns>HtmlTag[]</returns>
-	public static XmlTag[] xmlToArray(Xml xml)
+	public static XmlTag[] xmlToArray(Xml xml) throws Exception
     {
         XmlTag[] tagArray = new XmlTag[0];    //das Array, das die Tags des Quelltextes enthalten wird
         XmlTag tag = new XmlTag();
@@ -415,14 +410,12 @@ public class Xml
         	}
         	catch(Exception e)
         	{
-        		//TODO:Theres an Problem reading the HTML
+        		throw new Exception(e);
         	}
             tagArray = xml.AddTagToArray(tagArray, tag);
 
         }
         while (xml.container.length() > 1 );
-        //TODO:TEST dieser Bedingung
-        //while (!(tag.type.equalsIgnoreCase("body") && tag.isEndTag) && this.xmlStringResponse.length() > 1 );
         
         return tagArray;
     }

@@ -1,4 +1,4 @@
-package de.janssen.android.gsoplan.Runnables;
+package de.janssen.android.gsoplan.runnables;
 
 import java.io.File;
 import java.util.Calendar;
@@ -11,15 +11,15 @@ import de.janssen.android.gsoplan.Xml;
 
 public class SaveData implements Runnable{
 	private Context context;
-	private StupidCore stupid;
+	private WeekData weekData;
 	private File dataFile;
 	public Exception exception;
 	
 	
-	public SaveData(Context context,StupidCore stupid,File file)
+	public SaveData(Context context,WeekData weekData,File file)
 	{
 		this.context=context;
-		this.stupid=stupid;
+		this.weekData=weekData;
 		this.dataFile=file;
 	}
 	
@@ -28,17 +28,12 @@ public class SaveData implements Runnable{
 		try
 		{
 			//den Index aktualisieren
-			stupid.timeTableIndexer();
-			int index = stupid.getIndexOfWeekData(stupid.currentDate);
-			WeekData weekData = stupid.stupidData[index];
-			String xmlContent = Xml.convertWeekDataToXml(weekData,stupid.progressDialog);
+			//stupid.timeTableIndexer();
+			//int index = stupid.getIndexOfWeekData(stupid.currentDate);
+			//WeekData weekData = stupid.stupidData.get(index);
+			String xmlContent = Xml.convertWeekDataToXml(weekData, weekData.parent.progressDialog);
 			FileOPs.saveToFile(context,xmlContent,dataFile);
-	   		stupid.dataIsDirty=false;
-
-	   		if(!stupid.setupIsDirty && !stupid.dataIsDirty)
-	   		{
-	   			stupid.progressDialog.dismiss();
-	   		}
+			weekData.isDirty=false;
 		}
 		catch(Exception e)
 		{

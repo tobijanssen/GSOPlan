@@ -1,4 +1,4 @@
-package de.janssen.android.gsoplan.Runnables;
+package de.janssen.android.gsoplan.runnables;
 
 import de.janssen.android.gsoplan.StupidCore;
 

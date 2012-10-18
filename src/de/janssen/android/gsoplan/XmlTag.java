@@ -52,7 +52,7 @@ public class XmlTag {
             //prüfen, ob überhaupt ein Tag vorliegt:
             if(startPoint == -1)
             {
-            	throw new Exception("no Tag found in HtmlResponse");
+            	throw new Exception("Fehler bei der XML Konvertierung! Code: 0x001");
             }
             
             //der Text davor wird verworfen:
@@ -65,7 +65,8 @@ public class XmlTag {
             endTagPoint = xml.container.indexOf(">", startPoint)+1;
             if(endTagPoint == -1)
             {
-            	throw new Exception("Tag not closed correctly");
+            	//Tag ist nicht vernüftig geclosed worden
+            	throw new Exception("Fehler bei der XML Konvertierung! Code: 0x002");
             }
 
             String tagContent = xml.container.substring(0,endTagPoint);
@@ -77,8 +78,8 @@ public class XmlTag {
             }
             catch(Exception e)
             {
-            	//TODO:
-            	String trrr= e.getMessage();
+            	throw new Exception(e);
+            	
             }
 
             //prüfen, ob daten vorhanden sind
@@ -118,7 +119,7 @@ public class XmlTag {
         
         
         
-        private static XmlTag decodeXmlTag(String xmlCode)
+        private static XmlTag decodeXmlTag(String xmlCode) throws Exception
         {
         	XmlTag tag = new XmlTag();
         	try
@@ -147,7 +148,7 @@ public class XmlTag {
         	}
         	catch(Exception e)
         	{
-        		//TODO:Exception
+        		 throw new Exception("Fehler bei der XML Decodierung! Code: 0x201");
         	}
         	int parameterPoint = xmlCode.indexOf("=", 0);
         	if(parameterPoint == -1 && tag.type == null)
@@ -202,7 +203,7 @@ public class XmlTag {
 	        		}
 	        		catch(Exception e)
 	        		{
-	        			//TODO:Exception
+	        			throw new Exception("Fehler bei der XML Decodierung! Code: 0x202");
 	        		}
 	        		
 	        		

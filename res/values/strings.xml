@@ -13,13 +13,16 @@
     
     
     <!-- Meldungen -->
-    <string name="msg_weekNotAvailable">Die Woche ist auf dem GSO-Server nicht verfügbar!</string>
-    <string name="msg_searchingNewData">Suche nach aktuelleren Daten…</string>
-    <string name="msg_loadingData">Lade Daten vom Server…</string>
+    <string name="msg_weekNotAvailable">Die gewählte Woche ist auf dem GSO-Server nicht verfügbar!</string>
+    <string name="msg_foreWeekNotAvailable">Eine Vorwoche ist auf dem GSO-Server nicht mehr verfügbar!</string>
+    <string name="msg_nextWeekNotAvailable">Die Folgewoche ist auf dem GSO-Server nicht verfügbar!</string>
+    <string name="msg_searchingNewDataNow">Aktualisiere die angezeigte Woche…</string>
+    <string name="msg_searchingNewDataNext">Aktualisiere die Folgewoche…</string>
+    <string name="msg_searchingNewDataLast">Aktualisiere die Vorwoche…</string>
+    <string name="msg_loadingData">Lade vom GSO-Server…</string>
     <string name="msg_noWlan">Keine Wlan Verbindung!</string>
     <string name="msg_saving">Speichern…</string>
-    <string name="msg_error_timeout_onDestroy">Ein Task reagiert nicht mehr!</string>
-    <string name="msg_error_timeout_task">Ein Task reagiert nicht mehr!</string>
+    <string name="msg_start">Bitte warten…</string>
     
     
     

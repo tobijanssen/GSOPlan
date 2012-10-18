@@ -1,4 +1,4 @@
-package de.janssen.android.gsoplan.Runnables;
+package de.janssen.android.gsoplan.runnables;
 
 import android.widget.Toast;
 import de.janssen.android.gsoplan.PlanActivity;

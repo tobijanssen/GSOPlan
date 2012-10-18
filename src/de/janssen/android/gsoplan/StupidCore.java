@@ -21,16 +21,17 @@ public class StupidCore {
 	public int myType=0;
 	public Boolean onlyWlan=false;
 	public long syncTime = 0;
-	public WeekData[] stupidData = new WeekData[0];
+	public List <WeekData> stupidData = new ArrayList<WeekData>();
 	public Boolean dataIsDirty=false;
 	public Boolean setupIsDirty=false;
 	public ProgressDialog progressDialog;
-	public String[] resyncAfterStrings=new String[]{"sofort","1h","2h","3h","5h","10h","24h","48h","nie"};
-	public long[] resyncAfterMinutes=new long[]      {0,60,120,180,300,600,1440,2880,5256000};
+	public String[] resyncAfterStrings=new String[]{"sofort","10min","30min","1h","2h","3h","5h","24h","nie"};
+	public long[] resyncAfterMinutes=new long[]      {0,10,30,60,120,180,300,1440,5256000};
 	public String[] timeslots =new String[]{"","7.45 - 8.30","8.30 - 9.15","9.35 - 10.20","10.20 - 11.05","11.25 - 12.10","12.10 - 12.55","13.15 - 14.00","14.00 - 14.45","15.05 - 15.50","15.50 - 16.35","16.55 - 17.40","17.40 - 18.25","18.25 - 19.10","19.30 - 20.15","20.15 - 21.00"};
-	public long myResyncAfter=1;
+	public long myResyncAfter=10;
 	public Calendar currentDate = new GregorianCalendar();
 	public TimeTableIndex[] myTimetables;
+	private final int CONNECTIONTIMEOUT =8000; 
 	
 	final String NAVBARURL = "http://stupid.gso-koeln.de/frames/navbar.htm"; 
 	final String URLMOOODLE = "http://stupid.gso-koeln.de/";
@@ -44,7 +45,7 @@ public class StupidCore {
 	// / leert die Daten
 	public void clearData()
 	{
-		this.stupidData = new WeekData[0];
+		this.stupidData.clear();
 	}
 	
 	// / Datum: 20.09.12
@@ -193,32 +194,41 @@ public class StupidCore {
 	// / StupidCore, der alle Daten enthält
 	// /
 	// /
-	public void fetchTimetableFromXml(Xml xml) {
+	public void fetchTimetableFromXml(Xml xml) throws Exception {
 		
-		stupidData = new WeekData[0];
+		this.stupidData.clear();
 
 	
 		//xml Header auslesen und version abholen
-		XmlTag[] xmlArray = Xml.xmlToArray(xml);
-		String xmlVersion = "";
-		for (int i = 0; i < xmlArray[0].parameters.length; i++) {
-			if (xmlArray[0].parameters[i].name.equalsIgnoreCase("version")) {
-				xmlVersion = xmlArray[0].parameters[i].value;
-			}
+		XmlTag[] xmlArray;
+		try 
+		{
+			xmlArray = Xml.xmlToArray(xml);
+			String xmlVersion = "";
+			for (int i = 0; i < xmlArray[0].parameters.length; i++) {
+				if (xmlArray[0].parameters[i].name.equalsIgnoreCase("version")) {
+					xmlVersion = xmlArray[0].parameters[i].value;
+				}
 
+			}
+			
+			//verarbeiten der enthaltenen weeks
+			if (xmlVersion.equalsIgnoreCase("1")) 
+			{
+				for(int weekNo=1;weekNo<xmlArray.length;weekNo++)
+				{
+					WeekData weekData = new WeekData(this);
+					XmlTag timetable = xmlArray[weekNo].childTags[0];// den timetable abrufen
+					weekData = convertXmlTableToWeekData(timetable);
+					this.stupidData.add(weekData);
+				}
+	    	}
+		} 
+		catch (Exception e) 
+		{
+			throw new Exception(e);
 		}
 		
-		//verarbeiten der enthaltenen weeks
-		if (xmlVersion.equalsIgnoreCase("1")) 
-		{
-			for(int weekNo=1;weekNo<xmlArray.length;weekNo++)
-			{
-				WeekData weekData = new WeekData();
-				XmlTag timetable = xmlArray[weekNo].childTags[0];// den timetable abrufen
-				weekData = convertXmlTableToWeekData(timetable);
-				stupidData = (WeekData[]) ArrayOperations.AppendToArray(stupidData, weekData);
-			}
-    	}
 	}
 
 	/*	Datum: 30.08.12
@@ -234,16 +244,8 @@ public class StupidCore {
         {
         	URL url = new URL(NAVBARURL);
         	Xml xml = new Xml();
-        	xml.container = Xml.readFromHTML(url,this.progressDialog);
+        	xml.container = Xml.readFromHTML(url,this.progressDialog,CONNECTIONTIMEOUT);
         	xmlTagArray = Xml.xmlToArray(xml);
-        }
-        catch (MalformedURLException e)
-        {
-        	throw new MalformedURLException("Die Url ist fehlerhaft");
-        }
-        catch(IOException e)
-        {
-        	throw e;
         }
 		catch(Exception e)
         {
@@ -317,7 +319,7 @@ public class StupidCore {
 	 *  Lädt den angegebenen TimeTable von der GSO Seite und parsed diesen in den StupidCore
 	 *  
 	 */	
-	public int fetchTimeTableFromNet(String selectedStringDate, String selectedElement, String selectedType) throws Exception
+	public DownloadFeedback fetchTimeTableFromNet(String selectedStringDate, String selectedElement, String selectedType) throws Exception
 	{
 		Exception error = null;
 		int dataIndex = -1;
@@ -339,16 +341,8 @@ public class StupidCore {
         {
 			URL url = new URL(URLMOOODLE+selectedDateIndex+"/"+selectedType+"/"+selectedType+"000"+selectedClassIndex+".htm");
 			Xml xml = new Xml();
-			xml.container = Xml.readFromHTML(url,this.progressDialog);
+			xml.container = Xml.readFromHTML(url,this.progressDialog,CONNECTIONTIMEOUT);
         	xmlArray = Xml.xmlToArray(xml,this.progressDialog);
-        }
-        catch (MalformedURLException e)
-        {
-        	throw e;
-        }
-        catch(IOException e)
-        {
-        	throw e;
         }
 		catch(Exception e)
         {
@@ -390,7 +384,7 @@ public class StupidCore {
         
         
         //den XmlTimeTable in das WeekData format wandeln:
-        WeekData weekData = new WeekData();
+        WeekData weekData = new WeekData(this);
         weekData = convertXmlTableToWeekData(xmlTimeTable);		//Konvertiert den angegebenen XmlTable in das WeekData-format.
         this.progressDialog.setProgress(this.progressDialog.getProgress()+1000);
         weekData = collapseWeekDataMultiDim(weekData);			//reduziert den Inhalt des WeekData.timetable auf den Kern, es werden doppelt einträe entfernt und leere spalten und zeilen herausgefiltert
@@ -428,12 +422,12 @@ public class StupidCore {
         //prüfen, ob bereits die Woche für die Klasse un den typ vorliegt:
 
         long existSyncTime=0;
-        WeekData exitWeekData= new WeekData();
+        WeekData exitWeekData= new WeekData(this);
         //alle bestehden Daten abrufen:
-        for(int y =0;y<stupidData.length;y++)
+        for(int y =0;y<this.stupidData.size();y++)
         {
         	this.progressDialog.setProgress(this.progressDialog.getProgress()+50);
-        	exitWeekData=stupidData[y];
+        	exitWeekData=this.stupidData.get(y);
         	//prüfen, ob das bestehende Element, dem neu hinzuzufügenden entspricht(klasse,KW,Typ)
         	if(exitWeekData.elementId.equalsIgnoreCase(shownElement)&& exitWeekData.weekId.equalsIgnoreCase(selectedDateIndex)&& exitWeekData.typeId.equalsIgnoreCase(selectedType))
         	{
@@ -441,15 +435,21 @@ public class StupidCore {
        			//prüfen, ob die alte syncTime älter ist als die neue
        			if(existSyncTime < weekData.syncTime)
        			{
-       				stupidData[y]=weekData;
-       				dataIsDirty=true;
-       				return y;
+       				weekData.isDirty=true;
+       				this.stupidData.set(y, weekData);
+       				return new DownloadFeedback(y,DownloadFeedback.REFRESH);
        			}
         	}
         }
-        dataIsDirty=true;
-       	stupidData = (WeekData[]) ArrayOperations.AppendToArray(stupidData, weekData);	//fügt die geparste Woche den Hauptdaten hinzu
-       	dataIndex = stupidData.length-1;
+        weekData.isDirty=true;
+       	this.stupidData.add(weekData);	//fügt die geparste Woche den Hauptdaten hinzu
+       	sort();
+       	for(int y =0;y<this.stupidData.size() && dataIndex == -1;y++)
+       	{
+       		if(this.stupidData.get(y).equals(weekData))
+       			dataIndex=y;
+       	}
+       	
        	this.progressDialog.setProgress(this.progressDialog.getProgress()+1000);
         if(error != null)
         {
@@ -457,7 +457,7 @@ public class StupidCore {
         }
         else
         {
-        	return dataIndex;
+        	return new DownloadFeedback(dataIndex,DownloadFeedback.NO_REFRESH);
         }
         
 	}
@@ -527,7 +527,7 @@ public class StupidCore {
 	private WeekData convertXmlTableToWeekData(XmlTag htmlTableTag)
 	{
 		// Größe des benötigten Arrays muss kalkuliert werden
-		WeekData weekData = new WeekData();
+		WeekData weekData = new WeekData(this);
 		//TODO: sycnDate darf nur bei HTML gesetzt werden!!!
 		weekData.setSyncDate();
 		weekData.timetable = new XmlTag[0][0]; 
@@ -1028,15 +1028,15 @@ public class StupidCore {
 		myTimetables = new TimeTableIndex[0];
 		
 		//den gesamten geladenen Datenbestand durchsuchen
-		for (int i = 0; i < stupidData.length; i++) 
+		for (int i = 0; i < this.stupidData.size(); i++) 
 		{
 			//prüfen, ob der aktuelle Datensatz dem eigenen Element entspricht
-			if (stupidData[i].elementId.equalsIgnoreCase(myElement)) 
+			if (this.stupidData.get(i).elementId.equalsIgnoreCase(myElement)) 
 			{
 				
 				//wenn ja, einen neuen Eintrag dem Indexer hinzufügen
 				myTimetables=(TimeTableIndex[]) ArrayOperations.AppendToArray(myTimetables, 
-						new TimeTableIndex(i,stupidData[i].date,stupidData[i].syncTime));
+						new TimeTableIndex(i,this.stupidData.get(i).date,this.stupidData.get(i).syncTime));
 			}
 		}
 	}
@@ -1102,6 +1102,82 @@ public class StupidCore {
 		return -1;
 	}
 	
+	/*	11.10.12
+	 * 	Tobias Janssen
+	 * 
+	 * 	Sortiert die Daten nach Wochennummer
+	 * 
+	 * 
+	 * 
+	 */
+	public void sort()
+	{
+		List <WeekData> newList = new ArrayList<WeekData>();
+		int currentObj = this.stupidData.size()-1;
+		int nextObj=currentObj-1;
+		int weekIdCurrent;
+		int weekIdNext;		
+		while(this.stupidData.size() != 0)
+		{
+			//prüfen, ob es ein nächstes Objekt überhaupt noch gibt
+			//das kleinste object heraussuchen
+			currentObj=this.stupidData.size()-1;
+			nextObj=this.stupidData.size()-2;
 
+				for(int i=nextObj;i>=0;i--)
+				{
+					if(this.stupidData.size()==1)
+					{
+						nextObj=-1;
+					}
+					else
+					{
+						//pürfen, ob das nextObj größer ist als das aktuelle
+						weekIdCurrent =Integer.decode(this.stupidData.get(currentObj).weekId);
+						weekIdNext=Integer.decode(this.stupidData.get(i).weekId);
+						if(weekIdNext > weekIdCurrent)
+						{
+							//das nextObj ist größer, daher wird der zeiger nun einen niedriger gesetzt
+							nextObj=i;
+						}
+						else
+						{
+							//das nextObj ist kleiner, daher nehmen wir nun das Object als current
+							currentObj=i;
+						}
+					}
+				}
+
+				//liste ist durch, ablegen
+				weekIdCurrent =Integer.decode(this.stupidData.get(currentObj).weekId);
+				if(nextObj != -1)
+				{
+					weekIdNext=Integer.decode(this.stupidData.get(nextObj).weekId);
+					if(weekIdNext > weekIdCurrent)
+					{
+						//das nextObj ist größer, daher wird erst das currentObject abgelegt
+						newList.add(this.stupidData.get(currentObj));
+						this.stupidData.remove(currentObj);
+
+						
+					}
+					else
+					{
+						//das nextObj ist kleiner, daher wird erst das nextObj abgelegt
+						newList.add(this.stupidData.get(nextObj));
+						this.stupidData.remove(nextObj);
+					}
+				}
+				else
+				{
+					newList.add(this.stupidData.get(currentObj));
+					this.stupidData.remove(currentObj);
+				}
+				
+			}
+
+		this.stupidData = newList;
+		
+	}
 	
 }

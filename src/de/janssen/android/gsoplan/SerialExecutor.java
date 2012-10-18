@@ -18,7 +18,6 @@ public class SerialExecutor implements Executor, Runnable
 	}
 
 	
-	@Override
 	public synchronized void execute(final Runnable r) 
 	{
 		this.r=r;
@@ -32,7 +31,9 @@ public class SerialExecutor implements Executor, Runnable
 
 	   protected synchronized void scheduleNext() 
 	   {
+
 		   active = tasks.poll();
+		   
 		   if (active != null) 
 		   {
 			   executor.execute(active);
@@ -41,7 +42,6 @@ public class SerialExecutor implements Executor, Runnable
 	   }
 
 
-	@Override
 	public void run() 
 	{
 			try 

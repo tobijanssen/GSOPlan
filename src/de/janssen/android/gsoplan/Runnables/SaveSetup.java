@@ -1,4 +1,4 @@
-package de.janssen.android.gsoplan.Runnables;
+package de.janssen.android.gsoplan.runnables;
 
 import android.content.Context;
 import de.janssen.android.gsoplan.FileOPs;
@@ -27,10 +27,7 @@ public class SaveSetup implements Runnable{
 			String xmlContent = Xml.convertSetupToXml(stupid,stupid.progressDialog);
 			FileOPs.saveToFile(context,xmlContent ,setupFile);
 	   		stupid.setupIsDirty=false;
-	   		if(!stupid.setupIsDirty && !stupid.dataIsDirty)
-	   		{
-	   			stupid.progressDialog.dismiss();
-	   		}
+   			stupid.progressDialog.dismiss();
 		}
 		catch(Exception e)
 		{

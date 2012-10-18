@@ -6,74 +6,82 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import de.janssen.android.gsoplan.Runnables.SpecialDownload;
-import de.janssen.android.gsoplan.Runnables.Toaster;
-import de.janssen.android.gsoplan.Runnables.UpdateTimeTableScreen;
-import android.os.AsyncTask;
+import com.viewpagerindicator.TitlePageIndicator;
+import de.janssen.android.gsoplan.runnables.ErrorMessage;
+import de.janssen.android.gsoplan.runnables.MainDownloader;
+import de.janssen.android.gsoplan.runnables.PlanActivityLuncher;
+import de.janssen.android.gsoplan.runnables.ShowProgressDialog;
 import android.os.Bundle;
 import android.os.Handler;
+import android.app.ActionBar;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.gesture.Gesture;
-import android.gesture.GestureLibraries;
-import android.gesture.GestureLibrary;
-import android.gesture.GestureOverlayView;
-import android.gesture.GestureOverlayView.OnGesturePerformedListener;
-import android.gesture.Prediction;
-import android.graphics.Color;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.Window;
 import android.widget.DatePicker;
-import android.widget.ListView;
 import android.widget.Toast;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.support.v4.view.ViewPager.OnPageChangeListener;
 
-public class PlanActivity extends Activity implements OnGesturePerformedListener {
+
+
+public class PlanActivity extends Activity {
 
 	
 	public StupidCore stupid = new StupidCore();
 	public Exception exception;
-	private GestureLibrary gestureLib;
 	public MyArrayAdapter adapter;
-	public int indexOfWeekIdToDisplay=0;		//Weekto display ist nach wie vor noch in gebraucht
 	public Calendar dateBackup;
 	public Handler handler;
-	private AsyncTask<Integer, Void, Void> task;
-	private Boolean selfCheckIsRunning=false;
+	public Boolean selfCheckIsRunning=false;
 	public int weekDataIndexToShow;
 	private ExecutorService exec = Executors.newSingleThreadExecutor();
 	private SerialExecutor exec2 = new SerialExecutor(exec);
-
-	public Future<?>[] future = new Future<?>[10];
-	public int lastThreadId=0;
+	public List<View> pages = new ArrayList<View>();
+	public List<Calendar> pageIndex = new ArrayList<Calendar>();;
+	public List<String> headlines = new ArrayList<String>();
+	public LayoutInflater inflater;
+	public PagerAdapter pageAdapter;
+	public ViewPager viewPager;
+	public Boolean disablePagerOnChangedListener = false;
+	public TitlePageIndicator pageIndicator;
+	private int currentPage;
 	
-	
-	
-    @Override
+    
+	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_plan);
-        handler = new Handler();
+        if(android.os.Build.VERSION.SDK_INT >= 11)
+        {
+        	getWindow().requestFeature(Window.FEATURE_ACTION_BAR);
+        }
+        
 
         
-        indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
-        setupGesture();
-        setupviewList();
-        if(!selfCheckIsRunning)
-        	selfCheck();
+        
+        inflater = LayoutInflater.from(this);
+        setContentView(R.layout.activity_plan);
+        if(android.os.Build.VERSION.SDK_INT >= 11)
+        {
+	        ActionBar actionBar = getActionBar();
+	        actionBar.show();
+        }
+        handler = new Handler();
+        
+       
+        executeWithDialog(new PlanActivityLuncher(this), getString(R.string.msg_start),ProgressDialog.STYLE_SPINNER);
         
     }
+    
     @Override
 	protected void onResume() 
 	{
@@ -84,10 +92,8 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	    	stupid.clearData();
 	    	stupid.dataIsDirty=false;
 	    	stupid.setupIsDirty=false;
-	    	indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
 	    	handler.postDelayed(new Runnable(){
-
-				@Override
+	    		@Override
 				public void run() {
 					PlanActivity.this.selfCheck();
 					
@@ -96,7 +102,6 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	    else if(stupid.setupIsDirty)
 	    {
 	    	stupid.setupIsDirty=false;
-	    	indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
     		selfCheck();
 
 	    }
@@ -129,10 +134,13 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 	protected void onStop()
 	{
     	super.onStop();
+    	for(int i=0;i<stupid.stupidData.size() && !stupid.dataIsDirty;i++)
+    	{
+    		if(stupid.stupidData.get(i).isDirty)
+    			stupid.dataIsDirty=true;
+    	}
     	if(stupid.dataIsDirty)
 		{
-			if(task!=null)
-				task.cancel(true);
 			try
 			{
 				Tools.saveFiles(this, stupid, exec);
@@ -147,7 +155,6 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 			}
 			
 		}
-    	
 	}
     
     @Override
@@ -161,20 +168,8 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 			exec.awaitTermination(120, TimeUnit.SECONDS);
 			if(!exec.isTerminated())
 			{
-				new AlertDialog.Builder(this)
-	    	    .setTitle("Timeout")
-	    	    .setMessage(this.getString(R.string.msg_error_timeout_onDestroy))
-	    	    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-	    	        public void onClick(DialogInterface dialog, int which) { 
-	    	            // continue with delete
-	    	        }
-	    	     })
-	    	    .setNegativeButton("Abbrechen", new DialogInterface.OnClickListener() {
-	    	        public void onClick(DialogInterface dialog, int which) { 
-	    	            // do nothing
-	    	        }
-	    	     })
-	    	     .show();
+				handler.post(new ErrorMessage(PlanActivity.this,"Beim Beenden ist ein Fehler aufgetreten"));
+
 			}
 			
 			
@@ -187,69 +182,8 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 
     
     @Override
-    public void onGesturePerformed(GestureOverlayView overlay, Gesture gesture) 
-    {
-    	ArrayList<Prediction> predictions = gestureLib.recognize(gesture);
-    	for (Prediction prediction : predictions) 
-    	{
-    		if (prediction.score > 1.0) 
-    		{
-    			dateBackup=(Calendar) stupid.currentDate.clone();
-    			
-    			if(prediction.name.equalsIgnoreCase("left") && stupid.currentDate.get(Calendar.DAY_OF_WEEK) > 2)
-    			{
-    				stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()-(86400000*1));
-    				handler.post(new UpdateTimeTableScreen(this));
-    			}
-    			else if(prediction.name.equalsIgnoreCase("left"))
-    			{
-    				//die aktuelle Woche abspeichern
-    				try 
-    				{
-						Tools.saveFiles(PlanActivity.this, stupid, exec);
-						
-					} 
-    				catch (Exception e) 
-    				{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-    				stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()-(86400000*3));
-    				//Prüfen, ob diese Woche existiert/on- oder offline
-    				checkAvailibilityOfWeek();
-
-    			}
-    			
-    			if(prediction.name.equalsIgnoreCase("right")&& stupid.currentDate.get(Calendar.DAY_OF_WEEK) < 6)
-    			{
-    				
-    				stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(86400000*1));
-    				handler.post(new UpdateTimeTableScreen(this));
-    			}
-    			else if(prediction.name.equalsIgnoreCase("right"))
-    			{
-    				//die aktuelle Woche abspeichern
-    				try {
-						Tools.saveFiles(PlanActivity.this, stupid, exec);
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-    				//Das Datum um drei Tag erhöhen
-    				stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(1000*60*60*24*3));
-    				
-    				checkAvailibilityOfWeek();
-    				
-    			}
-    		}
-    	}
-    }
-    
-    
-    
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.activity_plan, menu);
+    	getMenuInflater().inflate(R.menu.activity_plan, menu);
         return true;
     }
     
@@ -267,13 +201,13 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
             	Tools.saveFilesWithProgressDialog(this, stupid, exec, stupid.currentDate);
             	return true;
             case R.id.menu_refresh:
-            	//selfCheck();
             	refreshWeek();
             	return true;
             case R.id.menu_today:
             	stupid.currentDate=new GregorianCalendar();
-            	indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(stupid.currentDate);
-            	checkAvailibilityOfWeek();
+            	checkAvailibilityOfWeek(Const.THISWEEK);
+            	viewPager.setCurrentItem(Tools.getPage(pageIndex, stupid.currentDate));
+            	
             	return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -289,13 +223,12 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     {
     	handler.post(new Runnable(){
 
-			@Override
+    		@Override
 			public void run() {
 				
 				
 				DatePickerDialog picker = new DatePickerDialog(PlanActivity.this, new DatePickerDialog.OnDateSetListener() {
 
-					@Override
 					public void onDateSet(DatePicker view, int year,
 							int monthOfYear, int dayOfMonth) {
 						//Backup vom Datum erstellen, falls es das neue Datum nicht gibt
@@ -311,10 +244,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
 							case Calendar.SUNDAY:
 								PlanActivity.this.stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(1000*60*60*24*1));
 						}
-						
-						//Die KalenderWoche herausfinden:
-						PlanActivity.this.indexOfWeekIdToDisplay=Tools.getWeekOfYearToDisplay(PlanActivity.this.stupid.currentDate);
-						checkAvailibilityOfWeek();
+						checkAvailibilityOfWeek(Const.THISWEEK);
 						
 					}
 			    },
@@ -348,32 +278,7 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
      */
     public void refreshWeek()
     {
-    	//eine Übersicht erstellen, welche Daten für die aktuelle Klasse überhaupt vorliegen
-    	try
-    	{
-    		stupid.timeTableIndexer();
-    	}
-    	catch(Exception e)
-    	{
-    		//Keine Klasse ausgewählt!
-    		gotoSetup();
-    	}
-    	indexOfWeekIdToDisplay = stupid.getWeekOfYear(stupid.currentDate);
-        //aus dieser Liste mithilfer der selektierten KalenderWoche den richtigen Index heraussuchen
-        weekDataIndexToShow = stupid.getIndexOfWeekData(stupid.currentDate);
-        //prüfen, ob diese Woche bereits im Datenbestand ist
-        if(weekDataIndexToShow ==-1)
-        {
-        	//Woche ist nicht im Index enthalten        	
-        	//Downloader starten, dieser prüft, ob diese Woche erhältlich ist und unternimmt alle weitern Maßnahmen
-        	executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
-        	
-        }
-        else
-        {
-        	executeWithDialog(new SpecialDownload(this),getString(R.string.msg_searchingNewData));
-        }
-        
+    	checkAvailibilityOfWeek(Const.FORCEREFRESH,Const.THISWEEK);
     }
     
     /*	5.10.12
@@ -383,7 +288,19 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
      * 	unternimmt weitere Maßnahmen, wenn nicht, oder veraltet
      * 
      */
-    public void checkAvailibilityOfWeek()
+    public void checkAvailibilityOfWeek(int weekOffset)
+    {
+    	checkAvailibilityOfWeek(false,weekOffset);
+    }
+    
+    /*	5.10.12
+     * 	Tobias Janssen
+     * 
+     * 	Prüft, ob die eingestellte Woche(laut stupid.currentDate) bereits verfügbar ist 
+     * 	unternimmt weitere Maßnahmen, wenn nicht, oder veraltet
+     * 
+     */
+    public void checkAvailibilityOfWeek(Boolean forceRefresh, int weekOffset)
     {
     	//eine Übersicht erstellen, welche Daten für die aktuelle Klasse überhaupt vorliegen
     	try
@@ -395,98 +312,82 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     		//Keine Klasse ausgewählt!
     		gotoSetup();
     	}
-    	indexOfWeekIdToDisplay = stupid.getWeekOfYear(stupid.currentDate);
+    	
+    	Calendar requestedWeek = (Calendar) stupid.currentDate.clone();
+    	requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()+(86400000*7*weekOffset));//den weekOffset umsetzen
+    	
+    	int currentDay = requestedWeek.get(Calendar.DAY_OF_WEEK);
+    	if(currentDay != 2)
+    	{
+    		if(currentDay > 2)
+    			requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()-(86400000*(currentDay-2)));
+    		else if(currentDay < 2)
+    			requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()+(86400000*(2-currentDay)));
+     	}
+    	//Fehlermeldungen für den Fehlerfall einstellen
+    	String notAvail ="";
+    	String loading="";
+    	String refreshing="";
+    	switch(weekOffset)
+    	{
+    		case Const.NEXTWEEK:
+    			notAvail = this.getString(R.string.msg_nextWeekNotAvailable);
+    			loading =  this.getString(R.string.msg_loadingData);
+    			refreshing =  this.getString(R.string.msg_searchingNewDataNext);
+    			break;
+    		case Const.LASTWEEK:
+    			notAvail = this.getString(R.string.msg_foreWeekNotAvailable);
+    			loading =  this.getString(R.string.msg_loadingData);
+    			refreshing =  this.getString(R.string.msg_searchingNewDataLast);
+    			break;
+    		case Const.THISWEEK:
+    		default:
+    			notAvail = this.getString(R.string.msg_weekNotAvailable);
+    			loading =  this.getString(R.string.msg_loadingData);
+    			refreshing =  this.getString(R.string.msg_searchingNewDataNow);
+    			break;
+    	}
+    	
+    	
         //aus dieser Liste mithilfer der selektierten KalenderWoche den richtigen Index heraussuchen
-        weekDataIndexToShow = stupid.getIndexOfWeekData(stupid.currentDate);
+        weekDataIndexToShow = stupid.getIndexOfWeekData(requestedWeek);
         //prüfen, ob diese Woche bereits im Datenbestand ist
         if(weekDataIndexToShow ==-1)
         {
-        	//prüfen, ob es eine Datei dazu gibt
-        	File myDirectory = new File(this.getFilesDir()+"/"+stupid.myElement);
-        	File[] myDirectoryFileList = myDirectory.listFiles();
-        	String actualFileName="";
-        	String weekId="";
-        	String year="";
-        	Boolean fileFound =false;
-        	for(int i=0;i<myDirectoryFileList.length && !fileFound;i++)
-        	{
-        		actualFileName =	myDirectoryFileList[i].getName();
-        		int endPosWeek = actualFileName.indexOf("_");
-        		int endPosYear = actualFileName.indexOf("_",endPosWeek+1);
-        		if(endPosWeek !=-1 && endPosYear != -1)
-        		{
-	        		weekId = actualFileName.substring(0,endPosWeek);
-	        		year = actualFileName.substring(endPosWeek+1,endPosYear);
-	        		if(String.valueOf(indexOfWeekIdToDisplay).equalsIgnoreCase(weekId) && String.valueOf(stupid.currentDate.get(Calendar.YEAR)).equalsIgnoreCase(year))
-	        		{
-	        			//passende Datei gefunden, Datei nun dazuladen
-	        			Tools.loadNAppendFile(this, stupid, new File(myDirectory,actualFileName));
-	        			fileFound=true;
-	        		}
-        		}
-//        		else
-//        		{	//TODO: dies ist nur debug bereinigung und dieser else weg muss wieder entfernt werden
-//        			myDirectoryFileList[i].delete();
-//        			
-//        		}
-        		
-        	}
-        	if(fileFound)
-        	{
-        		try 
-        		{
-					stupid.timeTableIndexer();
-					weekDataIndexToShow = stupid.getIndexOfWeekData(stupid.currentDate);
-					//prüfen, ob die benötigten daten nun geladen sind
-					if(weekDataIndexToShow ==-1)
-					{
-						//nein sind nicht im speicher
-						executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
-					}
-				} 
-        		catch (Exception e) 
-        		{
-        			executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
-				}
-        	}
-        	else
-        	{
-	        	//Woche ist nicht lokal verfügbar       	
-	        	//Downloader starten, dieser prüft, ob diese Woche erhältlich ist und unternimmt alle weitern Maßnahmen
-	        	executeWithDialog(new SpecialDownload(this),getString(R.string.msg_loadingData));
-        	}
-        	
+         	//Woche ist nicht lokal verfügbar       	
+        	//Downloader starten, dieser prüft, ob diese Woche erhältlich ist und unternimmt alle weitern Maßnahmen
+        	executeWithDialog(new MainDownloader(this,notAvail,requestedWeek),loading,ProgressDialog.STYLE_HORIZONTAL);
         }
         if(weekDataIndexToShow !=-1)
         {
         	//Woche ist im Datenbestand vorhanden
-        	
             //Nun prüfen, wie alt diese Daten sind:
-        	
-        	if(indexOfWeekIdToDisplay < new GregorianCalendar().get(Calendar.WEEK_OF_YEAR))
+        	if(stupid.getWeekOfYear(requestedWeek) < new GregorianCalendar().get(Calendar.WEEK_OF_YEAR) && !forceRefresh)
         	{
         		//diese Woche liegt bereits in der vergangenheit und muss nicht aktualisiert werden
-        		handler.post(new UpdateTimeTableScreen(this));
+        		//disablePagerOnChangedListener=false; //den onPageChangeListener wieder aktivieren
         	}
         	else
         	{
 	            Date date = new Date();
-	        	if(stupid.myTimetables[weekDataIndexToShow].syncTime + (stupid.myResyncAfter*60*1000) < date.getTime())	
+	        	if(stupid.myTimetables[weekDataIndexToShow].syncTime + (stupid.myResyncAfter*60*1000) < date.getTime() || forceRefresh)	
 	        	{
-	        		//veraltet sollte neu heruntergeladen werden!
-	        		executeWithDialog(new SpecialDownload(this),getString(R.string.msg_searchingNewData));
+	        		//veraltet neu herunterladen
+	        		executeWithDialog(new MainDownloader(this,notAvail,requestedWeek),refreshing,ProgressDialog.STYLE_HORIZONTAL);
 	        	}
 	        	else
 	        	{
-	        		//Datenbestand neu genug
-	        		
-		        	handler.post(new UpdateTimeTableScreen(this));
+	        		//Datenbestand neu genug jetz muss der richtige tag nur dargestellt werden
+							//PlanActivity.this.viewPager.setCurrentItem(page);
+        		
+	        		//disablePagerOnChangedListener=false;
 	        	}
         	}
         }
         
     }
     
+   
     
     
     
@@ -502,7 +403,10 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     	switch(checkStructure())
         {
         	case 0:	//Alles in Ordnung
-        		checkAvailibilityOfWeek();
+        		
+        		Tools.loadAllDataFiles(this, stupid);
+        		stupid.sort();
+        		checkAvailibilityOfWeek(Const.THISWEEK);
         		break;
         		
         	case 1:	//FILESETUP fehlt
@@ -520,10 +424,10 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         			//neuen anlegen
         			java.io.File elementDir = new java.io.File(this.getFilesDir(),stupid.myElement);
         			elementDir.mkdir();
-        			checkAvailibilityOfWeek();
+        			checkAvailibilityOfWeek(Const.THISWEEK);
     		break;
         	case 7:	//Keine Daten für diese Klasse vorhanden
-        		checkAvailibilityOfWeek();
+        		checkAvailibilityOfWeek(Const.THISWEEK);
         		break;
         }
     	selfCheckIsRunning=false;
@@ -571,14 +475,9 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
         
         //prüfen, ob daten für die ausgewählte klasse vorhanden sind
         //zählt wie viele Timetables für die ausgewählt Klasse vorhanden sind
-        int tableCounter = 0;
-        for(int i=0; i< stupid.stupidData.length;i++)
-        {
-        	if(stupid.stupidData[i].elementId.equalsIgnoreCase(stupid.myElement))
-        		tableCounter++;
-        }
+    	File[] files = elementDir.listFiles();
         
-        if(tableCounter == 0)
+        if(files.length == 0)
         	return 7;
         
         return 0;
@@ -586,58 +485,105 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
     
     
     
-    
-    
-    /// Datum: 20.09.12
+	/// Datum: 11.10.12
   	/// Autor: Tobias Janßen
   	///
   	///	Beschreibung:
-  	///	Initialisiert das viewList
+  	///	Initialisiert den viewPager
   	///	
-    public void setupviewList()
+    public void initViewPager()
     {
-    	List<TimetableViewObject> mylist1 = new ArrayList<TimetableViewObject>();
-    	
-        mylist1.add(new TimetableViewObject("--","Keine Daten vorhanden!","#FFFFFF"));
-        
-        adapter = new MyArrayAdapter(this,mylist1);
-        ListView listView = (ListView) findViewById(R.id.listTimetable);
-        
-        listView.setAdapter(adapter);
-        
-        
-    }
-    
-    
-    /// Datum: 20.09.12
-  	/// Autor: Tobias Janßen
-  	///
-  	///	Beschreibung:
-  	///	Initialisiert das Gesture Overlay
-  	///	
-    public void setupGesture()
-    {
-    	GestureOverlayView gestureOverlayView = (GestureOverlayView) findViewById(R.id.gestureOverlayView1);
-        gestureOverlayView.addOnGesturePerformedListener(this);
-        gestureOverlayView.setGestureColor(Color.TRANSPARENT);
-        gestureOverlayView.setUncertainGestureColor(Color.TRANSPARENT);
-        gestureLib = GestureLibraries.fromRawResource(this, R.raw.gestures);
-        if (!gestureLib.load()) {
-          finish();
+    	 
+    	 
+    	currentPage=0;
+        for(int i=0;i<stupid.stupidData.size();i++)
+        {
+        	Tools.appendTimeTableToPager(stupid.stupidData.get(i), stupid, this);
+        	
         }
-    
-    }
+        currentPage=Tools.getPage(pageIndex,stupid.currentDate);
 
+        handler.post(new Runnable(){
+
+			@Override
+			public void run() {
+				
+		        pageAdapter = new MyPagerAdapter(pages,headlines);       
+		        viewPager = (ViewPager)findViewById(R.id.pager);
+		        viewPager.setAdapter(pageAdapter);
+		        
+				viewPager.setCurrentItem(currentPage);
+		        pageIndicator = (TitlePageIndicator)findViewById(R.id.indicator);
+		        pageIndicator.setViewPager(viewPager);
+		        pageIndicator.setOnPageChangeListener(new OnPageChangeListener(){
+
+		 			@Override
+		 			public void onPageScrollStateChanged(int state) {
+		 				
+		 			}
+
+		 			@Override
+		 			public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+		 				
+		 			}
+
+		 			@Override
+		 			public void onPageSelected(int position) {
+
+		 				Calendar selectedDay = PlanActivity.this.pageIndex.get(position);
+		 				PlanActivity.this.stupid.currentDate = (Calendar) selectedDay.clone();
+		 				if(selectedDay.get(Calendar.DAY_OF_WEEK) == 6 && !PlanActivity.this.disablePagerOnChangedListener)
+		 				{
+		 					//ende erreicht
+		 					PlanActivity.this.disablePagerOnChangedListener=true;
+		 					try
+		 					{
+		 						PlanActivity.this.checkAvailibilityOfWeek(Const.NEXTWEEK);
+		 					}
+		 					finally
+		 					{
+		 						PlanActivity.this.disablePagerOnChangedListener=false;
+		 					}
+		 					
+		 				}
+		 				else if(selectedDay.get(Calendar.DAY_OF_WEEK) == 2 && !PlanActivity.this.disablePagerOnChangedListener)
+		 				{
+		 					//Anfang erreicht
+		 					PlanActivity.this.disablePagerOnChangedListener=true;
+		 					try
+		 					{
+		 						PlanActivity.this.checkAvailibilityOfWeek(Const.LASTWEEK);
+		 					}
+		 					finally
+		 					{
+		 						PlanActivity.this.disablePagerOnChangedListener=false;
+		 					}
+		 				}
+		 			}
+		         	
+		         	
+		         });
+				
+			}
+        	
+        });
+               
+    }
+    
 
     public boolean gotoSetup() {
-    	Tools.saveFilesWithProgressDialog(this,stupid,exec, stupid.currentDate);
-    	exec.shutdown();
+    	
     	try {
-			exec.awaitTermination(20, TimeUnit.SECONDS);
+    		Tools.saveFiles(this,stupid,exec);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    	catch (Exception e)
+    	{
+    		
+    	}
 	    Intent intent = new Intent(PlanActivity.this,SetupActivity.class);
 	    startActivityForResult(intent,1);	
     	
@@ -657,18 +603,16 @@ public class PlanActivity extends Activity implements OnGesturePerformedListener
   	///	
   	/// 
   	/// 
-    public void executeWithDialog(Runnable run,String text)
+    public void executeWithDialog(Runnable run,String text, int style)
     {
-    	stupid.progressDialog =  new ProgressDialog(PlanActivity.this);
-    	stupid.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-    	stupid.progressDialog.setMessage(text);
-    	stupid.progressDialog.setCancelable(true);
-    	stupid.progressDialog.setProgress(0);
-    	stupid.progressDialog.show();
     	
+    	handler.post(new ShowProgressDialog(this,style,text));
 		exec2.execute(run);
 		
     	
     }
     
+    
+
 }
+
