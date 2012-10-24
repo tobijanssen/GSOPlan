@@ -1,14 +1,11 @@
 package de.janssen.android.gsoplan;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-
 import android.app.ProgressDialog;
 import android.graphics.Point;
 
@@ -25,8 +22,6 @@ public class StupidCore {
 	public Boolean dataIsDirty=false;
 	public Boolean setupIsDirty=false;
 	public ProgressDialog progressDialog;
-	public String[] resyncAfterStrings=new String[]{"sofort","10min","30min","1h","2h","3h","5h","24h","nie"};
-	public long[] resyncAfterMinutes=new long[]      {0,10,30,60,120,180,300,1440,5256000};
 	public String[] timeslots =new String[]{"","7.45 - 8.30","8.30 - 9.15","9.35 - 10.20","10.20 - 11.05","11.25 - 12.10","12.10 - 12.55","13.15 - 14.00","14.00 - 14.45","15.05 - 15.50","15.50 - 16.35","16.55 - 17.40","17.40 - 18.25","18.25 - 19.10","19.30 - 20.15","20.15 - 21.00"};
 	public long myResyncAfter=10;
 	public Calendar currentDate = new GregorianCalendar();
@@ -36,7 +31,16 @@ public class StupidCore {
 	final String NAVBARURL = "http://stupid.gso-koeln.de/frames/navbar.htm"; 
 	final String URLMOOODLE = "http://stupid.gso-koeln.de/";
 	
-	
+	public StupidCore()
+	{
+		int currentDayOfWeek = currentDate.get(Calendar.DAY_OF_WEEK);
+		//den currentDay auf Montag setzten
+    	if(currentDayOfWeek < 2)
+    	{
+    		//1000*60*60*24 = 1 Tag!
+    		currentDate.setTimeInMillis(currentDate.getTimeInMillis()+(1000*60*60*24*(2-currentDayOfWeek)));
+    	}
+	}
 	
 	// / Datum: 25.09.12
 	// / Autor: Tobias Janßen

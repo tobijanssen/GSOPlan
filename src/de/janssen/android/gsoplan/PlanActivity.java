@@ -13,6 +13,7 @@ import com.viewpagerindicator.TitlePageIndicator;
 import de.janssen.android.gsoplan.runnables.ErrorMessage;
 import de.janssen.android.gsoplan.runnables.MainDownloader;
 import de.janssen.android.gsoplan.runnables.PlanActivityLuncher;
+import de.janssen.android.gsoplan.runnables.SetupPager;
 import de.janssen.android.gsoplan.runnables.ShowProgressDialog;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,7 +31,6 @@ import android.widget.DatePicker;
 import android.widget.Toast;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.support.v4.view.ViewPager.OnPageChangeListener;
 
 
 
@@ -44,8 +44,8 @@ public class PlanActivity extends Activity {
 	public Handler handler;
 	public Boolean selfCheckIsRunning=false;
 	public int weekDataIndexToShow;
-	private ExecutorService exec = Executors.newSingleThreadExecutor();
-	private SerialExecutor exec2 = new SerialExecutor(exec);
+	private ExecutorService executor = Executors.newSingleThreadExecutor();
+	private SerialExecutor execQueue = new SerialExecutor(executor);
 	public List<View> pages = new ArrayList<View>();
 	public List<Calendar> pageIndex = new ArrayList<Calendar>();;
 	public List<String> headlines = new ArrayList<String>();
@@ -56,22 +56,24 @@ public class PlanActivity extends Activity {
 	public TitlePageIndicator pageIndicator;
 	private int currentPage;
 	
-    
 	@Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) 
+	{
         super.onCreate(savedInstanceState);
+        //Android Version prüfen, wenn neuer als API11, 
+        Boolean actionBarAvailable = false;
         if(android.os.Build.VERSION.SDK_INT >= 11)
         {
-        	getWindow().requestFeature(Window.FEATURE_ACTION_BAR);
+        	//ActionBar anfragen
+        	actionBarAvailable=getWindow().requestFeature(Window.FEATURE_ACTION_BAR);
         }
-        
-
-        
-        
+         
         inflater = LayoutInflater.from(this);
         setContentView(R.layout.activity_plan);
-        if(android.os.Build.VERSION.SDK_INT >= 11)
+        //Wenn ActionBar verfügbar ist,
+        if(actionBarAvailable)
         {
+        	//ActionBar hinzufügen
 	        ActionBar actionBar = getActionBar();
 	        actionBar.show();
         }
@@ -143,10 +145,10 @@ public class PlanActivity extends Activity {
 		{
 			try
 			{
-				Tools.saveFiles(this, stupid, exec);
-	    		exec.shutdown();
-	    		exec.awaitTermination(120, TimeUnit.SECONDS);
-	    		if(!exec.isTerminated())
+				Tools.saveFiles(this, stupid, executor);
+	    		executor.shutdown();
+	    		executor.awaitTermination(120, TimeUnit.SECONDS);
+	    		if(!executor.isTerminated())
 	    			Toast.makeText(this,"Fehler beim Beenden des Programmes", Toast.LENGTH_LONG).show();
 			}
 			catch(Exception e)
@@ -161,21 +163,18 @@ public class PlanActivity extends Activity {
     protected void onDestroy()
     {
     	super.onDestroy();
-    	try {
-    		
-			exec.shutdown();
-			
-			exec.awaitTermination(120, TimeUnit.SECONDS);
-			if(!exec.isTerminated())
+    	try 
+    	{
+			executor.shutdown();
+			executor.awaitTermination(120, TimeUnit.SECONDS);
+			if(!executor.isTerminated())
 			{
 				handler.post(new ErrorMessage(PlanActivity.this,"Beim Beenden ist ein Fehler aufgetreten"));
-
 			}
-			
-			
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} 
+    	catch (InterruptedException e) 
+    	{
+			//hier ist nix zu tun...
 		}
     	
     }
@@ -198,7 +197,7 @@ public class PlanActivity extends Activity {
             	gotoDate();
             	return true;
             case R.id.menu_save:
-            	Tools.saveFilesWithProgressDialog(this, stupid, exec, stupid.currentDate);
+            	Tools.saveFilesWithProgressDialog(this, stupid, executor, stupid.currentDate);
             	return true;
             case R.id.menu_refresh:
             	refreshWeek();
@@ -288,9 +287,9 @@ public class PlanActivity extends Activity {
      * 	unternimmt weitere Maßnahmen, wenn nicht, oder veraltet
      * 
      */
-    public void checkAvailibilityOfWeek(int weekOffset)
+    public void checkAvailibilityOfWeek(int weekModificator)
     {
-    	checkAvailibilityOfWeek(false,weekOffset);
+    	checkAvailibilityOfWeek(false,weekModificator);
     }
     
     /*	5.10.12
@@ -365,7 +364,6 @@ public class PlanActivity extends Activity {
         	if(stupid.getWeekOfYear(requestedWeek) < new GregorianCalendar().get(Calendar.WEEK_OF_YEAR) && !forceRefresh)
         	{
         		//diese Woche liegt bereits in der vergangenheit und muss nicht aktualisiert werden
-        		//disablePagerOnChangedListener=false; //den onPageChangeListener wieder aktivieren
         	}
         	else
         	{
@@ -374,13 +372,6 @@ public class PlanActivity extends Activity {
 	        	{
 	        		//veraltet neu herunterladen
 	        		executeWithDialog(new MainDownloader(this,notAvail,requestedWeek),refreshing,ProgressDialog.STYLE_HORIZONTAL);
-	        	}
-	        	else
-	        	{
-	        		//Datenbestand neu genug jetz muss der richtige tag nur dargestellt werden
-							//PlanActivity.this.viewPager.setCurrentItem(page);
-        		
-	        		//disablePagerOnChangedListener=false;
 	        	}
         	}
         }
@@ -403,30 +394,32 @@ public class PlanActivity extends Activity {
     	switch(checkStructure())
         {
         	case 0:	//Alles in Ordnung
-        		
         		Tools.loadAllDataFiles(this, stupid);
         		stupid.sort();
+        		initViewPager();
         		checkAvailibilityOfWeek(Const.THISWEEK);
         		break;
         		
         	case 1:	//FILESETUP fehlt
-        		gotoSetup();
+        		gotoSetup(Const.FIRSTSTART,true);
         		break;
         		
         	case 2:	//FILESETUP laden fehlgeschlagen
-        		gotoSetup();
+        		gotoSetup(Const.FIRSTSTART,true);
         		break;
         		
         	case 3:	//Keine Klasse ausgewählt
-        		gotoSetup();
+        		gotoSetup(Const.FIRSTSTART,true);
         		break;
         	case 6:	//Elementenordner existiert nicht
         			//neuen anlegen
         			java.io.File elementDir = new java.io.File(this.getFilesDir(),stupid.myElement);
         			elementDir.mkdir();
+        			initViewPager();
         			checkAvailibilityOfWeek(Const.THISWEEK);
     		break;
         	case 7:	//Keine Daten für diese Klasse vorhanden
+        		initViewPager();
         		checkAvailibilityOfWeek(Const.THISWEEK);
         		break;
         }
@@ -485,16 +478,12 @@ public class PlanActivity extends Activity {
     
     
     
-	/// Datum: 11.10.12
-  	/// Autor: Tobias Janßen
-  	///
-  	///	Beschreibung:
-  	///	Initialisiert den viewPager
-  	///	
+	/* Datum: 11.10.12
+	 * Tobias Janßen
+	 * Initialisiert den viewPager, der die Tage des Stundenplans darstellt
+	 */
     public void initViewPager()
     {
-    	 
-    	 
     	currentPage=0;
         for(int i=0;i<stupid.stupidData.size();i++)
         {
@@ -503,93 +492,41 @@ public class PlanActivity extends Activity {
         }
         currentPage=Tools.getPage(pageIndex,stupid.currentDate);
 
-        handler.post(new Runnable(){
-
-			@Override
-			public void run() {
-				
-		        pageAdapter = new MyPagerAdapter(pages,headlines);       
-		        viewPager = (ViewPager)findViewById(R.id.pager);
-		        viewPager.setAdapter(pageAdapter);
-		        
-				viewPager.setCurrentItem(currentPage);
-		        pageIndicator = (TitlePageIndicator)findViewById(R.id.indicator);
-		        pageIndicator.setViewPager(viewPager);
-		        pageIndicator.setOnPageChangeListener(new OnPageChangeListener(){
-
-		 			@Override
-		 			public void onPageScrollStateChanged(int state) {
-		 				
-		 			}
-
-		 			@Override
-		 			public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-		 				
-		 			}
-
-		 			@Override
-		 			public void onPageSelected(int position) {
-
-		 				Calendar selectedDay = PlanActivity.this.pageIndex.get(position);
-		 				PlanActivity.this.stupid.currentDate = (Calendar) selectedDay.clone();
-		 				if(selectedDay.get(Calendar.DAY_OF_WEEK) == 6 && !PlanActivity.this.disablePagerOnChangedListener)
-		 				{
-		 					//ende erreicht
-		 					PlanActivity.this.disablePagerOnChangedListener=true;
-		 					try
-		 					{
-		 						PlanActivity.this.checkAvailibilityOfWeek(Const.NEXTWEEK);
-		 					}
-		 					finally
-		 					{
-		 						PlanActivity.this.disablePagerOnChangedListener=false;
-		 					}
-		 					
-		 				}
-		 				else if(selectedDay.get(Calendar.DAY_OF_WEEK) == 2 && !PlanActivity.this.disablePagerOnChangedListener)
-		 				{
-		 					//Anfang erreicht
-		 					PlanActivity.this.disablePagerOnChangedListener=true;
-		 					try
-		 					{
-		 						PlanActivity.this.checkAvailibilityOfWeek(Const.LASTWEEK);
-		 					}
-		 					finally
-		 					{
-		 						PlanActivity.this.disablePagerOnChangedListener=false;
-		 					}
-		 				}
-		 			}
-		         	
-		         	
-		         });
-				
-			}
-        	
-        });
+        handler.post( new SetupPager(this, pageIndex, currentPage));
+        
                
     }
     
 
-    public boolean gotoSetup() {
+    public boolean gotoSetup(String putExtraName, Boolean value) {
     	
-    	try {
-    		Tools.saveFiles(this,stupid,exec);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	catch (Exception e)
+    	try 
+    	{
+    		Tools.saveFiles(this,stupid,executor);
+		} 
+    	catch(Exception e) 
     	{
     		
-    	}
+		}
+	    Intent intent = new Intent(PlanActivity.this,SetupActivity.class);
+	    intent.putExtra(putExtraName, value);
+	    startActivityForResult(intent,1);	
+	    return true;
+    }
+    
+    public boolean gotoSetup() {
+    	
+    	try 
+    	{
+    		Tools.saveFiles(this,stupid,executor);
+		} 
+    	catch(Exception e) 
+    	{
+    		
+		}
 	    Intent intent = new Intent(PlanActivity.this,SetupActivity.class);
 	    startActivityForResult(intent,1);	
-    	
-    	
-
-        return true;
+	    return true;
     }
     
     /// Datum: 28.09.12
@@ -607,7 +544,7 @@ public class PlanActivity extends Activity {
     {
     	
     	handler.post(new ShowProgressDialog(this,style,text));
-		exec2.execute(run);
+		execQueue.execute(run);
 		
     	
     }

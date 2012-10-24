@@ -1,10 +1,6 @@
 package de.janssen.android.gsoplan.runnables;
 
 import java.util.Calendar;
-
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.widget.Toast;
 import de.janssen.android.gsoplan.DownloadFeedback;
 import de.janssen.android.gsoplan.PlanActivity;

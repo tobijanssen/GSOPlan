@@ -1,11 +1,8 @@
 package de.janssen.android.gsoplan.runnables;
 
 import java.io.File;
-import java.util.Calendar;
-
 import android.content.Context;
 import de.janssen.android.gsoplan.FileOPs;
-import de.janssen.android.gsoplan.StupidCore;
 import de.janssen.android.gsoplan.WeekData;
 import de.janssen.android.gsoplan.Xml;
 

@@ -353,26 +353,22 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
     public static final class id {
         public static final int bottom=0x7f040003;
         public static final int indicator=0x7f040005;
-        public static final int label=0x7f040012;
-        public static final int listTimetable=0x7f040010;
-        public static final int menu_gotoDate=0x7f040015;
-        public static final int menu_refresh=0x7f040017;
-        public static final int menu_save=0x7f040016;
-        public static final int menu_setup=0x7f040014;
-        public static final int menu_today=0x7f040018;
+        public static final int label=0x7f04000e;
+        public static final int listTimetable=0x7f04000c;
+        public static final int menu_gotoDate=0x7f040011;
+        public static final int menu_refresh=0x7f040013;
+        public static final int menu_save=0x7f040012;
+        public static final int menu_setup=0x7f040010;
+        public static final int menu_today=0x7f040014;
         public static final int none=0x7f040000;
         public static final int pager=0x7f040006;
-        public static final int scrollView1=0x7f040007;
-        public static final int spinnerElement=0x7f04000b;
-        public static final int spinnerResyncAfter=0x7f04000f;
-        public static final int spinnerType=0x7f040009;
-        public static final int syncTime=0x7f040011;
-        public static final int text=0x7f040013;
-        public static final int textView1=0x7f04000c;
-        public static final int textViewElement=0x7f04000a;
-        public static final int textViewResyncAfter=0x7f04000e;
-        public static final int textViewType=0x7f040008;
-        public static final int toggleButtonWlan=0x7f04000d;
+        public static final int readyButton=0x7f04000b;
+        public static final int spinnerElement=0x7f040008;
+        public static final int spinnerResyncAfter=0x7f04000a;
+        public static final int spinnerType=0x7f040007;
+        public static final int syncTime=0x7f04000d;
+        public static final int text=0x7f04000f;
+        public static final int toggleButtonWlan=0x7f040009;
         public static final int top=0x7f040004;
         public static final int triangle=0x7f040001;
         public static final int underline=0x7f040002;
@@ -415,17 +411,18 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
         /**  Meldungen 
          */
         public static final int msg_weekNotAvailable=0x7f0a000a;
-        public static final int setup_message_dlElements_body=0x7f0a0018;
-        public static final int setup_message_dlElements_title=0x7f0a0017;
-        public static final int setup_message_error_dlElements_1=0x7f0a0019;
+        public static final int setup_message_dlElements_body=0x7f0a0019;
+        public static final int setup_message_dlElements_title=0x7f0a0018;
+        public static final int setup_message_error_dlElements_1=0x7f0a001a;
         public static final int title_activity_plan=0x7f0a0004;
         public static final int title_activity_setup=0x7f0a0003;
-        public static final int title_ask4net=0x7f0a001a;
+        public static final int title_ask4net=0x7f0a001b;
         /**  Setup Section 
          */
         public static final int title_element=0x7f0a0014;
-        public static final int title_resyncafter=0x7f0a0016;
-        public static final int title_type=0x7f0a0015;
+        public static final int title_readyButton=0x7f0a0015;
+        public static final int title_resyncafter=0x7f0a0017;
+        public static final int title_type=0x7f0a0016;
     }
     public static final class style {
         public static final int AppTheme=0x7f090005;

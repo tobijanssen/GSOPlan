@@ -1,24 +1,8 @@
 package de.janssen.android.gsoplan.runnables;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-
-import com.viewpagerindicator.TitlePageIndicator;
-
-import android.support.v4.view.ViewPager;
-import android.view.View;
-import android.widget.ListAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
 import de.janssen.android.gsoplan.DownloadFeedback;
-import de.janssen.android.gsoplan.MyArrayAdapter;
 import de.janssen.android.gsoplan.MyPagerAdapter;
 import de.janssen.android.gsoplan.PlanActivity;
-import de.janssen.android.gsoplan.R;
-import de.janssen.android.gsoplan.TimetableViewObject;
 import de.janssen.android.gsoplan.Tools;
 
 public class UpdateTimeTableList implements Runnable{

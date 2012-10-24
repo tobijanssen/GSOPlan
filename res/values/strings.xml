@@ -32,6 +32,7 @@
     <!-- Setup Section -->
     
     <string name="title_element">Element</string>
+    <string name="title_readyButton">Fertig</string>
     <string name="title_type">Art</string>
     <string name="title_resyncafter">Aktualisierungsrate des Stundeplans</string>
     <string name="setup_message_dlElements_title">Downloade Elementenliste…</string>

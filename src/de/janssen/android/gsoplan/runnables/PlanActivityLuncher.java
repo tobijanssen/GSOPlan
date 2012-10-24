@@ -13,8 +13,6 @@ public class PlanActivityLuncher implements Runnable{
 	public void run() {
         if(!parent.selfCheckIsRunning)
         	parent.selfCheck();
-        parent.initViewPager();
-        
 		if (parent.stupid.progressDialog != null) 
 		{
 			parent.stupid.progressDialog.dismiss();

@@ -9,23 +9,22 @@ import java.util.concurrent.TimeUnit;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.RemoteException;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.Spinner;
-import android.widget.Toast;
 import android.widget.ToggleButton;
+import android.widget.Button;
 
 public class SetupActivity extends Activity implements Runnable{
 	public StupidCore stupid = new StupidCore();;
@@ -38,13 +37,34 @@ public class SetupActivity extends Activity implements Runnable{
 	private ArrayAdapter<String> adapterType;
 	private ArrayAdapter<String> adapterResyncAfter;
 	private ExecutorService exec = Executors.newSingleThreadExecutor();
-	
+	private String[] resyncAfterStrings=new String[]{"sofort","10min","30min","1h","2h","3h","5h","24h","nie"};
+	private long[] resyncAfterMinutes=new long[]      {0,10,30,60,120,180,300,1440,5256000};
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setup);
+        
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) 
+        {
+        	if(extras.getBoolean(Const.FIRSTSTART))
+        	{
+             View readyButton = (Button) findViewById(R.id.readyButton);
+             readyButton.setOnClickListener(new OnClickListener(){
 
+				@Override
+				public void onClick(View v) {
+					SetupActivity.this.finish();
+				}
+            	 
+             });
+             readyButton.setVisibility(Button.VISIBLE);
+            } 
+        }
+        
+        
+        
         handler = new Handler();
         initSpinners();
         
@@ -282,10 +302,10 @@ public class SetupActivity extends Activity implements Runnable{
     public void setupSpinnerResyncAfter()
     {
     	adapterResyncAfter.clear();
-    	for(int i=0;i<stupid.resyncAfterMinutes.length;i++)
+    	for(int i=0;i<resyncAfterMinutes.length;i++)
     	{
-    		adapterResyncAfter.add(stupid.resyncAfterStrings[i]);
-    		if(stupid.myResyncAfter == stupid.resyncAfterMinutes[i])
+    		adapterResyncAfter.add(resyncAfterStrings[i]);
+    		if(stupid.myResyncAfter == resyncAfterMinutes[i])
     			spinnerResyncAfter.setSelection(i); 
     	}
     	adapterResyncAfter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);    
@@ -294,9 +314,9 @@ public class SetupActivity extends Activity implements Runnable{
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
 				
-				if(stupid.myResyncAfter!=stupid.resyncAfterMinutes[position])
+				if(stupid.myResyncAfter!=resyncAfterMinutes[position])
 				{
-					stupid.myResyncAfter=stupid.resyncAfterMinutes[position];
+					stupid.myResyncAfter=resyncAfterMinutes[position];
 					stupid.setupIsDirty=true;
 				}
 				else

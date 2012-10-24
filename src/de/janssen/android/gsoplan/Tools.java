@@ -3,30 +3,20 @@ package de.janssen.android.gsoplan;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.SimpleTimeZone;
-import java.util.TimeZone;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import de.janssen.android.gsoplan.runnables.DismissProgress;
 import de.janssen.android.gsoplan.runnables.Download;
 import de.janssen.android.gsoplan.runnables.SaveData;
 import de.janssen.android.gsoplan.runnables.SaveSetup;
-
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.res.Resources;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.Handler;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -34,8 +24,7 @@ import android.widget.Toast;
 
 public class Tools{
 	
-	final static String FILESETUP="gsoStupidSetup.xml";
-	final static String FILEDATA="Data.xml";
+
 	
 	/// Datum 25.9.12
 	public static Boolean isWifiConnected(Context context)
@@ -377,7 +366,7 @@ public class Tools{
     public static File getFileSaveData(Context context,WeekData weekData)
     {
     	
-    	String filename=Tools.getWeekOfYearToDisplay(weekData.date)+"_"+weekData.date.get(Calendar.YEAR)+"_"+FILEDATA;
+    	String filename=Tools.getWeekOfYearToDisplay(weekData.date)+"_"+weekData.date.get(Calendar.YEAR)+"_"+Const.FILEDATA;
     	return new File(context.getFilesDir()+"/"+weekData.elementId,filename);
     }
 
@@ -402,7 +391,7 @@ public class Tools{
      */
     public static File getFileSaveSetup(Context context,StupidCore stupid)
     {
-    	String filename=FILESETUP;
+    	String filename=Const.FILESETUP;
     	return new File(context.getFilesDir(),filename);
     }
     
@@ -430,95 +419,79 @@ public class Tools{
      */
     public static void appendTimeTableToPager(WeekData weekData, StupidCore stupid, PlanActivity parent)
     {
+    	//eine Kopie des Stundenplan-Datums erstellen
     	Calendar currentDay = new GregorianCalendar();
     	currentDay = (Calendar) weekData.date.clone();
 
+    	//den aktuellen Wochentag abrufen
     	int currentDayOfWeek = currentDay.get(Calendar.DAY_OF_WEEK);
-    	//den currentDay auf sonntag setzten
-    	while(currentDayOfWeek!=2)
+    	
+    	//den currentDay auf Montag setzten
+    	if(currentDayOfWeek > 2)
     	{
-    		currentDay.roll(Calendar.DAY_OF_YEAR, false);
+    		//1000*60*60*24 = 1 Tag!
+    		currentDay.setTimeInMillis(currentDay.getTimeInMillis()-(1000*60*60*24*(currentDayOfWeek-2)));
     	}
     		
 		for (int x = 1; x < weekData.timetable[0].length; x++)
 		{
-			List<TimetableViewObject> list = new ArrayList<TimetableViewObject>();
+			List<TimetableViewObject> list = createTimetableViewObject(weekData, stupid, parent, currentDay);
 
-			int nullCounter = 0;
-			Boolean entryFound = false;
-			for (int y = 1; y < weekData.timetable.length; y++) 
-			{
-
-				if (weekData.timetable[y][x].dataContent == null && !entryFound) 
-				{
-					nullCounter++;
-				} 
-				else if (weekData.timetable[y][x].dataContent != null) 
-				{
-					if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")&& !entryFound) 
-					{
-						nullCounter++;
-					} 
-					else if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("")&& !entryFound) 
-					{
-						nullCounter++;
-					}
-					else 
-					{
-						if (y != 0)
-							entryFound = true;
-						if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")) 
-						{
-							list.add(new TimetableViewObject(stupid.timeslots[y], "", "#000000"));
-						} 
-						else 
-						{
-							String color = weekData.timetable[y][x].getColorParameter();
-							list.add(new TimetableViewObject(
-									stupid.timeslots[y],
-									weekData.timetable[y][x].dataContent.replaceAll(
-											"\n", " "), color));
-						}
-					}
-				}
-				else 
-				{
-					list.add(new TimetableViewObject(stupid.timeslots[y], "","#000000"));
-				}
-			}
-			// prüfen, ob gar keine Stunden vorhanden sind
-			if (nullCounter == 15) {
-				list.add(new TimetableViewObject("", "kein Unterricht","#000000"));
-			}
-
-
-			String dayName = weekData.timetable[0][x].dataContent.replace("\n", "")
-					.substring(0, 2);
-
-			String header = dayName + ", " + currentDay.get(Calendar.DAY_OF_MONTH) + "." + (currentDay.get(Calendar.MONTH)+1) + "."	+ currentDay.get(Calendar.YEAR);
-
-			View page = parent.inflater.inflate(R.layout.daylayout, null);
-			ListView listView = (ListView) page.findViewById(R.id.listTimetable);
-			MyArrayAdapter adapter = new MyArrayAdapter(parent, list);
-			listView.setAdapter(adapter);
-			
-			TextView syncTime = (TextView) page.findViewById(R.id. syncTime);
-			Calendar sync = new GregorianCalendar();
-			sync.setTimeInMillis(weekData.syncTime);
-			
-			String minute = String.valueOf(sync.get(Calendar.MINUTE));
-			if(minute.length()==1)
-				minute="0"+minute;
-			
-			syncTime.setText("Stand vom "+sync.get(Calendar.DAY_OF_MONTH)+"."+(sync.get(Calendar.MONTH)+1)+"."+sync.get(Calendar.YEAR)+" "+sync.get(Calendar.HOUR_OF_DAY)+":"+minute+" Uhr");
-			
-			
-			
-			insertPage(parent, currentDay, page, header,0,parent.pageIndex.size());
+			View page = createPage(weekData, parent, list);
+			insertPage(parent, currentDay, page, createHeader(weekData, currentDay),0,parent.pageIndex.size());
 			
 			currentDay.roll(Calendar.DAY_OF_YEAR,true);
 		}
 
+	}
+    
+    /*	12.10.12
+	 * 	Tobias Janssen
+	 * 
+	 * 	erst in der Liste der Pages und Headlines den übergebenen TimeTable 
+	 */
+	public static void replaceTimeTableInPager(WeekData weekData, StupidCore stupid, PlanActivity parent)
+	{
+		Calendar currentDay = new GregorianCalendar();
+		currentDay = (Calendar) weekData.date.clone();
+		int currentDayOfWeek = currentDay.get(Calendar.DAY_OF_WEEK);
+		while(currentDayOfWeek!=2)
+		{
+			currentDay.roll(Calendar.DAY_OF_YEAR, false);
+		}
+			
+		for (int x = 1; x < weekData.timetable[0].length; x++)
+		{
+			List<TimetableViewObject> list = createTimetableViewObject(weekData, stupid, parent, currentDay);
+			View page = createPage(weekData, parent, list);
+			String header = createHeader(weekData, currentDay);
+			
+			//location suchen
+			int location=0;
+			for(int i=0;i<parent.headlines.size();i++)
+			{
+				if(parent.headlines.get(i).equals(header))
+					location=i;
+			}
+			parent.pages.set(location, page);
+			parent.headlines.set(location,header);
+	
+			currentDay.roll(Calendar.DAY_OF_YEAR,true);
+		}
+	}
+
+
+	/*	24.10.12
+	 * 	Tobias Janssen
+	 * 
+	 * 	Erstellt den Überschriften String 
+	 * 
+	 */
+	private static String createHeader(WeekData weekData, Calendar currentDay)
+	{
+		int x = currentDay.get(Calendar.DAY_OF_WEEK)-1;
+		String dayName = weekData.timetable[0][x].dataContent.replace("\n", "").substring(0, 2);
+		return dayName + ", " + currentDay.get(Calendar.DAY_OF_MONTH) + "." + (currentDay.get(Calendar.MONTH)+1) + "."	+ currentDay.get(Calendar.YEAR);
 	}
 	
 	/*	15.10.12
@@ -652,116 +625,103 @@ public class Tools{
 		
 		
 	}
-
-
-    /*	12.10.12
+	
+	/*	24.10.12
      * 	Tobias Janssen
+     * 	Erstellt eine Seite des ViewPagers, inkl Header und Footer
      * 
-     * 	erst in der Liste der Pages und Headlines den übergebenen TimeTable 
+     * 
      */
-    public static void replaceTimeTableInPager(WeekData weekData, StupidCore stupid, PlanActivity parent)
+    private static View createPage(WeekData weekData, PlanActivity parent, List<TimetableViewObject> list)
     {
-    	Calendar weekStart = new GregorianCalendar();
-    	weekStart = (Calendar) weekData.date.clone();
-    	int currentDayOfWeek = weekStart.get(Calendar.DAY_OF_WEEK);
-    	while(currentDayOfWeek!=2)
-    	{
-    		weekStart.roll(Calendar.DAY_OF_YEAR, false);
-    	}
-    		
-		for (int x = 1; x < weekData.timetable[0].length; x++)
+    	View page = parent.inflater.inflate(R.layout.daylayout, null);
+		ListView listView = (ListView) page.findViewById(R.id.listTimetable);
+		MyArrayAdapter adapter = new MyArrayAdapter(parent, list);
+		listView.setAdapter(adapter);
+		
+		TextView syncTime = (TextView) page.findViewById(R.id. syncTime);
+		Calendar sync = new GregorianCalendar();
+		sync.setTimeInMillis(weekData.syncTime);
+		
+		String minute = String.valueOf(sync.get(Calendar.MINUTE));
+		if(minute.length()==1)
+			minute="0"+minute;
+		
+		syncTime.setText(weekData.elementId+" | Stand vom "+sync.get(Calendar.DAY_OF_MONTH)+"."+(sync.get(Calendar.MONTH)+1)+"."+sync.get(Calendar.YEAR)+" "+sync.get(Calendar.HOUR_OF_DAY)+":"+minute+" Uhr");
+		return page;
+    }
+	
+	/*	24.10.12
+     * 	Tobias Janssen
+     * 	Erstellt eine Seite des ViewPagers, inkl Header und Footer
+     * 
+     * 
+     */
+    private static List<TimetableViewObject> createTimetableViewObject(WeekData weekData, StupidCore stupid, PlanActivity parent, Calendar currentDay)
+    {
+    	int x = currentDay.get(Calendar.DAY_OF_WEEK)-1;
+		List<TimetableViewObject> list = new ArrayList<TimetableViewObject>();
+
+		int nullCounter = 0;
+		Boolean entryFound = false;
+		for (int y = 1; y < weekData.timetable.length; y++) 
 		{
-			List<TimetableViewObject> list = new ArrayList<TimetableViewObject>();
 
-			int nullCounter = 0;
-			Boolean entryFound = false;
-			for (int y = 1; y < weekData.timetable.length; y++) 
+			if (weekData.timetable[y][x].dataContent == null && !entryFound) 
 			{
-
-				if (weekData.timetable[y][x].dataContent == null && !entryFound) 
+				nullCounter++;
+			} 
+			else if (weekData.timetable[y][x].dataContent != null) 
+			{
+				if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")&& !entryFound) 
 				{
 					nullCounter++;
 				} 
-				else if (weekData.timetable[y][x].dataContent != null) 
+				else if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("")&& !entryFound) 
 				{
-					if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")&& !entryFound) 
-					{
-						nullCounter++;
-					} 
-					else if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("")&& !entryFound) 
-					{
-						nullCounter++;
-					}
-					else 
-					{
-						if (y != 0)
-							entryFound = true;
-						if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")) 
-						{
-							list.add(new TimetableViewObject(stupid.timeslots[y], "", "#000000"));
-						} 
-						else 
-						{
-							String color = weekData.timetable[y][x].getColorParameter();
-							if (color.equalsIgnoreCase("#000000")) 
-							{
-								color = "#000000";
-							}
-							list.add(new TimetableViewObject(
-									stupid.timeslots[y],
-									weekData.timetable[y][x].dataContent.replaceAll(
-											"\n", " "), color));
-						}
-					}
+					nullCounter++;
 				}
 				else 
 				{
-					list.add(new TimetableViewObject(stupid.timeslots[y], "","#000000"));
+					if (y != 0)
+						entryFound = true;
+					if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")) 
+					{
+						list.add(new TimetableViewObject(stupid.timeslots[y], "", "#000000"));
+					} 
+					else 
+					{
+						String color = weekData.timetable[y][x].getColorParameter();
+						list.add(new TimetableViewObject(
+								stupid.timeslots[y],
+								weekData.timetable[y][x].dataContent.replaceAll(
+										"\n", " "), color));
+					}
 				}
 			}
-			// prüfen, ob gar keine Stunden vorhanden sind
-			if (nullCounter == 15) {
-				list.add(new TimetableViewObject("", "kein Unterricht","#000000"));
-			}
-
-
-			String dayName = weekData.timetable[0][x].dataContent.replace("\n", "")
-					.substring(0, 2);
-
-			String header = dayName + ", " + weekStart.get(Calendar.DAY_OF_MONTH) + "." + (weekStart.get(Calendar.MONTH)+1) + "."	+ weekStart.get(Calendar.YEAR);
-			
-			weekStart.roll(Calendar.DAY_OF_YEAR,true);
-
-			View page = parent.inflater.inflate(R.layout.daylayout, null);
-			ListView listView = (ListView) page.findViewById(R.id.listTimetable);
-			MyArrayAdapter adapter = new MyArrayAdapter(parent, list);
-			listView.setAdapter(adapter);
-			
-			TextView syncTime = (TextView) page.findViewById(R.id. syncTime);
-			Calendar sync = new GregorianCalendar();
-			sync.setTimeInMillis(weekData.syncTime);
-			
-			String minute = String.valueOf(sync.get(Calendar.MINUTE));
-			if(minute.length()==1)
-				minute="0"+minute;
-			
-			syncTime.setText("Stand vom "+sync.get(Calendar.DAY_OF_MONTH)+"."+(sync.get(Calendar.MONTH)+1)+"."+sync.get(Calendar.YEAR)+" "+sync.get(Calendar.HOUR_OF_DAY)+":"+minute+" Uhr");
-			
-			
-			//location suchen
-			int location=0;
-			for(int i=0;i<parent.headlines.size();i++)
+			else 
 			{
-				if(parent.headlines.get(i).equals(header))
-					location=i;
+				list.add(new TimetableViewObject(stupid.timeslots[y], "","#000000"));
 			}
-			
-			
-			parent.pages.set(location, page);
-			parent.headlines.set(location,header);
 		}
+		// prüfen, ob gar keine Stunden vorhanden sind
+		if (nullCounter == 15) 
+		{
+			list.add(new TimetableViewObject("", "kein Unterricht","#000000"));
+		}
+		//nun von hinten aufrollen und alle leeren Stunden entfernen
+		TimetableViewObject lineObject;
+		for(int i=list.size()-1;i >= 0;i--)
+		{
+			lineObject = list.get(i);
+			if(lineObject.row2.equalsIgnoreCase(""))
+				list.remove(i);
+			else
+				break;
+		}
+		return list;
     }
-    
+
     /*	16.10.12
      * 	Tobias Janssen
      * 
@@ -785,4 +745,7 @@ public class Tools{
     	return -1;
     	
     }
+    
+    
+    
 }

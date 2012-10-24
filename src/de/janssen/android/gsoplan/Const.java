@@ -6,4 +6,9 @@ public class Const {
 	public static final int LASTWEEK =-1;
 	
 	public static final Boolean FORCEREFRESH =true;
+	
+	public final static String FILESETUP="gsoStupidSetup.xml";
+	public final static String FILEDATA="Data.xml";
+	
+	public final static String FIRSTSTART="FirstStart";
 }
