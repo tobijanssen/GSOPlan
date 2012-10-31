@@ -1,11 +1,9 @@
 <resources>
 
     <string name="app_name">GSOPlan</string>
-    <string name="hello_world">Hello world!</string>
     <string name="menu_setup">Setup</string>
     <string name="title_activity_setup">Setup</string>
     <string name="title_activity_plan">GSO-Plan</string>
-    <string name="clear_cache">Cache leeren</string>
     <string name="menu_save">Speichern</string>
     <string name="menu_gotoDate">Gehe zu Datum</string>
     <string name="menu_refresh">Jetzt aktualisieren</string>
@@ -16,6 +14,7 @@
     <string name="msg_weekNotAvailable">Die gewählte Woche ist auf dem GSO-Server nicht verfügbar!</string>
     <string name="msg_foreWeekNotAvailable">Eine Vorwoche ist auf dem GSO-Server nicht mehr verfügbar!</string>
     <string name="msg_nextWeekNotAvailable">Die Folgewoche ist auf dem GSO-Server nicht verfügbar!</string>
+    <string name="msg_searchingNewDataSelected">Aktualisiere die gewählte Woche…</string>
     <string name="msg_searchingNewDataNow">Aktualisiere die angezeigte Woche…</string>
     <string name="msg_searchingNewDataNext">Aktualisiere die Folgewoche…</string>
     <string name="msg_searchingNewDataLast">Aktualisiere die Vorwoche…</string>

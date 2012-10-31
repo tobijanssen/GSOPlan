@@ -86,6 +86,7 @@ public class MainDownloader implements Runnable{
 	    		}
 	    		catch (Exception e)
 	    		{
+	    			//parent.disablePagerOnChangedListener=false;
 	    			parent.handler.post(new ErrorMessage(parent,e.getMessage()));
 	    			return;
 	    		}
@@ -97,15 +98,14 @@ public class MainDownloader implements Runnable{
         		}
         		catch(Exception e)
         		{
-        			//Keine Klasse ausgewählt!        			
+        			//Keine Klasse ausgewählt!       
         			parent.gotoSetup();
         			return;
         		}
-        		//Den neuen Index der angeforderten Woche heraussuchen
-        		//parent.weekDataIndexToShow = parent.stupid.getIndexOfWeekData(parent.stupid.currentDate);
         		
         		parent.handler.post(new UpdateTimeTableList(parent, downloadFeedback));
     		}
+
 
     	}
     	else

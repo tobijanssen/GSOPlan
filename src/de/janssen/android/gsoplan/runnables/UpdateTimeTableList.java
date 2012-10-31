@@ -45,15 +45,13 @@ public class UpdateTimeTableList implements Runnable{
     			}
     			
     		}
+    		parent.disableNextPagerOnChangedEvent=true;
     		currentPage=Tools.getPage(parent.pageIndex,parent.stupid.currentDate);
             parent.pageAdapter = new MyPagerAdapter(parent.pages,parent.headlines);
             
-            //parent.viewPager = (ViewPager)parent.findViewById(R.id.pager);
             parent.viewPager.setAdapter(parent.pageAdapter);
-            parent.viewPager.setCurrentItem(currentPage);
-
+            parent.viewPager.setCurrentItem(currentPage, false);
             
-            //parent.pageIndicator = (TitlePageIndicator)parent.findViewById(R.id.indicator);
             parent.pageIndicator.setViewPager(parent.viewPager);
             parent.pageIndicator.notifyDataSetChanged();
             

@@ -2,19 +2,6 @@ package de.janssen.android.gsoplan;
 
 public class ArrayOperations 
 {
-	public static Object ResizeArray (Object oldArray, int newSize)
-	{
-		int oldSize = java.lang.reflect.Array.getLength(oldArray);
-		Class<?> elementType = oldArray.getClass().getComponentType();
-		Object newArray = java.lang.reflect.Array.newInstance(elementType, newSize);
-		int preserveLength = Math.min(oldSize, newSize);
-		if (preserveLength > 0)
-		{
-			System.arraycopy(oldArray, 0, newArray, 0, preserveLength);
-		}
-		return newArray; 
-	}
-	
 	/// Datum: 30.08.12
 	/// Autor: Tobias Janﬂen
 	///	Beschreibung:
@@ -37,11 +24,25 @@ public class ArrayOperations
 		return newArray; 
 	}
 	
+	@Deprecated
 	public static Object RemoveAtIndex(Object array, int index)
 	{
 		int oldSize = java.lang.reflect.Array.getLength(array);
 		System.arraycopy(array, index+1, array, index, oldSize-1);
 		return ArrayOperations.ResizeArray(array, oldSize-1);
 		
+	}
+	
+	public static Object ResizeArray (Object oldArray, int newSize)
+	{
+		int oldSize = java.lang.reflect.Array.getLength(oldArray);
+		Class<?> elementType = oldArray.getClass().getComponentType();
+		Object newArray = java.lang.reflect.Array.newInstance(elementType, newSize);
+		int preserveLength = Math.min(oldSize, newSize);
+		if (preserveLength > 0)
+		{
+			System.arraycopy(oldArray, 0, newArray, 0, preserveLength);
+		}
+		return newArray; 
 	}
 }

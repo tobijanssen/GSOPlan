@@ -1,0 +1,8 @@
+Change Notes Version 0.7 Alpha:
+
+Bugfixes:
+
+- Unter bedingten Umständen führte eine Aktualisierung an einem Montag, oder Freitag zu einer unendlichen Aktualisierungsschleife
+- Animations-"Flattern" der Seiten entfernt, wenn ein Stundeplan aktualisiert wurde
+- Einen Fehler behoben, bei dem die allererste Page nicht angesteuert werden konnte
+

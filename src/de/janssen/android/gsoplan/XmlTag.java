@@ -10,7 +10,7 @@ public class XmlTag {
     public XmlTag parentTag;
     public int sumerizeId=0;
 
-    
+ 
     
     public XmlTag(){}
     public XmlTag(String type,String dataContent,Parameter[] parameters){
@@ -250,7 +250,7 @@ public class XmlTag {
     	/// String tagType:	String der den zu suchenden Tag angibt
     	/// String parameterName: String der den zu suchenden Parameternamen angibt
     	/// String parameterValue: String der die zum Parameternamen gehörende Value angibt
-    	public XmlTag tagCrawlerFindFirstOf(XmlTag sourceXmlTag, XmlTag searchFor, XmlTag result)
+    	public XmlTag tagCrawlerFindFirstOf(XmlTag currentPositionXmlTag, XmlTag searchFor, XmlTag result)
     	{
     		//prüfen, ob das resultArray bereits initialisiert wurde:
     		if(result.type != null)
@@ -260,17 +260,17 @@ public class XmlTag {
     		}
     		
     		//prüfen, ob der aktuelle HtmlTag dem zu suchenden Tag entspricht
-    		if(sourceXmlTag.type.equalsIgnoreCase(searchFor.type))
+    		if(currentPositionXmlTag.type.equalsIgnoreCase(searchFor.type))
     		{
-    			return sourceXmlTag;		
+    			return currentPositionXmlTag;		
     		}
     		//prüfen, ob es noch untergeordnete Tags gibt:
-    		if(sourceXmlTag.childTags.length >0)
+    		if(currentPositionXmlTag.childTags.length >0)
     		{
     			//alle childTags per Rekursion prüfen:
-    			for(int i=0; i<sourceXmlTag.childTags.length;i++)
+    			for(int i=0; i<currentPositionXmlTag.childTags.length;i++)
     			{
-    				result = tagCrawlerFindFirstOf(sourceXmlTag.childTags[i], searchFor,result);
+    				result = tagCrawlerFindFirstOf(currentPositionXmlTag.childTags[i], searchFor,result);
     			}
     		}
     		return result;

@@ -67,6 +67,251 @@ public class StupidCore {
 		this.onlyWlan=false;
 	}
 
+	/// Datum: 06.09.12
+	/// Autor: Tobias Janßen
+	///
+	///	Beschreibung:
+	///	Reduziert das Mehrdimensionale Array auf deren Wichtigen Inhalt 
+	///	
+	private WeekData collapseWeekDataMultiDim(WeekData weekData)
+	{
+		//in das erste Feld gehen
+		XmlTag sourceField;
+		
+		//entfernt alle Doppel-Zeilen und Spalten, die durch spans entstanden sind
+		weekData=removeDubColsnRows(weekData);
+		
+		//nun alle felder durchlaufen und die XML tag zusammen summieren
+		for(int y= 0; y < weekData.timetable.length; y++)
+		{
+			for(int x= 0; x < weekData.timetable[y].length; x++)
+			{
+				sourceField = weekData.timetable[y][x];
+				//eine zufalls id für dieses feld vergeben, dadurch werden alle schon besuchten tags markiert. jedoch nur für diesen suchlauf
+				int rndmId = new java.util.Random().nextInt();
+				XmlTag resultField= new XmlTag();
+				weekData.timetable[y][x] = SummerizeField(sourceField,rndmId, sourceField,resultField);
+			}
+		}
+		//nun noch alle leeren Zeilen und Spalten entfernen, falls vorhanden
+		weekData = removeEmtyColsnRows(weekData);
+
+		
+		return weekData;
+	}
+	
+	/// Datum: 30.08.12
+	/// Autor: Tobias Janßen
+	///
+	///	Beschreibung:
+	///	Konvertiert ein Html Table Tag zu einem mehrdimensionalen Array 
+	///	
+	///
+	///	Parameter:
+	///	
+	/// 
+	/// 
+	private WeekData convertXmlTableToWeekData(XmlTag htmlTableTag)
+	{
+		// Größe des benötigten Arrays muss kalkuliert werden
+		WeekData weekData = new WeekData(this);
+		//TODO: sycnDate darf nur bei HTML gesetzt werden!!!
+		weekData.setSyncDate();
+		weekData.timetable = new XmlTag[0][0]; 
+		// die tr heraussuchen:
+		// TODO:hier muss eine andere form des crawlers her, der nicht tiefer
+		// als x suchen soll
+		XmlTag tr = htmlTableTag.tagCrawlerFindFirstEntryOf(htmlTableTag, Xml.TR,
+				new XmlTag());
+		// TODO: Abfangen wenn nichts gefunden wurde!
+
+		// TODO:das hier ist noch nicht optimal:
+		int rows = tr.parentTag.childTags.length;
+		int cols = 0;
+		Boolean colSpanFound = false;
+		// jedes td prüfen:
+		for (int i = 0; i < tr.childTags.length; i++) 
+		{
+			// auf parameter prüfen
+			if (tr.childTags[i].parameters.length > 0) 
+			{
+				colSpanFound = false;
+				// jeden parameter überprüfen:
+				for (int parIndex = 0; parIndex < tr.childTags[i].parameters.length; parIndex++) 
+				{
+					if (tr.childTags[i].parameters[parIndex].name.equalsIgnoreCase("colspan")) 
+					{
+						String value = tr.childTags[i].parameters[parIndex].value;
+						int num = java.lang.Integer.parseInt(value);
+						cols += num;
+						colSpanFound = true;
+					}
+				}
+				if (!colSpanFound) 
+				{
+					cols++;
+				}
+			} 
+			else 
+			{
+				// kein colspan vorhanden, daher nur eine col dazuzählen:
+				cols++;
+			}
+			
+			
+				
+		}
+		weekData.timetable = new XmlTag[rows][cols];
+		
+		//die tabelle erstellen
+		for(int y = 0; y < tr.parentTag.childTags.length; y++)
+		{
+			XmlTag[] td = tr.parentTag.childTags[y].childTags;
+
+			Point insertPoint;
+			//jedes td prüfen:
+			for(int i=0; i < td.length; i++)
+			{				
+				insertPoint = getLastFreePosition(weekData);
+				//auf parameter prüfen
+				if(td[i].parameters.length >0)
+				{
+					int colspan = 0;
+					int rowspan = 0;
+					//jeden parameter überprüfen:
+					for(int parIndex=0;parIndex < td[i].parameters.length;parIndex++)
+					{
+						if(td[i].parameters[parIndex].name.equalsIgnoreCase("colspan"))
+						{
+							String value = td[i].parameters[parIndex].value;
+							colspan = java.lang.Integer.parseInt(value);
+						}
+						if( td[i].parameters[parIndex].name.equalsIgnoreCase("rowspan"))
+						{
+							String value = td[i].parameters[parIndex].value;
+							rowspan = Integer.parseInt(value);
+						}
+					}
+					
+					if(rowspan > 0 || colspan > 0)
+					{
+						int col = 0;
+						do
+						{
+							insertPoint = getLastFreePosition(weekData);
+							if(rowspan > 0)
+							{
+								for(int row = 0;row<rowspan;row++)
+								{
+									weekData.timetable[insertPoint.y+row][insertPoint.x]=td[i];
+								}
+							}
+							else
+							{	
+								weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
+							}
+							col++;
+						}
+						while(col<colspan);
+					}
+					else
+					{
+						weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
+					}
+				}
+				else
+				{
+					weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
+				}
+					
+			}
+		}
+		
+		return weekData;
+	}
+
+	/*	Datum: 30.08.12
+	 * 	Tobias Janßen
+	 *  
+	 *  Lädt die Selectoren von der GSO Seite und parsed diese in den StupidCore
+	 *  
+	 */
+	public void fetchSelectorsFromNet() throws Exception
+	{
+		XmlTag[] xmlTagArray = new XmlTag[0];
+		try
+        {
+        	URL url = new URL(NAVBARURL);
+        	Xml xml = new Xml();
+        	xml.container = Xml.readFromHTML(url,this.progressDialog,CONNECTIONTIMEOUT);
+        	xmlTagArray = Xml.xmlToArray(xml);
+        }
+		catch(Exception e)
+        {
+        	throw e;
+        }
+		
+        //verfügbare Wochen abrufen
+        XmlTag searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "select", "name", "week",new XmlTag()); 
+        
+        try
+        {
+        	weekList = getOptionsFromSelectTag(searchResult);
+        }
+        catch(Exception e)
+        {
+        	throw e;
+        }
+        
+        
+        //verfügbare Typen abrufen
+        searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "select", "name", "type",new XmlTag()); 
+        try
+        {
+        	typeList = getOptionsFromSelectTag(searchResult);
+        }
+        catch(Exception e)
+        {
+        	throw e;
+        }
+        
+        if(typeList.length==0)
+        {
+        	throw new Exception("Konnte TypeList nicht extrahieren");
+        }
+        else
+        {
+        	if(typeList[this.myType].index.equalsIgnoreCase("c"))
+        	{
+        		//verfügbare Klassen abrufen
+                searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "script", "var classes",new XmlTag());
+                elementList = GetOptionsFromJavaScriptArray(searchResult, "classes");
+        	}
+        	if(typeList[this.myType].index.equalsIgnoreCase("t"))
+        	{
+        		//verfügbare Lehrer abrufen
+                searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "script", "var teachers",new XmlTag());
+                elementList = GetOptionsFromJavaScriptArray(searchResult, "teachers");
+        	}
+        	if(typeList[this.myType].index.equalsIgnoreCase("r"))
+        	{
+        		//verfügbare Räume abrufen
+                searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "script", "var rooms",new XmlTag());
+                elementList = GetOptionsFromJavaScriptArray(searchResult, "rooms");
+        	}
+        }
+        
+        this.progressDialog.setProgress(this.progressDialog.getProgress()+500);
+       
+        
+        setupIsDirty=true;
+
+		Date date = new Date();
+		syncTime = date.getTime(); 
+		this.progressDialog.setProgress(this.progressDialog.getProgress()+500);
+	}
+	
+	
 	// / Datum: 12.09.12
 	// / Autor: Tobias Janßen
 	// /
@@ -187,134 +432,6 @@ public class StupidCore {
 		}
 	}
 	
-	/// Datum: 12.09.12
-	// / Autor: Tobias Janßen
-	// /
-	// / Beschreibung:
-	// / Konvertiert den StupidCore in einen XmlString
-	// /
-	// /
-	// / Parameter:
-	// / StupidCore, der alle Daten enthält
-	// /
-	// /
-	public void fetchTimetableFromXml(Xml xml) throws Exception {
-		
-		this.stupidData.clear();
-
-	
-		//xml Header auslesen und version abholen
-		XmlTag[] xmlArray;
-		try 
-		{
-			xmlArray = Xml.xmlToArray(xml);
-			String xmlVersion = "";
-			for (int i = 0; i < xmlArray[0].parameters.length; i++) {
-				if (xmlArray[0].parameters[i].name.equalsIgnoreCase("version")) {
-					xmlVersion = xmlArray[0].parameters[i].value;
-				}
-
-			}
-			
-			//verarbeiten der enthaltenen weeks
-			if (xmlVersion.equalsIgnoreCase("1")) 
-			{
-				for(int weekNo=1;weekNo<xmlArray.length;weekNo++)
-				{
-					WeekData weekData = new WeekData(this);
-					XmlTag timetable = xmlArray[weekNo].childTags[0];// den timetable abrufen
-					weekData = convertXmlTableToWeekData(timetable);
-					this.stupidData.add(weekData);
-				}
-	    	}
-		} 
-		catch (Exception e) 
-		{
-			throw new Exception(e);
-		}
-		
-	}
-
-	/*	Datum: 30.08.12
-	 * 	Tobias Janßen
-	 *  
-	 *  Lädt die Selectoren von der GSO Seite und parsed diese in den StupidCore
-	 *  
-	 */
-	public void fetchSelectorsFromNet() throws Exception
-	{
-		XmlTag[] xmlTagArray = new XmlTag[0];
-		try
-        {
-        	URL url = new URL(NAVBARURL);
-        	Xml xml = new Xml();
-        	xml.container = Xml.readFromHTML(url,this.progressDialog,CONNECTIONTIMEOUT);
-        	xmlTagArray = Xml.xmlToArray(xml);
-        }
-		catch(Exception e)
-        {
-        	throw e;
-        }
-		
-        //verfügbare Wochen abrufen
-        XmlTag searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "select", "name", "week",new XmlTag()); 
-        
-        try
-        {
-        	weekList = getOptionsFromSelectTag(searchResult);
-        }
-        catch(Exception e)
-        {
-        	throw e;
-        }
-        
-        
-        //verfügbare Typen abrufen
-        searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "select", "name", "type",new XmlTag()); 
-        try
-        {
-        	typeList = getOptionsFromSelectTag(searchResult);
-        }
-        catch(Exception e)
-        {
-        	throw e;
-        }
-        
-        if(typeList.length==0)
-        {
-        	throw new Exception("Konnte TypeList nicht extrahieren");
-        }
-        else
-        {
-        	if(typeList[this.myType].index.equalsIgnoreCase("c"))
-        	{
-        		//verfügbare Klassen abrufen
-                searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "script", "var classes",new XmlTag());
-                elementList = GetOptionsFromJavaScriptArray(searchResult, "classes");
-        	}
-        	if(typeList[this.myType].index.equalsIgnoreCase("t"))
-        	{
-        		//verfügbare Lehrer abrufen
-                searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "script", "var teachers",new XmlTag());
-                elementList = GetOptionsFromJavaScriptArray(searchResult, "teachers");
-        	}
-        	if(typeList[this.myType].index.equalsIgnoreCase("r"))
-        	{
-        		//verfügbare Räume abrufen
-                searchResult = xmlTagArray[0].tagCrawlerFindFirstOf(xmlTagArray[0], "script", "var rooms",new XmlTag());
-                elementList = GetOptionsFromJavaScriptArray(searchResult, "rooms");
-        	}
-        }
-        
-        this.progressDialog.setProgress(this.progressDialog.getProgress()+500);
-       
-        
-        setupIsDirty=true;
-
-		Date date = new Date();
-		syncTime = date.getTime(); 
-		this.progressDialog.setProgress(this.progressDialog.getProgress()+500);
-	}
 	
 	
 	/*	Datum: 15.08.12
@@ -466,7 +583,178 @@ public class StupidCore {
         
 	}
 	
+	/// Datum: 12.09.12
+	// / Autor: Tobias Janßen
+	// /
+	// / Beschreibung:
+	// / Konvertiert den StupidCore in einen XmlString
+	// /
+	// /
+	// / Parameter:
+	// / StupidCore, der alle Daten enthält
+	// /
+	// /
+	@Deprecated 
+	public void fetchTimetableFromXml(Xml xml) throws Exception {
+		
+		this.stupidData.clear();
+
 	
+		//xml Header auslesen und version abholen
+		XmlTag[] xmlArray;
+		try 
+		{
+			xmlArray = Xml.xmlToArray(xml);
+			String xmlVersion = "";
+			for (int i = 0; i < xmlArray[0].parameters.length; i++) {
+				if (xmlArray[0].parameters[i].name.equalsIgnoreCase("version")) {
+					xmlVersion = xmlArray[0].parameters[i].value;
+				}
+
+			}
+			
+			//verarbeiten der enthaltenen weeks
+			if (xmlVersion.equalsIgnoreCase("1")) 
+			{
+				for(int weekNo=1;weekNo<xmlArray.length;weekNo++)
+				{
+					WeekData weekData = new WeekData(this);
+					XmlTag timetable = xmlArray[weekNo].childTags[0];// den timetable abrufen
+					weekData = convertXmlTableToWeekData(timetable);
+					this.stupidData.add(weekData);
+				}
+	    	}
+		} 
+		catch (Exception e) 
+		{
+			throw new Exception(e);
+		}
+		
+	}
+
+	
+	/// Datum: 19.09.12
+	/// Autor: Tobias Janßen
+	///
+	///	Beschreibung:
+	///	erstellt einen Fingeprint für ein eindimensoinales Array 
+	///	Die Methode returned einen String, der durch 0 und 1 angibt, ob das element an dieser Position die vorherigen gleicht
+	///
+	///	Parameter:
+	///	
+	/// 
+	/// 
+	private String fingerprintOfDubs(XmlTag[] array)
+	{
+		String fingerprint = "0";
+		for(int x=1;x<array.length;x++)
+		{
+			
+			if(array[x].equals(array[x-1]))
+			{
+				fingerprint+="1";
+			}
+			else
+			{
+				fingerprint+="0";
+			}
+		}
+		return fingerprint;
+	}
+	
+	// / Datum: 135.09.12
+	// / Autor: Tobias Janßen
+	// /
+	// / Beschreibung:
+	// / Liefert den Index passenend zu der angegebenen KW aus den Online verfügaberen Wochen zurück
+	// / Wenn online nicht verfügbar, wird -1 zurückgeliefert
+	// /
+	// / Parameter:
+	// /
+	@Deprecated
+	public int getIndexFromWeekList(String weekOfYear)
+	{
+		for(int i=0;i<this.weekList.length;i++)
+		{
+			if(weekOfYear.equalsIgnoreCase(this.weekList[i].index))
+				return i;
+		}
+		return -1;
+	}
+	
+	// / Datum: 135.09.12
+	// / Autor: Tobias Janßen
+	// /
+	// / Beschreibung:
+	// / Sucht den Index aus einem SelectOptionsArray
+	// /
+	// /
+	// / Parameter:
+	// /
+	// /
+	// /
+	public String getIndexOfSelectorValue(SelectOptions[] array, String value) {
+		for (int x = 0; x < array.length; x++) {
+			if (array[x].description.equalsIgnoreCase(value)) {
+				return String.valueOf(array[x].index);
+			}
+		}
+		return "-1";
+	}
+	
+	// / Datum: 135.09.12
+	// / Autor: Tobias Janßen
+	// /
+	// / Beschreibung:
+	// / Liefert den Index der WeekData des angegebenen Datums
+	// / Wenn nicht vorhanden(also bereits im Speicher geladen), wird -1 zurückgeliefert 
+	// /
+	// / Parameter:
+	// /
+	public int getIndexOfWeekData(Calendar aquiredDate)
+	{
+		int weekOfYear = getWeekOfYear(aquiredDate);
+		for(int i=0;i<myTimetables.length;i++)
+		{
+			if(weekOfYear == myTimetables[i].date.get(Calendar.WEEK_OF_YEAR))
+			{
+				if(aquiredDate.get(Calendar.YEAR) == myTimetables[i].date.get(Calendar.YEAR))
+						return i;
+			}
+		}
+		return -1;
+	}
+	
+	/// Datum: 05.09.12
+	/// Autor: Tobias Janßen
+	///
+	///	Beschreibung:
+	///	Sucht die letzte freie Position in einem mehrdimensionalen Array 
+	///	
+	///
+	///	Parameter:
+	///	
+	/// 
+	///
+	private Point getLastFreePosition(WeekData weekData)
+	{
+		Point freeIndexPoint = new Point();
+		Boolean success=false;
+		for(int y=0; y < weekData.timetable.length && !success;y++)
+		{
+			for(int x=0; x < weekData.timetable[y].length && !success;x++)
+			{
+				if(weekData.timetable[y][x] == null)
+				{
+					freeIndexPoint.y=y;
+					freeIndexPoint.x=x;
+					success=true;
+				}
+			}
+		}
+		//TODO: exception wenn kein leerer eintrag gefunden wurde
+		return freeIndexPoint;
+	}
 	
 	private SelectOptions[] GetOptionsFromJavaScriptArray(XmlTag selectTag, String varName)
 	{
@@ -497,13 +785,12 @@ public class StupidCore {
 		{
 			for(int i=0; i<selectTag.childTags.length;i++)
 			{
-				if(selectTag.childTags[i].type.equalsIgnoreCase("option"))
+				if(selectTag.childTags[i].type.equalsIgnoreCase(Xml.OPTION))
 				{
 					if(selectTag.childTags[i].parameters.length > 0)
 					{
 						result[i] = new SelectOptions();
 						result[i].description = selectTag.childTags[i].dataContent;
-						//TODO:was ist wenn ein option tag mehr als einen parameter hat?
 						result[i].index = selectTag.childTags[i].parameters[0].value;
 					}
 				}
@@ -516,168 +803,24 @@ public class StupidCore {
 		return result;
 	}
 
-	
-	/// Datum: 30.08.12
-	/// Autor: Tobias Janßen
-	///
-	///	Beschreibung:
-	///	Konvertiert ein Html Table Tag zu einem mehrdimensionalen Array 
-	///	
-	///
-	///	Parameter:
-	///	
-	/// 
-	/// 
-	private WeekData convertXmlTableToWeekData(XmlTag htmlTableTag)
+	/* 5.10.12
+	 * Tobias Janssen
+	 * Ruft zu dem angegebenen Datum die entsprechende Kalenderwoche ab
+	 * 
+	 * 
+	 */
+	public int getWeekOfYear(Calendar aquiredDate)
 	{
-		// Größe des benötigten Arrays muss kalkuliert werden
-		WeekData weekData = new WeekData(this);
-		//TODO: sycnDate darf nur bei HTML gesetzt werden!!!
-		weekData.setSyncDate();
-		weekData.timetable = new XmlTag[0][0]; 
-		// die tr heraussuchen:
-		// TODO:hier muss eine andere form des crawlers her, der nicht tiefer
-		// als x suchen soll
-		XmlTag tr = htmlTableTag.tagCrawlerFindFirstEntryOf(htmlTableTag, "tr",
-				new XmlTag());
-		// TODO: Abfangen wenn nichts gefunden wurde!
-
-		// TODO:das hier ist noch nicht optimal:
-		int rows = tr.parentTag.childTags.length;
-		int cols = 0;
-		Boolean colSpanFound = false;
-		// jedes td prüfen:
-		for (int i = 0; i < tr.childTags.length; i++) 
+		Calendar calcopy = (Calendar) aquiredDate.clone();
+		int weekOfYear=0;
+		while(weekOfYear==0)
 		{
-			// auf parameter prüfen
-			if (tr.childTags[i].parameters.length > 0) 
-			{
-				colSpanFound = false;
-				// jeden parameter überprüfen:
-				for (int parIndex = 0; parIndex < tr.childTags[i].parameters.length; parIndex++) 
-				{
-					if (tr.childTags[i].parameters[parIndex].name.equalsIgnoreCase("colspan")) 
-					{
-						String value = tr.childTags[i].parameters[parIndex].value;
-						int num = java.lang.Integer.parseInt(value);
-						cols += num;
-						colSpanFound = true;
-					}
-				}
-				if (!colSpanFound) 
-				{
-					cols++;
-				}
-			} 
-			else 
-			{
-				// kein colspan vorhanden, daher nur eine col dazuzählen:
-				cols++;
-			}
-			
-			
-				
+			if(calcopy.get(Calendar.DAY_OF_WEEK)==6)
+				weekOfYear=calcopy.get(Calendar.WEEK_OF_YEAR);
+			else
+				calcopy.setTimeInMillis(calcopy.getTimeInMillis()+(86400000*1));
 		}
-		weekData.timetable = new XmlTag[rows][cols];
-		
-		//die tabelle erstellen
-		for(int y = 0; y < tr.parentTag.childTags.length; y++)
-		{
-			XmlTag[] td = tr.parentTag.childTags[y].childTags;
-
-			Point insertPoint;
-			//jedes td prüfen:
-			for(int i=0; i < td.length; i++)
-			{				
-				insertPoint = getLastFreePosition(weekData);
-				//auf parameter prüfen
-				if(td[i].parameters.length >0)
-				{
-					int colspan = 0;
-					int rowspan = 0;
-					//jeden parameter überprüfen:
-					for(int parIndex=0;parIndex < td[i].parameters.length;parIndex++)
-					{
-						if(td[i].parameters[parIndex].name.equalsIgnoreCase("colspan"))
-						{
-							String value = td[i].parameters[parIndex].value;
-							colspan = java.lang.Integer.parseInt(value);
-						}
-						if( td[i].parameters[parIndex].name.equalsIgnoreCase("rowspan"))
-						{
-							String value = td[i].parameters[parIndex].value;
-							rowspan = Integer.parseInt(value);
-						}
-					}
-					
-					if(rowspan > 0 || colspan > 0)
-					{
-						int col = 0;
-						do
-						{
-							insertPoint = getLastFreePosition(weekData);
-							if(rowspan > 0)
-							{
-								for(int row = 0;row<rowspan;row++)
-								{
-									weekData.timetable[insertPoint.y+row][insertPoint.x]=td[i];
-								}
-							}
-							else
-							{	
-								weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
-							}
-							col++;
-						}
-						while(col<colspan);
-					}
-					else
-					{
-						weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
-					}
-				}
-				else
-				{
-					weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
-				}
-					
-			}
-		}
-		
-		return weekData;
-	}
-	
-	/// Datum: 06.09.12
-	/// Autor: Tobias Janßen
-	///
-	///	Beschreibung:
-	///	Reduziert das Mehrdimensionale Array auf deren Wichtigen Inhalt 
-	///	
-	private WeekData collapseWeekDataMultiDim(WeekData weekData)
-	{
-		//in das erste Feld gehen
-		XmlTag sourceField;
-		
-		//entfernt alle Doppel-Zeilen und Spalten, die durch spans entstanden sind
-		weekData=removeDubColsnRows(weekData);
-		
-		//nun alle felder durchlaufen und die XML tag zusammen summieren
-		for(int y= 0; y < weekData.timetable.length; y++)
-		{
-			for(int x= 0; x < weekData.timetable[y].length; x++)
-			{
-				sourceField = weekData.timetable[y][x];
-				//eine zufalls id für dieses feld vergeben, dadurch werden alle schon besuchten tags markiert. jedoch nur für diesen suchlauf
-				int rndmId = new java.util.Random().nextInt();
-				XmlTag resultField= new XmlTag();
-				weekData.timetable[y][x] = SummerizeField(sourceField,rndmId, sourceField,resultField);
-			}
-		}
-		//nun noch alle leeren Zeilen und Spalten entfernen, falls vorhanden
-		weekData = removeEmtyColsnRows(weekData);
-
-		
-		return weekData;
+		return weekOfYear;
 	}
 	
 	/// Datum: 19.09.12
@@ -775,36 +918,6 @@ public class StupidCore {
 
 		return weekData;
 	}
-	
-	/// Datum: 19.09.12
-	/// Autor: Tobias Janßen
-	///
-	///	Beschreibung:
-	///	erstellt einen Fingeprint für ein eindimensoinales Array 
-	///	Die Methode returned einen String, der durch 0 und 1 angibt, ob das element an dieser Position die vorherigen gleicht
-	///
-	///	Parameter:
-	///	
-	/// 
-	/// 
-	private String fingerprintOfDubs(XmlTag[] array)
-	{
-		String fingerprint = "0";
-		for(int x=1;x<array.length;x++)
-		{
-			
-			if(array[x].equals(array[x-1]))
-			{
-				fingerprint+="1";
-			}
-			else
-			{
-				fingerprint+="0";
-			}
-		}
-		return fingerprint;
-	}
-	
 	/// Datum: 06.09.12
 	/// Autor: Tobias Janßen
 	///
@@ -907,205 +1020,6 @@ public class StupidCore {
 		return weekData;
 	}
 	
-	/// Datum: 06.09.12
-	/// Autor: Tobias Janßen
-	///
-	///	Beschreibung:
-	///	Reduziert jedes Feld auf deren Inhalt 
-	///	
-	///
-	///	Parameter:
-	///	
-	/// 
-	/// 
-	private XmlTag SummerizeField(XmlTag field,int rndmId, XmlTag origin,XmlTag summerizedField)
-	{
-		XmlTag currentTag = field.tagCrawlerFindDeepestUnSumerizedChild(origin,rndmId);
-			
-		if(currentTag.dataContent != null)
-		{
-			if(summerizedField.dataContent == null)
-			{
-				summerizedField.dataContent= currentTag.dataContent;
-			}
-			else
-			{
-				summerizedField.dataContent+= currentTag.dataContent;
-			}
-		}
-		//Parameter auslesen
-		Boolean redundanz=false;
-		for(int p=0;p<currentTag.parameters.length;p++)
-		{
-			redundanz=false;
-			if(currentTag.parameters[p].name.equals("color"))
-			{
-				for(int i=0;i<summerizedField.parameters.length;i++)
-				{
-					if(summerizedField.parameters[i].name.equalsIgnoreCase(currentTag.parameters[p].name))
-					{
-						redundanz=true;
-					}
-				}
-				if(!redundanz)
-					summerizedField.addParameter(currentTag.parameters[p].name, currentTag.parameters[p].value);
-			}
-			
-		}
-		currentTag.sumerizeId = rndmId;
-		//prüfen, ob es noch ein parent tag gibt, und ob dieses nicht dem ursprungs tag entspricht
-		if(currentTag.parentTag != null && !currentTag.parentTag.equals(origin))
-			 return SummerizeField(currentTag.parentTag,rndmId,origin,summerizedField);
-		
-		return summerizedField;
-	}
-	
-	/// Datum: 05.09.12
-	/// Autor: Tobias Janßen
-	///
-	///	Beschreibung:
-	///	Sucht die letzte freie Position in einem mehrdimensionalen Array 
-	///	
-	///
-	///	Parameter:
-	///	
-	/// 
-	///
-	private Point getLastFreePosition(WeekData weekData)
-	{
-		Point freeIndexPoint = new Point();
-		Boolean success=false;
-		for(int y=0; y < weekData.timetable.length && !success;y++)
-		{
-			for(int x=0; x < weekData.timetable[y].length && !success;x++)
-			{
-				if(weekData.timetable[y][x] == null)
-				{
-					freeIndexPoint.y=y;
-					freeIndexPoint.x=x;
-					success=true;
-				}
-			}
-		}
-		//TODO: exception wenn kein leerer eintrag gefunden wurde
-		return freeIndexPoint;
-	}
-
-	// / Datum: 135.09.12
-	// / Autor: Tobias Janßen
-	// /
-	// / Beschreibung:
-	// / Sucht den Index aus einem SelectOptionsArray
-	// /
-	// /
-	// / Parameter:
-	// /
-	// /
-	// /
-	public String getIndexOfSelectorValue(SelectOptions[] array, String value) {
-		for (int x = 0; x < array.length; x++) {
-			if (array[x].description.equalsIgnoreCase(value)) {
-				return String.valueOf(array[x].index);
-			}
-		}
-		return "-1";
-	}
-	
-	// / Datum: 135.09.12
-	// / Autor: Tobias Janßen
-	// /
-	// / Beschreibung:
-	// / Erstellt ein Array mit einer Übersicht der lokal verfügbaren Timetable. Anhand der Schlüssel kann dann der richtige Datensatz aus dem Bestand abgerufen werden
-	// /
-	// /
-	// / Parameter:
-	// /
-	// /
-	// /
-	public void timeTableIndexer() throws Exception
-	{
-		//Prüfen, ob ein Element ausgewählt wurde
-		//Es ist für den Indexer essentiell wichtig, dass dieser festgelegt ist!
-		if(myElement.equalsIgnoreCase(""))
-			throw new Exception("Keine Element festgelegt.Indexer kann nicht gestartet werden!");
-		
-		myTimetables = new TimeTableIndex[0];
-		
-		//den gesamten geladenen Datenbestand durchsuchen
-		for (int i = 0; i < this.stupidData.size(); i++) 
-		{
-			//prüfen, ob der aktuelle Datensatz dem eigenen Element entspricht
-			if (this.stupidData.get(i).elementId.equalsIgnoreCase(myElement)) 
-			{
-				
-				//wenn ja, einen neuen Eintrag dem Indexer hinzufügen
-				myTimetables=(TimeTableIndex[]) ArrayOperations.AppendToArray(myTimetables, 
-						new TimeTableIndex(i,this.stupidData.get(i).date,this.stupidData.get(i).syncTime));
-			}
-		}
-	}
-	// / Datum: 135.09.12
-	// / Autor: Tobias Janßen
-	// /
-	// / Beschreibung:
-	// / Liefert den Index der WeekData des angegebenen Datums
-	// / Wenn nicht vorhanden(also bereits im Speicher geladen), wird -1 zurückgeliefert 
-	// /
-	// / Parameter:
-	// /
-	public int getIndexOfWeekData(Calendar aquiredDate)
-	{
-		int weekOfYear = getWeekOfYear(aquiredDate);
-		for(int i=0;i<myTimetables.length;i++)
-		{
-			if(weekOfYear == myTimetables[i].date.get(Calendar.WEEK_OF_YEAR))
-			{
-				if(aquiredDate.get(Calendar.YEAR) == myTimetables[i].date.get(Calendar.YEAR))
-						return i;
-			}
-		}
-		return -1;
-	}
-	
-	/* 5.10.12
-	 * Tobias Janssen
-	 * Ruft zu dem angegebenen Datum die entsprechende Kalenderwoche ab
-	 * 
-	 * 
-	 */
-	public int getWeekOfYear(Calendar aquiredDate)
-	{
-		Calendar calcopy = (Calendar) aquiredDate.clone();
-		int weekOfYear=0;
-		while(weekOfYear==0)
-		{
-			if(calcopy.get(Calendar.DAY_OF_WEEK)==6)
-				weekOfYear=calcopy.get(Calendar.WEEK_OF_YEAR);
-			else
-				calcopy.setTimeInMillis(calcopy.getTimeInMillis()+(86400000*1));
-		}
-		return weekOfYear;
-	}
-	
-	// / Datum: 135.09.12
-	// / Autor: Tobias Janßen
-	// /
-	// / Beschreibung:
-	// / Liefert den Index passenend zu der angegebenen KW aus den Online verfügaberen Wochen zurück
-	// / Wenn online nicht verfügbar, wird -1 zurückgeliefert
-	// /
-	// / Parameter:
-	// /
-	public int getIndexFromWeekList(String weekOfYear)
-	{
-		for(int i=0;i<this.weekList.length;i++)
-		{
-			if(weekOfYear.equalsIgnoreCase(this.weekList[i].index))
-				return i;
-		}
-		return -1;
-	}
-	
 	/*	11.10.12
 	 * 	Tobias Janssen
 	 * 
@@ -1182,6 +1096,93 @@ public class StupidCore {
 
 		this.stupidData = newList;
 		
+	}
+	
+	/// Datum: 06.09.12
+	/// Autor: Tobias Janßen
+	///
+	///	Beschreibung:
+	///	Reduziert jedes Feld auf deren Inhalt 
+	///	
+	///
+	///	Parameter:
+	///	
+	/// 
+	/// 
+	private XmlTag SummerizeField(XmlTag field,int rndmId, XmlTag origin,XmlTag summerizedField)
+	{
+		XmlTag currentTag = field.tagCrawlerFindDeepestUnSumerizedChild(origin,rndmId);
+			
+		if(currentTag.dataContent != null)
+		{
+			if(summerizedField.dataContent == null)
+			{
+				summerizedField.dataContent= currentTag.dataContent;
+			}
+			else
+			{
+				summerizedField.dataContent+= currentTag.dataContent;
+			}
+		}
+		//Parameter auslesen
+		Boolean redundanz=false;
+		for(int p=0;p<currentTag.parameters.length;p++)
+		{
+			redundanz=false;
+			if(currentTag.parameters[p].name.equals("color"))
+			{
+				for(int i=0;i<summerizedField.parameters.length;i++)
+				{
+					if(summerizedField.parameters[i].name.equalsIgnoreCase(currentTag.parameters[p].name))
+					{
+						redundanz=true;
+					}
+				}
+				if(!redundanz)
+					summerizedField.addParameter(currentTag.parameters[p].name, currentTag.parameters[p].value);
+			}
+			
+		}
+		currentTag.sumerizeId = rndmId;
+		//prüfen, ob es noch ein parent tag gibt, und ob dieses nicht dem ursprungs tag entspricht
+		if(currentTag.parentTag != null && !currentTag.parentTag.equals(origin))
+			 return SummerizeField(currentTag.parentTag,rndmId,origin,summerizedField);
+		
+		return summerizedField;
+	}
+	
+	// / Datum: 135.09.12
+	// / Autor: Tobias Janßen
+	// /
+	// / Beschreibung:
+	// / Erstellt ein Array mit einer Übersicht der lokal verfügbaren Timetable. Anhand der Schlüssel kann dann der richtige Datensatz aus dem Bestand abgerufen werden
+	// /
+	// /
+	// / Parameter:
+	// /
+	// /
+	// /
+	public void timeTableIndexer() throws Exception
+	{
+		//Prüfen, ob ein Element ausgewählt wurde
+		//Es ist für den Indexer essentiell wichtig, dass dieser festgelegt ist!
+		if(myElement.equalsIgnoreCase(""))
+			throw new Exception("Keine Element festgelegt.Indexer kann nicht gestartet werden!");
+		
+		myTimetables = new TimeTableIndex[0];
+		
+		//den gesamten geladenen Datenbestand durchsuchen
+		for (int i = 0; i < this.stupidData.size(); i++) 
+		{
+			//prüfen, ob der aktuelle Datensatz dem eigenen Element entspricht
+			if (this.stupidData.get(i).elementId.equalsIgnoreCase(myElement)) 
+			{
+				
+				//wenn ja, einen neuen Eintrag dem Indexer hinzufügen
+				myTimetables=(TimeTableIndex[]) ArrayOperations.AppendToArray(myTimetables, 
+						new TimeTableIndex(i,this.stupidData.get(i).date,this.stupidData.get(i).syncTime));
+			}
+		}
 	}
 	
 }

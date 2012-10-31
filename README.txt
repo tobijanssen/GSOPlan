@@ -4,7 +4,7 @@ Mit diesem Programm ist es möglich den Stundenplan des Georg-Simon-Ohm-Berufskol
 Außerdem werden bestehende Daten gespeichert, so dass nicht immer eine Internetverbindung bestehen muss.
 
 GSOPlan befindet sich derzeit noch im Alpha Status, daher kann es zu Fehlverhalten und Falschinformation führen.
-Für jegliche Fehlinformation seitens des Stundenplans wird keine Haftung übernommen! 
+Für jegliche Fehlfunktion wird keine Haftung übernommen! 
 Nur der Stundenplan auf der GSO-Webseite zählt!
 
 Bei Problemen/Bugs,oder Anregungen bitte die Issues-Funktion auf https://github.com/tobijanssen/GSOPlan/issues benutzen. 

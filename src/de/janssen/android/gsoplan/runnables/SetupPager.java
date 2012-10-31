@@ -47,34 +47,27 @@ public class SetupPager implements Runnable{
  			@Override
  			public void onPageSelected(int position) {
 
- 				Calendar selectedDay = parent.pageIndex.get(position);
- 				parent.stupid.currentDate = (Calendar) selectedDay.clone();
- 				if(selectedDay.get(Calendar.DAY_OF_WEEK) == 6 && !parent.disablePagerOnChangedListener)
+ 				//prüfen, ob diese Event unterdrückt werden sollte
+ 				if(parent.disableNextPagerOnChangedEvent)
  				{
- 					//ende erreicht
- 					parent.disablePagerOnChangedListener=true;
- 					try
- 					{
- 						parent.checkAvailibilityOfWeek(Const.NEXTWEEK);
- 					}
- 					finally
- 					{
- 						parent.disablePagerOnChangedListener=false;
- 					}
- 					
+ 					//wenn ja, den Listener wieder aktivieren
+ 					parent.disableNextPagerOnChangedEvent = false;
  				}
- 				else if(selectedDay.get(Calendar.DAY_OF_WEEK) == 2 && !parent.disablePagerOnChangedListener)
+ 				else
  				{
- 					//Anfang erreicht
- 					parent.disablePagerOnChangedListener=true;
- 					try
- 					{
- 						parent.checkAvailibilityOfWeek(Const.LASTWEEK);
- 					}
- 					finally
- 					{
- 						parent.disablePagerOnChangedListener=false;
- 					}
+ 					//wenn nicht, kann das event ausgeführt werden
+	 				Calendar selectedDay = parent.pageIndex.get(position);
+	 				parent.stupid.currentDate = (Calendar) selectedDay.clone();
+	 				if(selectedDay.get(Calendar.DAY_OF_WEEK) == 6)
+	 				{
+	 					//ende erreicht
+						parent.checkAvailibilityOfWeek(Const.NEXTWEEK);
+	 				}
+	 				else if(selectedDay.get(Calendar.DAY_OF_WEEK) == 2)
+	 				{
+	 					//Anfang erreicht
+	 					parent.checkAvailibilityOfWeek(Const.LASTWEEK);
+	 				}
  				}
  			}
          	

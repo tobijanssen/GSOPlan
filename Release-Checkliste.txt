@@ -1,0 +1,33 @@
+Checkliste für neue Releases:
+
+
+Datums-Auswahl:
+
+1. 	Wird beim Programmstart die richtige Seite des aktuellen Datums dargestellt
+2. 	Datum verstellen auf das folgende Wochenende --> Wird der Folge-Montag angezeigt sofern er online verfügbar ist
+2.1 -->  wenn er nicht verfügbar ist, wird der letzte verfügbare Tag angezeigt
+3. 	Funktion Gehe zu Datum in Zukunft ausprobieren:
+3.1 - für online Verfügbare Seiten
+3.2 - für nicht verfügbare Seiten
+4. 	Funktion Gehe zu Datum in Vergangenheit ausprobieren:
+3.1 - für online Verfügbare Seiten
+3.2 - für nicht verfügbare Seiten
+5. Gehe Datum zur erste Seite
+
+
+Aktualisierungsrate:
+
+1. 	Sofortige Aktualisierung testen:
+1.1 an einem normalen Wochentag testen, der in der Zukunft liegt(Gehe zu Datum)
+1.2.an einem Wochenendtag, der in der Zukunft liegt
+1.3 an einem Wochentag, der in der Vergangenheit liegt
+1.4 an einem Wochenende, das in der Vergangenheit liegt
+1.5 an einem Freitag in der Zukunft
+
+
+Beenden:
+1. Testen, ob Ordnungsgemäß beendet wird:
+1.1 App destroyen
+1.2 Task verkleinern
+1.3 Task wiederstarten
+1.4 Sind Daten gespeichert worden?   
