@@ -12,4 +12,6 @@ public class Const {
 	public final static String FILEDATA="Data.xml";
 	
 	public final static String FIRSTSTART="FirstStart";
+	
+	public final static int CONNECTIONTIMEOUT =5000; 
 }

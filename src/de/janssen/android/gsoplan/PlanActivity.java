@@ -510,7 +510,7 @@ public class PlanActivity extends Activity {
 	    		executor.shutdown();
 	    		executor.awaitTermination(120, TimeUnit.SECONDS);
 	    		if(!executor.isTerminated())
-	    			Toast.makeText(this,"Fehler beim Beenden des Programmes", Toast.LENGTH_LONG).show();
+	    			Toast.makeText(this,"Beim Beenden ist ein Fehler aufgetreten", Toast.LENGTH_LONG).show();
 			}
 			catch(Exception e)
 			{
@@ -541,7 +541,14 @@ public class PlanActivity extends Activity {
     	switch(checkStructure())
         {
         	case 0:	//Alles in Ordnung
-        		Tools.loadAllDataFiles(this, stupid);
+        		try
+        		{
+        			Tools.loadAllDataFiles(this, stupid);
+        		}
+        		catch (Exception e)
+        		{
+        			handler.post(new ErrorMessage(this, e.getMessage()));
+        		}
         		stupid.sort();
         		initViewPager();
         		checkAvailibilityOfWeek(Const.THISWEEK);

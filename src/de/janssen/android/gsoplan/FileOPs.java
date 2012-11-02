@@ -102,12 +102,44 @@ public class FileOPs {
 			FileInputStream fis = new FileInputStream(file);
 			
 			long length = file.length();
-			//TODO Files größer als int können nicht gelesen werden!!!
-			byte[] buffer = new byte[(int)length];
-			fis.read(buffer);
-			output=new String(buffer);
-			fis.close();
-			ready = true;
+			//prüfen, ob das file größer als int ist
+			if(java.lang.Integer.MAX_VALUE < length)
+			{
+				int bytesLength = java.lang.Integer.MAX_VALUE;
+				long bytesRead = 0;
+				while(bytesRead < length)
+				{
+					byte[] buffer = new byte[bytesLength];
+					fis.read(buffer,0,bytesLength);
+					output+=new String(buffer);
+					bytesRead+=bytesLength;
+					//prüfen, ob die noch ausstehenden Daten größer als int Max sind
+					if(length-bytesRead > java.lang.Integer.MAX_VALUE)
+					{
+						//ja, sind immer noch größer
+						bytesLength = java.lang.Integer.MAX_VALUE;
+						
+					}
+					else
+					{
+						//nein, nun passt es
+						bytesLength = (int) (length-bytesRead);
+					}
+					
+				}
+				fis.close();
+				ready = true;
+			}
+			else
+			{
+				//dies sollte der normale fall sein
+				byte[] buffer = new byte[(int)length];
+				fis.read(buffer);
+				output=new String(buffer);
+				fis.close();
+				ready = true;
+			}
+
 		}
 		catch(FileNotFoundException e)
 		{

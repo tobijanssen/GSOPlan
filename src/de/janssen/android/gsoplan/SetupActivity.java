@@ -427,65 +427,7 @@ public class SetupActivity extends Activity implements Runnable{
     	    }
     	});
     }
-    
-    
-    //TODO: Remove:
-    /// Datum: 14.09.12
-  	/// Autor: Tobias Janﬂen
-  	///
-  	///	Beschreibung:
-  	///	L‰dt die Selectoren von der GSO Seite und parsed diese in die availableOnline Arrays
-  	///	
-  	///
-  	///	Parameter:
-  	///	
-  	/// 
-  	/// 
-    /*
-    public void fetchOnlineSelectorsDepricated()
-    {
 
-       	try
-    	{
-    		//aktuelle Daten aus dem Netz laden:
-            if(stupid.onlyWlan)
-            {
-            	if(Tools.isWifiConnected(this))
-            	{
-	            	stupid.progressDialog = ProgressDialog.show(this, getString(R.string.setup_message_dlElements_title), getString(R.string.setup_message_dlElements_body), true,false);
-	            	stupid.setupIsDirty=true;
-            	}
-            	else
-                {
-                	Toast.makeText(this, "Keine Wlan Verbindung!", Toast.LENGTH_SHORT).show();
-                }
-            }
-            else
-        	{
-            	stupid.progressDialog = ProgressDialog.show(this, getString(R.string.setup_message_dlElements_title), getString(R.string.setup_message_dlElements_body), true,false);
-            	stupid.setupIsDirty=true;
-        	}
-            
-    	}
-    	catch(Exception e)
-    	{
-    		new AlertDialog.Builder(SetupActivity.this)
-    	    .setTitle("Fehler")
-    	    .setMessage(getString(R.string.setup_message_error_dlElements_1))
-    	    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-    	        public void onClick(DialogInterface dialog, int which) { 
-    	            // continue with delete
-    	        }
-    	     })
-    	    .setNegativeButton("Abbrechen", new DialogInterface.OnClickListener() {
-    	        public void onClick(DialogInterface dialog, int which) { 
-    	            // do nothing
-    	        }
-    	     })
-    	     .show();
-
-    	}
-   	}*/
 
 	public void run() {
 		handler.post(new Runnable(){

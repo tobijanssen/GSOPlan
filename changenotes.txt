@@ -1,8 +1,9 @@
-Change Notes Version 0.7 Alpha:
+Change Notes Version 1.00 Beta:
 
-Bugfixes:
+Änderungen:
+	- neue App-Icons
+	
+Verbesserungen:
+	- Datei-Laden Dateilängen-Beschränkung aufgehoben
 
-- Unter bedingten Umständen führte eine Aktualisierung an einem Montag, oder Freitag zu einer unendlichen Aktualisierungsschleife
-- Animations-"Flattern" der Seiten entfernt, wenn ein Stundeplan aktualisiert wurde
-- Einen Fehler behoben, bei dem die allererste Page nicht angesteuert werden konnte
 

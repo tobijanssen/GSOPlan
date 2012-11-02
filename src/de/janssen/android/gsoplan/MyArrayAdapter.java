@@ -35,7 +35,7 @@ public class MyArrayAdapter extends ArrayAdapter<TimetableViewObject> {
 		textView2.setText(content.row2);
 		if(content.color.length()==7)
 		{
-			//TODO: prüfen, ob der string nur zecihen enthält um gültig zu sein
+			//TODO: prüfen, ob der string eine valide Farbe enthält
 			
 			textView2.setTextColor(Color.parseColor(content.color));
 		}

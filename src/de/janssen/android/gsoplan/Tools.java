@@ -524,14 +524,21 @@ public class Tools{
      * 
      * 
      */
-    public static void loadAllDataFiles(Context context,StupidCore stupid)
+    public static void loadAllDataFiles(Context context,StupidCore stupid) throws Exception
     {
-    	File elementDir = new java.io.File(context.getFilesDir()+"/"+stupid.myElement);
-    	File[] files = elementDir.listFiles();
-        for(int f=0;f<files.length;f++)
-        {
-        	loadNAppendFile(context,stupid, files[f]);
-        }
+    	try
+    	{
+	    	File elementDir = new java.io.File(context.getFilesDir()+"/"+stupid.myElement);
+	    	File[] files = elementDir.listFiles();
+	        for(int f=0;f<files.length;f++)
+	        {
+	        	loadNAppendFile(context,stupid, files[f]);
+	        }
+    	}
+    	catch (Exception e) 
+    	{
+			throw e;
+		}
     	
     }
     
@@ -541,7 +548,7 @@ public class Tools{
      * 	Lädt den angegebenen File und hängt diesen an die Daten im StupidCore an
      * 
      */
-    private static void loadNAppendFile(Context context,StupidCore stupid, File file)
+    private static void loadNAppendFile(Context context,StupidCore stupid, File file) throws Exception
     {
     	
     	try 
@@ -554,8 +561,7 @@ public class Tools{
 		} 
     	catch (Exception e) 
     	{
-			// TODO Exception loadNappendFile 
-			e.printStackTrace();
+			throw new Exception("Beim laden der Dateien ist ein Fehler aufgetreten");
 		}
 		
     }

@@ -3,7 +3,7 @@
     <string name="app_name">GSOPlan</string>
     <string name="menu_setup">Setup</string>
     <string name="title_activity_setup">Setup</string>
-    <string name="title_activity_plan">GSO-Plan</string>
+    <string name="title_activity_plan">GSOPlan</string>
     <string name="menu_save">Speichern</string>
     <string name="menu_gotoDate">Gehe zu Datum</string>
     <string name="menu_refresh">Jetzt aktualisieren</string>

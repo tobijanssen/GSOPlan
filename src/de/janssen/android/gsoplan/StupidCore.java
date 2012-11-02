@@ -26,7 +26,7 @@ public class StupidCore {
 	public long myResyncAfter=10;
 	public Calendar currentDate = new GregorianCalendar();
 	public TimeTableIndex[] myTimetables;
-	private final int CONNECTIONTIMEOUT =8000; 
+	
 	
 	final String NAVBARURL = "http://stupid.gso-koeln.de/frames/navbar.htm"; 
 	final String URLMOOODLE = "http://stupid.gso-koeln.de/";
@@ -243,7 +243,7 @@ public class StupidCore {
         {
         	URL url = new URL(NAVBARURL);
         	Xml xml = new Xml();
-        	xml.container = Xml.readFromHTML(url,this.progressDialog,CONNECTIONTIMEOUT);
+        	xml.container = Xml.readFromHTML(url,this.progressDialog,Const.CONNECTIONTIMEOUT);
         	xmlTagArray = Xml.xmlToArray(xml);
         }
 		catch(Exception e)
@@ -462,7 +462,7 @@ public class StupidCore {
         {
 			URL url = new URL(URLMOOODLE+selectedDateIndex+"/"+selectedType+"/"+selectedType+"000"+selectedClassIndex+".htm");
 			Xml xml = new Xml();
-			xml.container = Xml.readFromHTML(url,this.progressDialog,CONNECTIONTIMEOUT);
+			xml.container = Xml.readFromHTML(url,this.progressDialog,Const.CONNECTIONTIMEOUT);
         	xmlArray = Xml.xmlToArray(xml,this.progressDialog);
         }
 		catch(Exception e)
