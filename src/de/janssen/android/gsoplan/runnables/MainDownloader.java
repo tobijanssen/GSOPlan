@@ -34,6 +34,7 @@ public class MainDownloader implements Runnable{
 		}
 		catch (Exception e)
 		{
+			
 			parent.handler.post(new ErrorMessage(parent,e.getMessage()));
 			return;
 		}

@@ -34,6 +34,7 @@
     <string name="title_readyButton">Fertig</string>
     <string name="title_type">Art</string>
     <string name="title_resyncafter">Aktualisierungsrate des Stundeplans</string>
+    <string name="title_daybegin">Freistunden zu Beginn des Tages ausblenden</string>
     <string name="setup_message_dlElements_title">Downloade Elementenliste…</string>
     <string name="setup_message_dlElements_body"></string>
     <string name="setup_message_error_dlElements_1">Beim downloaden der Elemente ist ein Fehler aufgetreten!</string>

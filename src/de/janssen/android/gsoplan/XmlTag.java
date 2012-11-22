@@ -63,6 +63,16 @@ public class XmlTag {
             
             //ende des StartTags herausfinden:
             endTagPoint = xml.container.indexOf(">", startPoint)+1;
+            //prüfen, ob das tag valid ist, indem geprüft wird, ob bereits ein neues tag geöffnet wurde
+            int nextStartPoint = xml.container.indexOf("<", 1);
+            if(nextStartPoint!=-1 && (nextStartPoint<endTagPoint))
+            {
+            	//hier muss ein quelltext syntax-fehler vorliegen
+            	//dieses tag verwerfen
+            	 xml.container = xml.container.substring(nextStartPoint);
+            	 return parseNextXmlTag(xml);
+            }
+            
             if(endTagPoint == -1)
             {
             	//Tag ist nicht vernüftig geclosed worden

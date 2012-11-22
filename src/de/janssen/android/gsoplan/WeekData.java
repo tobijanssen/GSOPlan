@@ -54,8 +54,22 @@ public class WeekData
 		Parameter parameter = new Parameter();
 		parameter.name = name;
 		parameter.value = value;
-		
-		parameters = (Parameter[]) ArrayOperations.AppendToArray(parameters, parameter);
+		int index=-1;
+		for(int i=0; i<parameters.length && index == -1;i++)
+		{
+			if(parameters[i].name.equalsIgnoreCase(parameter.name))
+			{
+				index=i;
+			}
+		}
+		if(index == -1)
+		{
+			parameters = (Parameter[]) ArrayOperations.AppendToArray(parameters, parameter);
+		}
+		else
+		{
+			parameters[index]=parameter;
+		}
 		
 	}
 }

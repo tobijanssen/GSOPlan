@@ -105,7 +105,12 @@ public class Tools{
      */
     private static View createPage(WeekData weekData, PlanActivity parent, List<TimetableViewObject> list)
     {
+    	//TODO execption: issue #7: HTC One kann das Layout nicht inflaten:
+    	//android.view.InflateException: Binary XML file line #4: Error inflating class android.widget.ListView
     	View page = parent.inflater.inflate(R.layout.daylayout, null);
+    	
+    	
+    	
 		ListView listView = (ListView) page.findViewById(R.id.listTimetable);
 		MyArrayAdapter adapter = new MyArrayAdapter(parent, list);
 		listView.setAdapter(adapter);
@@ -139,17 +144,17 @@ public class Tools{
 		for (int y = 1; y < weekData.timetable.length; y++) 
 		{
 
-			if (weekData.timetable[y][x].dataContent == null && !entryFound) 
+			if (weekData.timetable[y][x].dataContent == null && !entryFound && stupid.hideEmptyHours) 
 			{
 				nullCounter++;
 			} 
 			else if (weekData.timetable[y][x].dataContent != null) 
 			{
-				if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")&& !entryFound) 
+				if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("null")&& !entryFound && stupid.hideEmptyHours) 
 				{
 					nullCounter++;
 				} 
-				else if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("")&& !entryFound) 
+				else if (weekData.timetable[y][x].dataContent.equalsIgnoreCase("")&& !entryFound && stupid.hideEmptyHours) 
 				{
 					nullCounter++;
 				}
@@ -176,11 +181,24 @@ public class Tools{
 				list.add(new TimetableViewObject(stupid.timeslots[y], "","#000000"));
 			}
 		}
+		
+		if(!stupid.hideEmptyHours)
+		{
+			// prüfen, ob gar keine Stunden vorhanden sind
+			for(int i=0;i<list.size();i++)
+			{
+				if(list.get(i).row2.equalsIgnoreCase(""))
+					nullCounter++;
+			}
+		}
+		
 		// prüfen, ob gar keine Stunden vorhanden sind
 		if (nullCounter == 15) 
 		{
+			list.clear();
 			list.add(new TimetableViewObject("", "kein Unterricht","#000000"));
 		}
+		
 		//nun von hinten aufrollen und alle leeren Stunden entfernen
 		TimetableViewObject lineObject;
 		for(int i=list.size()-1;i >= 0;i--)
@@ -607,7 +625,7 @@ public class Tools{
   	 *
   	 *	Prüft, ob welche Daten im StupidCore dirty sind, und speichert diese
   	 */ 
-    public static void saveFiles(Context context,StupidCore stupid,ExecutorService exec ) throws Exception
+    public static void saveFiles(Context context,StupidCore stupid,Executor exec ) throws Exception
     {
     	
 		SaveSetup saveSetup = buildSaveSetup(context,stupid);

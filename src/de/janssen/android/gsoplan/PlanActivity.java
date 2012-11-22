@@ -10,6 +10,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import com.viewpagerindicator.TitlePageIndicator;
+
+import de.janssen.android.gsoplan.runnables.AppendPage;
 import de.janssen.android.gsoplan.runnables.ErrorMessage;
 import de.janssen.android.gsoplan.runnables.MainDownloader;
 import de.janssen.android.gsoplan.runnables.PlanActivityLuncher;
@@ -236,7 +238,7 @@ public class PlanActivity extends Activity {
     public void executeWithDialog(Runnable run,String text, int style)
     {
     	
-    	handler.post(new ShowProgressDialog(this,style,text));
+    	handler.post(new ShowProgressDialog(this,style,text,run));
 		execQueue.execute(run);
 		
     	
@@ -343,7 +345,8 @@ public class PlanActivity extends Activity {
     	currentPage=0;
         for(int i=0;i<stupid.stupidData.size();i++)
         {
-        	Tools.appendTimeTableToPager(stupid.stupidData.get(i), stupid, this);
+        	handler.post(new AppendPage(stupid.stupidData.get(i), stupid, this));
+        	//Tools.appendTimeTableToPager(stupid.stupidData.get(i), stupid, this);
         	
         }
         currentPage=Tools.getPage(pageIndex,stupid.currentDate);
@@ -381,6 +384,8 @@ public class PlanActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) 
 	{
         super.onCreate(savedInstanceState);
+        
+        
         //Android Version prüfen, wenn neuer als API11, 
         Boolean actionBarAvailable = false;
         if(android.os.Build.VERSION.SDK_INT >= 11)
@@ -580,7 +585,15 @@ public class PlanActivity extends Activity {
     	selfCheckIsRunning=false;
     }
     
-    
+    /*	14.11.12
+     * 	Tobias Janssen
+     * 	Terminiert den aktiven Thread im SerialExecutor
+     */
+    public void terminateActiveThread(Runnable runThread)
+    {
+    	execQueue.terminateActiveThread(runThread);
+    	
+    }
 
 }
 

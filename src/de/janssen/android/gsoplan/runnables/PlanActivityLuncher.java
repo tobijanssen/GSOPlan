@@ -17,6 +17,22 @@ public class PlanActivityLuncher implements Runnable{
 		{
 			parent.stupid.progressDialog.dismiss();
 		}
+		else
+		{
+			try 
+			{
+				java.lang.Thread.sleep(1000);
+			} 
+			catch (InterruptedException e) 
+			{
+
+			}
+			if (parent.stupid.progressDialog != null) 
+			{
+				parent.stupid.progressDialog.dismiss();
+			}
+			
+		}
 		
 	}
 

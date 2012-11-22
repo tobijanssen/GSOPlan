@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.janssen.android.gsoplan"
-    android:versionCode="1"
-    android:versionName="1.00 Beta" >
+    android:versionCode="2"
+    android:versionName="1.01 Beta" >
 
     <uses-sdk
         android:minSdkVersion="10"
@@ -16,6 +16,7 @@
         android:theme="@android:style/Theme.Light" >
         <activity 
             android:name=".PlanActivity" 
+            android:configChanges="keyboardHidden|orientation" 
             android:label="@string/title_activity_plan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

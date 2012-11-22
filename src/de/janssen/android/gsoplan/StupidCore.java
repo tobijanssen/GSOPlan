@@ -17,6 +17,7 @@ public class StupidCore {
 	public String myElement="";
 	public int myType=0;
 	public Boolean onlyWlan=false;
+	public Boolean hideEmptyHours=true;
 	public long syncTime = 0;
 	public List <WeekData> stupidData = new ArrayList<WeekData>();
 	public Boolean dataIsDirty=false;
@@ -29,7 +30,8 @@ public class StupidCore {
 	
 	
 	final String NAVBARURL = "http://stupid.gso-koeln.de/frames/navbar.htm"; 
-	final String URLMOOODLE = "http://stupid.gso-koeln.de/";
+	//final String NAVBARURL = "http://eqtain.de/stupid/frames/navbar.htm";
+	final String URLSTUPID = "http://stupid.gso-koeln.de/";
 	
 	public StupidCore()
 	{
@@ -121,8 +123,7 @@ public class StupidCore {
 		// die tr heraussuchen:
 		// TODO:hier muss eine andere form des crawlers her, der nicht tiefer
 		// als x suchen soll
-		XmlTag tr = htmlTableTag.tagCrawlerFindFirstEntryOf(htmlTableTag, Xml.TR,
-				new XmlTag());
+		XmlTag tr = htmlTableTag.tagCrawlerFindFirstEntryOf(htmlTableTag, Xml.TR, new XmlTag());
 		// TODO: Abfangen wenn nichts gefunden wurde!
 
 		// TODO:das hier ist noch nicht optimal:
@@ -338,7 +339,15 @@ public class StupidCore {
 		XmlTag myTypeTag = parent.tagCrawlerFindFirstOf(parent, new XmlTag(Xml.myType), new XmlTag());
 		XmlTag onlyWlan = parent.tagCrawlerFindFirstOf(parent, new XmlTag(Xml.onlyWlan), new XmlTag());
 		XmlTag resyncAfter = parent.tagCrawlerFindFirstOf(parent, new XmlTag(Xml.resyncAfter), new XmlTag());
+		XmlTag hideEmptyHours = parent.tagCrawlerFindFirstOf(parent, new XmlTag(Xml.hideEmptyHours), new XmlTag());
 		
+		if(hideEmptyHours.dataContent != null)
+		{
+			if(hideEmptyHours.dataContent.equalsIgnoreCase("true"))
+				this.hideEmptyHours = true;
+			else
+				this.hideEmptyHours = false;
+		}
 		
 		if(resyncAfter.dataContent != null)
 		{
@@ -442,12 +451,11 @@ public class StupidCore {
 	 */	
 	public DownloadFeedback fetchTimeTableFromNet(String selectedStringDate, String selectedElement, String selectedType) throws Exception
 	{
-		Exception error = null;
 		int dataIndex = -1;
 		String selectedDateIndex = getIndexOfSelectorValue(weekList,selectedStringDate);
 		String selectedClassIndex= getIndexOfSelectorValue(elementList,selectedElement);
 		this.progressDialog.setProgress(this.progressDialog.getProgress()+500);
-		if(selectedClassIndex.length()==1)
+		while(selectedClassIndex.length()<5)
 		{
 			selectedClassIndex="0"+selectedClassIndex;
 		}
@@ -460,7 +468,7 @@ public class StupidCore {
 		XmlTag[] xmlArray = new XmlTag[0];
 		try
         {
-			URL url = new URL(URLMOOODLE+selectedDateIndex+"/"+selectedType+"/"+selectedType+"000"+selectedClassIndex+".htm");
+			URL url = new URL(URLSTUPID+selectedDateIndex+"/"+selectedType+"/"+selectedType+selectedClassIndex+".htm");
 			Xml xml = new Xml();
 			xml.container = Xml.readFromHTML(url,this.progressDialog,Const.CONNECTIONTIMEOUT);
         	xmlArray = Xml.xmlToArray(xml,this.progressDialog);
@@ -488,15 +496,22 @@ public class StupidCore {
         {
         	//es kann sein, dass sich dieses Tag nicht mehr mit den angegeben suchparametern finden lässt("font","size","5")
         	//daher muss nun geprüft werden, ob das gesuchte Element überhaupt im Quelltext auftritt, also alles durchsuchen
-        	elementSearchResult = highTag.tagCrawlerFindFirstOf(highTag, "font", selectedElement, new XmlTag());
-        	shownElement = elementSearchResult.dataContent.replaceAll(" ", "");
-            shownElement = shownElement.replaceAll("\n", "");
-            shownElement = shownElement.replaceAll("&nbsp;", "");
+        	try
+        	{
+	        	elementSearchResult = highTag.tagCrawlerFindFirstOf(highTag, "font", selectedElement, new XmlTag());
+	        	shownElement = elementSearchResult.dataContent.replaceAll(" ", "");
+	            shownElement = shownElement.replaceAll("\n", "");
+	            shownElement = shownElement.replaceAll("&nbsp;", "");
+        	}
+        	catch(Exception e)
+        	{
+        		throw new Exception("Bei der Konvertierung des Quelltextes ist ein Fehler aufgetreten!\n Versuchen Sie es erneut, oder wenden Sie sich bei erneutem Auftreten an den Entwickler!");
+        	}
             
         	if(!shownElement.contains(selectedElement))
         	{
         		//Nein, leider konnte es so auch nicht gefunden werden
-        		error = new Exception("Die angezeigte Klasse ist falsch");
+        		throw new Exception("Bei der Konvertierung des Quelltextes ist ein Fehler aufgetreten!\n Versuchen Sie es erneut, oder wenden Sie sich bei erneutem Auftreten an den Entwickler!");
         	}
         }
         
@@ -572,14 +587,8 @@ public class StupidCore {
        	}
        	
        	this.progressDialog.setProgress(this.progressDialog.getProgress()+1000);
-        if(error != null)
-        {
-        	throw error;
-        }
-        else
-        {
-        	return new DownloadFeedback(dataIndex,DownloadFeedback.NO_REFRESH);
-        }
+
+       	return new DownloadFeedback(dataIndex,DownloadFeedback.NO_REFRESH);
         
 	}
 	

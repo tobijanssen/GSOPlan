@@ -21,16 +21,19 @@ public class ErrorMessage implements Runnable{
 		{
 			parent.stupid.progressDialog.dismiss();
 		}
-		AlertDialog.Builder dialog = new AlertDialog.Builder(parent);
-		dialog.setMessage(errorMessage);
-		dialog.setPositiveButton("Ok", new OnClickListener(){
-
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
+		if(!errorMessage.equalsIgnoreCase(""))
+		{
+			AlertDialog.Builder dialog = new AlertDialog.Builder(parent);
+			dialog.setMessage(errorMessage);
+			dialog.setPositiveButton("Ok", new OnClickListener(){
+	
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					
+				}
 				
-			}
-			
-		});
-		dialog.show();
+			});
+			dialog.show();
+		}
 	}
 }

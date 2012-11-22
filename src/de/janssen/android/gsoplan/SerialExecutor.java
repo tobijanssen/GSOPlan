@@ -3,16 +3,18 @@ package de.janssen.android.gsoplan;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+
 
 public class SerialExecutor implements Executor, Runnable 
 {
 
 	final Queue<Runnable> tasks = new ArrayDeque<Runnable>();
-	final Executor executor;
+	final ExecutorService executor;
 	Runnable active;
 	Runnable r;
 
-	public SerialExecutor(Executor executor) 
+	public SerialExecutor(ExecutorService executor) 
 	{
 		this.executor = executor;
 	}
@@ -22,39 +24,64 @@ public class SerialExecutor implements Executor, Runnable
 	{
 		this.r=r;
 		tasks.add(this);
+			
 		if (active == null) 
 		{
 			scheduleNext();
 		}
+	}
 
-	   }
+	protected synchronized void scheduleNext() 
+	{
 
-	   protected synchronized void scheduleNext() 
-	   {
-
-		   active = tasks.poll();
+		active = tasks.poll();
 		   
-		   if (active != null) 
-		   {
+		if (active != null) 
+		{
+			try
+			{
 			   executor.execute(active);
-			   
-		   }
-	   }
+			}
+			catch(Exception e)
+			{
+				Boolean debugMe=true;
+			}
+		}
+		else if(!tasks.isEmpty())
+		{
+			Boolean debugMe=true;
+		}
+			
+	}
 
 
 	public void run() 
 	{
-			try 
-			{
-				r.run();
-			} 
-			finally 
-			{
-				scheduleNext();
-			}
+		try 
+		{
+			r.run();
 			
+		} 
+		finally 
+		{
+			scheduleNext();
+		}
+		
+	}
+		
+	
+
+	/*	14.11.12
+	 * 	Tobias Janssen
+	 * 	Terminiert den aktiven Thread im SerialExecutor
+	 */
+	public void terminateActiveThread(Runnable runThread)
+	{
+		if (active != null) 
+		{
+			//TODO: Implementieren eines Thread terminators
 		}
 		
 	}
 
-
+}

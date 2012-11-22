@@ -22,6 +22,7 @@ public class Xml
 	public static final String myType="myType";
 	public static final String onlyWlan="onlyWlan";
 	public static final String resyncAfter="resyncAfter";
+	public static final String hideEmptyHours="hideEmptyHours";
 	
     public static final String OPTION = "option";
     public static final String TR = "tr";
@@ -69,6 +70,8 @@ public class Xml
 		result += "<"+myElement+">"+stupid.myElement+"</"+myElement+">";
 		result += "<"+myType+">"+stupid.myType+"</"+myType+">";
 		result += "<"+onlyWlan+">"+stupid.onlyWlan.toString()+"</"+onlyWlan+">";
+		result += "<"+resyncAfter+">"+stupid.myResyncAfter+"</"+resyncAfter+">";
+		result += "<"+hideEmptyHours+">"+stupid.hideEmptyHours.toString()+"</"+hideEmptyHours+">";
 		return result;
 	}
 	
@@ -130,6 +133,7 @@ public class Xml
 		result += "<"+myType+">"+stupid.myType+"</"+myType+">";
 		result += "<"+onlyWlan+">"+stupid.onlyWlan.toString()+"</"+onlyWlan+">";
 		result += "<"+resyncAfter+">"+stupid.myResyncAfter+"</"+resyncAfter+">";
+		result += "<"+hideEmptyHours+">"+stupid.hideEmptyHours.toString()+"</"+hideEmptyHours+">";
 		return result;
 	}
 	
@@ -431,7 +435,7 @@ public class Xml
 		}
 		catch (Exception e)
 		{
-			throw new Exception("Fehler bei der XML Konvertierung! Code:0x002 \n"+e.getMessage());
+			throw new Exception("Fehler bei der XML Konvertierung! Code:0x002 \n");
 		}
 		
 

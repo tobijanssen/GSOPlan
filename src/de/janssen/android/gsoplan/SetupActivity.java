@@ -426,6 +426,20 @@ public class SetupActivity extends Activity implements Runnable{
     	        }
     	    }
     	});
+    	
+    	ToggleButton hideEmptyHoursSwitch = (ToggleButton) findViewById(R.id.toggleButtonHideEmptyHours);
+    	hideEmptyHoursSwitch.setChecked(stupid.hideEmptyHours);
+
+    	hideEmptyHoursSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+    	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+    	    	stupid.setupIsDirty=true;
+    	        if (isChecked) {
+    	            stupid.hideEmptyHours = true;
+    	        } else {
+    	        	stupid.hideEmptyHours = false;
+    	        }
+    	    }
+    	});
     }
 
 
