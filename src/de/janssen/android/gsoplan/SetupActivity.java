@@ -3,9 +3,6 @@ package de.janssen.android.gsoplan;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -27,19 +24,27 @@ import android.widget.ToggleButton;
 import android.widget.Button;
 
 public class SetupActivity extends Activity implements Runnable{
-	public StupidCore stupid = new StupidCore();;
+	
 	private Spinner spinnerElement;
 	private Spinner spinnerType;
+	private Spinner spinnerActivity;
 	private Spinner spinnerResyncAfter;
-	private Handler handler;
 	private AsyncTask<Void, Void, Void> task;
 	private ArrayAdapter<String> adapterElement;
 	private ArrayAdapter<String> adapterType;
+	private ArrayAdapter<String> adapterActivity;
 	private ArrayAdapter<String> adapterResyncAfter;
-	private ExecutorService exec = Executors.newSingleThreadExecutor();
 	private String[] resyncAfterStrings=new String[]{"sofort","10min","30min","1h","2h","3h","5h","24h","nie"};
 	private long[] resyncAfterMinutes=new long[]      {0,10,30,60,120,180,300,1440,5256000};
-
+	public MyContext ctxt = new MyContext();	
+	
+	public SetupActivity()
+	{
+		ctxt.context=this;
+		ctxt.activity=this;
+	}
+	
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,16 +70,17 @@ public class SetupActivity extends Activity implements Runnable{
         
         
         
-        handler = new Handler();
+        ctxt.handler = new Handler();
         initSpinners();
         
         
         //prüfen, ob die Selectoren bereits geladen wurden:
         if(!checkSetupFiles())
         {
-        	stupid.dataIsDirty=true;
-        	stupid.setupIsDirty=true;
-        	Tools.fetchOnlineSelectors(this, stupid, exec,this);
+        	ctxt.stupid.dataIsDirty=true;
+        	ctxt.stupid.setupIsDirty=true;
+        	setupDefaultActivity();
+        	Tools.fetchOnlineSelectors(ctxt,this);
         }
         else
         {
@@ -83,6 +89,7 @@ public class SetupActivity extends Activity implements Runnable{
             setupSpinnerType();
             setupSpinnerResyncAfter();
             setupToggleSwitch();
+            setupDefaultActivity();
         }
         
     	
@@ -122,33 +129,24 @@ public class SetupActivity extends Activity implements Runnable{
 		  // Prepare data intent 
 		if(task!=null)
 			task.cancel(true);
-		if(stupid.setupIsDirty || stupid.dataIsDirty)
+		if(ctxt.stupid.setupIsDirty || ctxt.stupid.dataIsDirty)
 		{
-			try {
-				Tools.saveSetup(this, stupid, exec);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			Tools.saveSetupWithProgressDialog(this, stupid, exec);
-
-			exec.shutdown();
 			try 
 			{
-				exec.awaitTermination(120, TimeUnit.SECONDS);
-				
+				Tools.saveSetup(ctxt);
 			} 
-			catch (InterruptedException e1) 
+			catch (Exception e) 
 			{
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				
+				
 			}
-			stupid.setupIsDirty=true;
+			//Tools.saveSetupWithProgressDialog(ctxt);
+			ctxt.stupid.setupIsDirty=true;
 		}
 		
 		Intent returnData = new Intent();
-		returnData.putExtra("dataIsDirty", stupid.dataIsDirty);
-		returnData.putExtra("setupIsDirty", stupid.setupIsDirty);
+		returnData.putExtra("dataIsDirty", ctxt.stupid.dataIsDirty);
+		returnData.putExtra("setupIsDirty", ctxt.stupid.setupIsDirty);
 		if (getParent() == null) 
 		{
 		    setResult(Activity.RESULT_OK, returnData);
@@ -157,7 +155,7 @@ public class SetupActivity extends Activity implements Runnable{
 		{
 		    getParent().setResult(Activity.RESULT_OK, returnData);
 		}
-		stupid.setupIsDirty=false;
+		ctxt.stupid.setupIsDirty=false;
 		
 	}
 /*
@@ -194,11 +192,11 @@ public class SetupActivity extends Activity implements Runnable{
 						java.io.File delFile = new java.io.File(appDir, files[i]);
 				    	delFile.delete();
 					}
-					stupid.clearSetup();
+					ctxt.stupid.clearSetup();
 					setupSpinnerElement();
 					setupSpinnerType();
 					setupToggleSwitch();
-					Tools.fetchOnlineSelectors(SetupActivity.this, stupid, exec,SetupActivity.this);
+					Tools.fetchOnlineSelectors(ctxt,SetupActivity.this);
 				}
 			})
     		.setNegativeButton("Abbruch", new DialogInterface.OnClickListener(){
@@ -226,10 +224,10 @@ public class SetupActivity extends Activity implements Runnable{
     	// die SetupDatei Laden
     	try {
     		Xml xml = new Xml();
-    		File setupFile = Tools.getFileSaveSetup(this, stupid);
-    		xml.container = FileOPs.readFromFile(this,setupFile);
-    		stupid.clearSetup();
-    		stupid.fetchSetupFromXml(xml);
+    		File setupFile = Tools.getFileSaveSetup(ctxt);
+    		xml.container = FileOPs.readFromFile(setupFile);
+    		ctxt.stupid.clearSetup();
+    		ctxt.stupid.fetchSetupFromXml(xml,ctxt);
     		return true;
     	} 
     	catch (Exception e) 
@@ -262,7 +260,7 @@ public class SetupActivity extends Activity implements Runnable{
     public Boolean checkSetupFiles()
     {
 		// Prüfen, ob die benötigten Dateien existieren:
-		File setupFile = Tools.getFileSaveSetup(this, stupid);
+		File setupFile = Tools.getFileSaveSetup(ctxt);
 		if (!setupFile.exists())
 			return false;
 
@@ -286,10 +284,14 @@ public class SetupActivity extends Activity implements Runnable{
         mylist2.add("keine Daten vorhanden!");
         List<String> mylist3 = new ArrayList<String>();
         mylist3.add("keine Daten vorhanden!");
+        List<String> mylist4 = new ArrayList<String>();
+        mylist4.add("keine Daten vorhanden!");
+        
         
         adapterElement = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, android.R.id.text1,mylist1);
         adapterType = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, android.R.id.text1,mylist2);
         adapterResyncAfter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, android.R.id.text1,mylist3);
+        adapterActivity = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, android.R.id.text1,mylist4);
         
         spinnerElement = (Spinner) findViewById(R.id.spinnerElement);
         spinnerElement.setAdapter(adapterElement);
@@ -297,6 +299,8 @@ public class SetupActivity extends Activity implements Runnable{
         spinnerType.setAdapter(adapterType);
         spinnerResyncAfter = (Spinner) findViewById(R.id.spinnerResyncAfter);
         spinnerResyncAfter.setAdapter(adapterResyncAfter);
+        this.spinnerActivity = (Spinner) findViewById(R.id.spinnerDefaultAytivity);
+        this.spinnerActivity.setAdapter(this.adapterActivity);
     }
     
     public void setupSpinnerResyncAfter()
@@ -305,7 +309,7 @@ public class SetupActivity extends Activity implements Runnable{
     	for(int i=0;i<resyncAfterMinutes.length;i++)
     	{
     		adapterResyncAfter.add(resyncAfterStrings[i]);
-    		if(stupid.myResyncAfter == resyncAfterMinutes[i])
+    		if(ctxt.stupid.myResyncAfter == resyncAfterMinutes[i])
     			spinnerResyncAfter.setSelection(i); 
     	}
     	adapterResyncAfter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);    
@@ -314,14 +318,14 @@ public class SetupActivity extends Activity implements Runnable{
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
 				
-				if(stupid.myResyncAfter!=resyncAfterMinutes[position])
+				if(ctxt.stupid.myResyncAfter!=resyncAfterMinutes[position])
 				{
-					stupid.myResyncAfter=resyncAfterMinutes[position];
-					stupid.setupIsDirty=true;
+					ctxt.stupid.myResyncAfter=resyncAfterMinutes[position];
+					ctxt.stupid.setupIsDirty=true;
 				}
 				else
 				{
-					stupid.setupIsDirty=false;
+					ctxt.stupid.setupIsDirty=false;
 				}
 			}
 
@@ -339,16 +343,16 @@ public class SetupActivity extends Activity implements Runnable{
     {
     	adapterElement.clear();
     	int selected=0;
-		for (int i = 0; i < stupid.elementList.length; i++)
+		for (int i = 0; i < ctxt.stupid.elementList.length; i++)
 		{
-			adapterElement.add(stupid.elementList[i].description);
-			if(stupid.myElement.equalsIgnoreCase(stupid.elementList[i].description))
+			adapterElement.add(ctxt.stupid.elementList[i].description);
+			if(ctxt.stupid.myElement.equalsIgnoreCase(ctxt.stupid.elementList[i].description))
 			{
 				selected=i;
 			}
 		}
 		spinnerElement.setSelection(selected);
-		stupid.myElement=String.valueOf(spinnerElement.getSelectedItem());
+		ctxt.stupid.myElement=String.valueOf(spinnerElement.getSelectedItem());
 		adapterElement.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
 		spinnerElement.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -357,11 +361,11 @@ public class SetupActivity extends Activity implements Runnable{
 					int position, long id) {
 					
 					String selectedClass = String.valueOf(spinnerElement.getSelectedItem());
-					if(!stupid.myElement.equalsIgnoreCase(selectedClass))
+					if(!ctxt.stupid.myElement.equalsIgnoreCase(selectedClass))
 					{
-						stupid.myElement=selectedClass;
-						stupid.setupIsDirty=true;
-						stupid.dataIsDirty=true;
+						ctxt.stupid.myElement=selectedClass;
+						ctxt.stupid.setupIsDirty=true;
+						ctxt.stupid.dataIsDirty=true;
 					}
 			}
 
@@ -376,16 +380,16 @@ public class SetupActivity extends Activity implements Runnable{
     {
     	adapterType.clear();
     	int selected=0;
-		for (int i = 0; i < stupid.typeList.length; i++)
+		for (int i = 0; i < ctxt.stupid.typeList.length; i++)
 		{
-			adapterType.add(stupid.typeList[i].description);
-			if(i == stupid.myType)
+			adapterType.add(ctxt.stupid.typeList[i].description);
+			if(i == ctxt.stupid.myType)
 			{
 				selected=i;
 			}
 		}
 		spinnerType.setSelection(selected);
-		stupid.myType=spinnerType.getSelectedItemPosition();
+		ctxt.stupid.myType=spinnerType.getSelectedItemPosition();
 		adapterType.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
 		spinnerType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -394,13 +398,63 @@ public class SetupActivity extends Activity implements Runnable{
 					int position, long id) {
 					
 					int selectedType = spinnerType.getSelectedItemPosition();
-					if(stupid.myType != selectedType)
+					if(ctxt.stupid.myType != selectedType)
 					{
-						stupid.myType=selectedType;
-						Tools.fetchOnlineSelectors(SetupActivity.this, stupid, exec,SetupActivity.this);
-						stupid.setupIsDirty=true;
-						stupid.dataIsDirty=true;
+						ctxt.stupid.myType=selectedType;
+						Tools.fetchOnlineSelectors(ctxt, SetupActivity.this);
+						ctxt.stupid.setupIsDirty=true;
+						ctxt.stupid.dataIsDirty=true;
 					}
+			}
+
+			public void onNothingSelected(AdapterView<?> parent) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+    }
+    
+    public void setupDefaultActivity()
+    {
+    	adapterActivity.clear();
+    	int selected =0;
+    	
+    	adapterActivity.add("Tag");
+    	adapterActivity.add("Woche");
+    	
+    	if(ctxt.defaultActivity != null)
+    	{
+    		if(ctxt.defaultActivity.equals(PlanActivity.class))
+    		{
+    			selected = 0;
+    		}
+    		else if(ctxt.defaultActivity.equals(WeekPlanActivity.class))
+    		{
+    			selected = 1;
+    		}
+    		
+    	}
+    	
+		spinnerActivity.setSelection(selected);
+		
+		adapterActivity.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+		spinnerActivity.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+			public void onItemSelected(AdapterView<?> parent, View view,
+					int position, long id) {
+					
+					int selectedActivity = spinnerActivity.getSelectedItemPosition();
+					if(selectedActivity == 0)
+		    		{
+						ctxt.defaultActivity = PlanActivity.class;
+						
+		    		}
+		    		else if(selectedActivity == 1)
+		    		{
+		    			ctxt.defaultActivity = WeekPlanActivity.class;
+		    		}
+					ctxt.stupid.setupIsDirty=true;
 			}
 
 			public void onNothingSelected(AdapterView<?> parent) {
@@ -414,29 +468,29 @@ public class SetupActivity extends Activity implements Runnable{
     private void setupToggleSwitch()
     {
     	ToggleButton wlanSwitch = (ToggleButton) findViewById(R.id.toggleButtonWlan);
-    	wlanSwitch.setChecked(stupid.onlyWlan);
+    	wlanSwitch.setChecked(ctxt.stupid.onlyWlan);
 
     	wlanSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
     	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-    	    	stupid.setupIsDirty=true;
+    	    	ctxt.stupid.setupIsDirty=true;
     	        if (isChecked) {
-    	            stupid.onlyWlan = true;
+    	        	ctxt.stupid.onlyWlan = true;
     	        } else {
-    	        	stupid.onlyWlan = false;
+    	        	ctxt.stupid.onlyWlan = false;
     	        }
     	    }
     	});
     	
     	ToggleButton hideEmptyHoursSwitch = (ToggleButton) findViewById(R.id.toggleButtonHideEmptyHours);
-    	hideEmptyHoursSwitch.setChecked(stupid.hideEmptyHours);
+    	hideEmptyHoursSwitch.setChecked(ctxt.stupid.hideEmptyHours);
 
     	hideEmptyHoursSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
     	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-    	    	stupid.setupIsDirty=true;
+    	    	ctxt.stupid.setupIsDirty=true;
     	        if (isChecked) {
-    	            stupid.hideEmptyHours = true;
+    	        	ctxt.stupid.hideEmptyHours = true;
     	        } else {
-    	        	stupid.hideEmptyHours = false;
+    	        	ctxt.stupid.hideEmptyHours = false;
     	        }
     	    }
     	});
@@ -444,13 +498,13 @@ public class SetupActivity extends Activity implements Runnable{
 
 
 	public void run() {
-		handler.post(new Runnable(){
+		ctxt.handler.post(new Runnable(){
 
 			public void run() {
 		    	setupSpinnerElement();
 		        setupSpinnerType();
 		        setupSpinnerResyncAfter();
-		        stupid.progressDialog.dismiss();
+		        ctxt.stupid.progressDialog.dismiss();
 			}
 	        
 		});
@@ -470,15 +524,16 @@ public class SetupActivity extends Activity implements Runnable{
   	///	
   	/// 
   	/// 
-    public void executeWithDialog(Runnable run,String text)
+    public void executeWithDialog(AsyncTask<Boolean, Integer, Boolean> task,String text)
     {
-    	stupid.progressDialog =  new ProgressDialog(this);
-    	stupid.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-    	stupid.progressDialog.setMessage(text);
-    	stupid.progressDialog.setCancelable(true);
-    	stupid.progressDialog.setProgress(0);
-    	stupid.progressDialog.show();
-    	exec.submit(run);
+    	ctxt.stupid.progressDialog =  new ProgressDialog(this);
+    	ctxt.stupid.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+    	ctxt.stupid.progressDialog.setMessage(text);
+    	ctxt.stupid.progressDialog.setCancelable(false);
+    	ctxt.stupid.progressDialog.setProgress(0);
+    	ctxt.stupid.progressDialog.show();
+    	
+    	ctxt.executor.execute(task,false);
     }
     
     

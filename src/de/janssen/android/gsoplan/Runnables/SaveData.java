@@ -1,41 +1,39 @@
 package de.janssen.android.gsoplan.runnables;
 
 import java.io.File;
-import android.content.Context;
+
+import android.os.AsyncTask;
 import de.janssen.android.gsoplan.FileOPs;
 import de.janssen.android.gsoplan.WeekData;
 import de.janssen.android.gsoplan.Xml;
 
-public class SaveData implements Runnable{
-	private Context context;
+public class SaveData extends AsyncTask<Boolean, Integer, Boolean>{
 	private WeekData weekData;
 	private File dataFile;
 	public Exception exception;
 	
 	
-	public SaveData(Context context,WeekData weekData,File file)
+	public SaveData(WeekData weekData,File file)
 	{
-		this.context=context;
 		this.weekData=weekData;
 		this.dataFile=file;
 	}
 	
-	@Override
-	public void run() {
+	protected Boolean doInBackground(Boolean... bool) {
 		try
 		{
-			//den Index aktualisieren
-			//stupid.timeTableIndexer();
-			//int index = stupid.getIndexOfWeekData(stupid.currentDate);
-			//WeekData weekData = stupid.stupidData.get(index);
+			if (isCancelled()) 
+				return null;
+			
 			String xmlContent = Xml.convertWeekDataToXml(weekData, weekData.parent.progressDialog);
-			FileOPs.saveToFile(context,xmlContent,dataFile);
+			FileOPs.saveToFile(xmlContent,dataFile);
 			weekData.isDirty=false;
 		}
 		catch(Exception e)
 		{
 			exception = e;
 		}
+		return null;
 	}
 
 }

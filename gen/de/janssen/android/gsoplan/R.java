@@ -8,6 +8,9 @@
 package de.janssen.android.gsoplan;
 
 public final class R {
+    public static final class array {
+        public static final int TextSizes=0x7f0b0000;
+    }
     public static final class attr {
         /** <p>Must be a boolean value, either "<code>true</code>" or "<code>false</code>".
 <p>This may also be a reference to a resource (in the form
@@ -302,6 +305,12 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
         public static final int default_line_indicator_centered=0x7f060002;
         public static final int default_title_indicator_selected_bold=0x7f060003;
         public static final int default_underline_indicator_fades=0x7f060004;
+        /** Enable Activity tracking
+         */
+        public static final int ga_autoActivityTracking=0x7f060005;
+        /** Enable automatic exception tracking
+         */
+        public static final int ga_reportUncaughtExceptions=0x7f060006;
     }
     public static final class color {
         public static final int default_circle_indicator_fill_color=0x7f050008;
@@ -340,44 +349,51 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
         public static final int default_title_indicator_top_padding=0x7f08000c;
     }
     public static final class drawable {
-        public static final int ic_action_search=0x7f020000;
-        public static final int ic_launcher=0x7f020001;
-        public static final int vpi__tab_indicator=0x7f020002;
-        public static final int vpi__tab_selected_focused_holo=0x7f020003;
-        public static final int vpi__tab_selected_holo=0x7f020004;
-        public static final int vpi__tab_selected_pressed_holo=0x7f020005;
-        public static final int vpi__tab_unselected_focused_holo=0x7f020006;
-        public static final int vpi__tab_unselected_holo=0x7f020007;
-        public static final int vpi__tab_unselected_pressed_holo=0x7f020008;
+        public static final int cell_shape=0x7f020000;
+        public static final int ic_action_search=0x7f020001;
+        public static final int ic_launcher=0x7f020002;
+        public static final int vpi__tab_indicator=0x7f020003;
+        public static final int vpi__tab_selected_focused_holo=0x7f020004;
+        public static final int vpi__tab_selected_holo=0x7f020005;
+        public static final int vpi__tab_selected_pressed_holo=0x7f020006;
+        public static final int vpi__tab_unselected_focused_holo=0x7f020007;
+        public static final int vpi__tab_unselected_holo=0x7f020008;
+        public static final int vpi__tab_unselected_pressed_holo=0x7f020009;
     }
     public static final class id {
         public static final int bottom=0x7f040003;
         public static final int indicator=0x7f040005;
-        public static final int label=0x7f040014;
-        public static final int listTimetable=0x7f040012;
-        public static final int menu_gotoDate=0x7f040017;
-        public static final int menu_refresh=0x7f040019;
-        public static final int menu_save=0x7f040018;
-        public static final int menu_setup=0x7f040016;
-        public static final int menu_today=0x7f04001a;
+        public static final int label=0x7f040016;
+        public static final int listTimetable=0x7f040014;
+        public static final int menu_dayPlan=0x7f040020;
+        public static final int menu_gotoDate=0x7f04001c;
+        public static final int menu_refresh=0x7f04001d;
+        public static final int menu_settings=0x7f04001a;
+        public static final int menu_setup=0x7f04001b;
+        public static final int menu_today=0x7f04001e;
+        public static final int menu_weekPlan=0x7f04001f;
         public static final int none=0x7f040000;
         public static final int pager=0x7f040006;
-        public static final int readyButton=0x7f040011;
+        public static final int readyButton=0x7f040013;
+        public static final int spinnerDefaultAytivity=0x7f040012;
         public static final int spinnerElement=0x7f04000a;
         public static final int spinnerResyncAfter=0x7f04000e;
         public static final int spinnerType=0x7f040008;
-        public static final int syncTime=0x7f040013;
+        public static final int syncTime=0x7f040015;
         public static final int tableRow1=0x7f040007;
         public static final int tableRow2=0x7f040009;
         public static final int tableRow3=0x7f04000b;
         public static final int tableRow4=0x7f04000d;
         public static final int tableRow5=0x7f04000f;
-        public static final int text=0x7f040015;
+        public static final int tableRow6=0x7f040011;
+        public static final int text=0x7f040017;
+        public static final int textview=0x7f040018;
         public static final int toggleButtonHideEmptyHours=0x7f040010;
         public static final int toggleButtonWlan=0x7f04000c;
         public static final int top=0x7f040004;
         public static final int triangle=0x7f040001;
         public static final int underline=0x7f040002;
+        public static final int weekTimetable=0x7f040019;
     }
     public static final class integer {
         public static final int default_circle_indicator_orientation=0x7f070000;
@@ -387,48 +403,64 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
         public static final int default_underline_indicator_fade_length=0x7f070004;
     }
     public static final class layout {
-        public static final int activity_plan=0x7f030000;
-        public static final int activity_setup=0x7f030001;
-        public static final int daylayout=0x7f030002;
-        public static final int rowlayout=0x7f030003;
+        public static final int activity_main=0x7f030000;
+        public static final int activity_plan=0x7f030001;
+        public static final int activity_setup=0x7f030002;
+        public static final int activity_weekly_plan=0x7f030003;
+        public static final int daylayout=0x7f030004;
+        public static final int rowlayout=0x7f030005;
+        public static final int textview=0x7f030006;
+        public static final int weeklayout=0x7f030007;
     }
     public static final class menu {
-        public static final int activity_plan=0x7f0b0000;
-        public static final int activity_setup=0x7f0b0001;
+        public static final int activity_main=0x7f0c0000;
+        public static final int activity_plan=0x7f0c0001;
+        public static final int activity_setup=0x7f0c0002;
+        public static final int activity_week_plan=0x7f0c0003;
     }
     public static final class string {
-        public static final int app_name=0x7f0a0000;
-        public static final int menu_gotoDate=0x7f0a0005;
-        public static final int menu_refresh=0x7f0a0006;
-        public static final int menu_save=0x7f0a0004;
-        public static final int menu_setup=0x7f0a0001;
-        public static final int menu_today=0x7f0a0007;
-        public static final int msg_foreWeekNotAvailable=0x7f0a0009;
-        public static final int msg_loadingData=0x7f0a000f;
-        public static final int msg_nextWeekNotAvailable=0x7f0a000a;
-        public static final int msg_noWlan=0x7f0a0010;
-        public static final int msg_saving=0x7f0a0011;
-        public static final int msg_searchingNewDataLast=0x7f0a000e;
-        public static final int msg_searchingNewDataNext=0x7f0a000d;
-        public static final int msg_searchingNewDataNow=0x7f0a000c;
-        public static final int msg_searchingNewDataSelected=0x7f0a000b;
-        public static final int msg_start=0x7f0a0012;
+        public static final int app_name=0x7f0a0001;
+        /** tracking ID
+         */
+        public static final int ga_trackingId=0x7f0a0000;
+        public static final int hello_world=0x7f0a0022;
+        public static final int menu_dayPlan=0x7f0a000c;
+        public static final int menu_gotoDate=0x7f0a0008;
+        public static final int menu_refresh=0x7f0a0009;
+        public static final int menu_save=0x7f0a0007;
+        public static final int menu_settings=0x7f0a0023;
+        public static final int menu_setup=0x7f0a0002;
+        public static final int menu_today=0x7f0a000a;
+        public static final int menu_weekPlan=0x7f0a000b;
+        public static final int msg_foreWeekNotAvailable=0x7f0a000e;
+        public static final int msg_loadingData=0x7f0a0014;
+        public static final int msg_nextWeekNotAvailable=0x7f0a000f;
+        public static final int msg_noWlan=0x7f0a0015;
+        public static final int msg_saving=0x7f0a0016;
+        public static final int msg_searchingNewDataLast=0x7f0a0013;
+        public static final int msg_searchingNewDataNext=0x7f0a0012;
+        public static final int msg_searchingNewDataNow=0x7f0a0011;
+        public static final int msg_searchingNewDataSelected=0x7f0a0010;
+        public static final int msg_start=0x7f0a0017;
         /**  Meldungen 
          */
-        public static final int msg_weekNotAvailable=0x7f0a0008;
-        public static final int setup_message_dlElements_body=0x7f0a0019;
-        public static final int setup_message_dlElements_title=0x7f0a0018;
-        public static final int setup_message_error_dlElements_1=0x7f0a001a;
-        public static final int title_activity_plan=0x7f0a0003;
-        public static final int title_activity_setup=0x7f0a0002;
-        public static final int title_ask4net=0x7f0a001b;
-        public static final int title_daybegin=0x7f0a0017;
+        public static final int msg_weekNotAvailable=0x7f0a000d;
+        public static final int setup_message_dlElements_body=0x7f0a001e;
+        public static final int setup_message_dlElements_title=0x7f0a001d;
+        public static final int setup_message_error_dlElements_1=0x7f0a001f;
+        public static final int title_activity_main=0x7f0a0006;
+        public static final int title_activity_plan=0x7f0a0005;
+        public static final int title_activity_setup=0x7f0a0004;
+        public static final int title_activity_week_plan=0x7f0a0003;
+        public static final int title_ask4net=0x7f0a0020;
+        public static final int title_daybegin=0x7f0a001c;
+        public static final int title_default_activity=0x7f0a0021;
         /**  Setup Section 
          */
-        public static final int title_element=0x7f0a0013;
-        public static final int title_readyButton=0x7f0a0014;
-        public static final int title_resyncafter=0x7f0a0016;
-        public static final int title_type=0x7f0a0015;
+        public static final int title_element=0x7f0a0018;
+        public static final int title_readyButton=0x7f0a0019;
+        public static final int title_resyncafter=0x7f0a001b;
+        public static final int title_type=0x7f0a001a;
     }
     public static final class style {
         public static final int AppTheme=0x7f090005;

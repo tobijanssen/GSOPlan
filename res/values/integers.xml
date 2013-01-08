@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer-array
+        name="TextSizes">	
+        <item >12</item>	//Überschrift für die Wochenansicht
+    </integer-array>
+</resources>

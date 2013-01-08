@@ -1,38 +1,40 @@
 package de.janssen.android.gsoplan.runnables;
 
-import android.content.Context;
 import de.janssen.android.gsoplan.FileOPs;
-import de.janssen.android.gsoplan.StupidCore;
+import de.janssen.android.gsoplan.MyContext;
 import de.janssen.android.gsoplan.Xml;
 import java.io.File;
 
-public class SaveSetup implements Runnable{
-	private Context context;
-	private StupidCore stupid;
+import android.os.AsyncTask;
+
+public class SaveSetup extends AsyncTask<Boolean, Integer, Boolean>{
+	private MyContext ctxt;
 	private File setupFile;
 	public Exception exception;
 	
 	
-	public SaveSetup(Context context,StupidCore stupid,File setupFile)
+	public SaveSetup(MyContext ctxt,File setupFile)
 	{
-		this.context=context;
-		this.stupid=stupid;
+		this.ctxt=ctxt;
 		this.setupFile=setupFile;
 	}
 	
-	@Override
-	public void run() {
+	protected Boolean doInBackground(Boolean... bool) {
 		try
 		{
-			String xmlContent = Xml.convertSetupToXml(stupid,stupid.progressDialog);
-			FileOPs.saveToFile(context,xmlContent ,setupFile);
-	   		stupid.setupIsDirty=false;
-   			stupid.progressDialog.dismiss();
+			if (isCancelled())
+				return null;
+			
+			String xmlContent = Xml.convertSetupToXml(ctxt);
+			FileOPs.saveToFile(xmlContent ,setupFile);
+			ctxt.stupid.setupIsDirty=false;
+			ctxt.stupid.progressDialog.dismiss();
 		}
 		catch(Exception e)
 		{
 			this.exception = e;
 		}
+		return null;
 	}
 
 }

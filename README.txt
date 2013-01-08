@@ -1,11 +1,18 @@
-GSOPlan ist eine open-source App für Android unter der GNU GENERAL PUBLIC LICENSE Version 2 entwickelt von Tobias Janßen FST11, 2012.
+GSOPlan ist eine open-source App für Android unter der GNU GENERAL PUBLIC LICENSE Version 2 entwickelt von Tobias Janßen aus Köln, 2012/2013.
 
-Mit diesem Programm ist es möglich den Stundenplan des Georg-Simon-Ohm-Berufskolleg in Köln, der alternativ nur per Html zur Verfügung steht, auf das Smartphone zu laden und darzustellen.
+Mit dieser inoffiziellen App für das Georg-Simon-Ohm Berufskolleg in Köln, hast du den Stundenplan deines Berufkollegs immer und überall dabei. Die Stundenplan-Daten werden auf deinem Smartphone gespeichert. Um einen Blick in den Stundenplan zu werfen, brauchst du also nicht immer eine Internetverbindung.
+Änderungen des normalen Stundenplans werden, wie von der offiziellen GSO-Webseite gewohnt, in Rot dargestellt.
+
 Außerdem werden bestehende Daten gespeichert, so dass nicht immer eine Internetverbindung bestehen muss.
 
-GSOPlan befindet sich derzeit im Beta Status, daher kann es zu Fehlverhalten und Falschinformation führen.
-Für jegliche Fehlfunktion wird keine Haftung übernommen! 
-Nur der Stundenplan auf der GSO-Webseite zählt!
+
+GSOPlan ist auch über den Play Store von Google erhältlich:
+	https://play.google.com/store/apps/details?id=de.janssen.android.gsoplan
+
+
+Haftungsausschluss:
+Hiermit weise ich ausdrücklich darauf hin, dass es sich bei GSOPlan um keine offizielle Software des Georg-Simon-Ohm-Berufskollegs handelt!
+Es ist möglich, dass die App falsche oder veraltete Informationen anzeigt. Der verbindliche Stundenplan ist ausschließlich der GSO-Webseite zu entnehmen. Für jegliche Fehlfunktion wird keine Haftung übernommen.
 
 Bei Problemen/Bugs,oder Anregungen bitte die Issues-Funktion auf https://github.com/tobijanssen/GSOPlan/issues benutzen. 
 

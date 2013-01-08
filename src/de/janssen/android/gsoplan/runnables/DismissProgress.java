@@ -1,8 +1,9 @@
 package de.janssen.android.gsoplan.runnables;
 
+import android.os.AsyncTask;
 import de.janssen.android.gsoplan.StupidCore;
 
-public class DismissProgress implements Runnable {
+public class DismissProgress extends AsyncTask<Boolean, Integer, Boolean> {
 	
 	private StupidCore stupid;
 	
@@ -11,10 +12,10 @@ public class DismissProgress implements Runnable {
 		this.stupid=stupid;
 	}
 	
-	@Override
-	public void run() {
+	protected Boolean doInBackground(Boolean... bool) {
 		if(stupid.progressDialog != null && stupid.progressDialog.isShowing())
 			stupid.progressDialog.dismiss();
+		return null;
 		
 	}
 }

@@ -1,64 +1,105 @@
 package de.janssen.android.gsoplan.runnables;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+import android.os.AsyncTask;
 import android.widget.Toast;
 import de.janssen.android.gsoplan.DownloadFeedback;
-import de.janssen.android.gsoplan.PlanActivity;
+import de.janssen.android.gsoplan.MyContext;
 import de.janssen.android.gsoplan.R;
 import de.janssen.android.gsoplan.Tools;
 
-public class MainDownloader implements Runnable{
+public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
+{
 	private final int BOTH=0;
 	private final int ONLYTIMETABLE=1;
 	private final int ONLYSELECTORS=2;
-	private PlanActivity parent;
+	private MyContext ctxt;
 	private String errorMessage;
 	private Calendar requestedDate;
+	private Runnable postExec;
+	private Boolean forcePageTurn;
+	
 
 	
-	public MainDownloader(PlanActivity parent,String errorMessage,Calendar requestedDate)
+	public MainDownloader(MyContext ctxt,String errorMessage,Calendar requestedDate, Runnable postExec,Boolean forcePageTurn)
 	{
-		this.parent=parent;
+		this.ctxt=ctxt;
 		this.errorMessage=errorMessage;
 		this.requestedDate=requestedDate;
+		this.postExec=postExec;
+		this.forcePageTurn=forcePageTurn;
+		
+	}
+	public MainDownloader(MyContext ctxt,String errorMessage,Calendar requestedDate,Boolean forcePageTurn)
+	{
+		this.ctxt=ctxt;
+		this.errorMessage=errorMessage;
+		this.requestedDate=requestedDate;
+		this.forcePageTurn=forcePageTurn;
 	}
 	
-	@Override
-	public void run() {
+	
+	protected Boolean doInBackground(Boolean... bool) {
 		
 		//Erst die Ressourcen Auffrischen
 		//Dazu die Selectoren downloaden(quasi prüfen, ob neue Wochen verfügbar sind)
 		try
 		{
+			if (isCancelled()) 
+				return bool[0];
 			downloader(ONLYSELECTORS);
 		}
 		catch (Exception e)
 		{
 			
-			parent.handler.post(new ErrorMessage(parent,e.getMessage()));
-			return;
+			ctxt.handler.post(new ErrorMessage(ctxt,e.getMessage()));
+			return bool[0];
 		}
 		
-		int reqWeekOfYear=parent.stupid.getWeekOfYear(requestedDate);
+		int reqWeekOfYear=ctxt.stupid.getWeekOfYear(requestedDate);
 		//Erstmal davon ausgehen, dass der TimeTable nicht verfügbar ist
 		int isOnlineAvailableIndex=-1;
 		//die neue Liste der verügbaren Wochen durchgehen
-    	for(int i=0;i<parent.stupid.weekList.length && isOnlineAvailableIndex == -1 ;i++)
+    	for(int i=0;i<ctxt.stupid.weekList.length && isOnlineAvailableIndex == -1 ;i++)
     	{
     		//und prüfen, ob die gesuchte Woche dabei ist
-    		if(reqWeekOfYear == Integer.decode(parent.stupid.weekList[i].index))
-    			isOnlineAvailableIndex=i;
+    		if(reqWeekOfYear == Integer.decode(ctxt.stupid.weekList[i].index))
+    		{
+    			//Woche ist vorhanden
+    			//ist das Jahr auch gleich?
+    			//Dazu muss die Description geparsed werden
+    			
+    			try
+    			{
+    				DateFormat dateFormat =  new SimpleDateFormat ("dd.MM.yyyy");
+    				Date date = dateFormat.parse(ctxt.stupid.weekList[i].description);
+	    			Calendar cal = new GregorianCalendar();
+	    			cal.setTimeInMillis(date.getTime());
+	    			if(requestedDate.get(Calendar.YEAR) == cal.get(Calendar.YEAR))
+	    				isOnlineAvailableIndex=i;
+    			}
+    			catch (Exception e)
+    			{
+    				//Datum konnte nicht geparsed werden
+    			}
+    			
+    		}
     	}
     	//wenn diese online verfügbar ist
     	if(isOnlineAvailableIndex!=-1)
     	{
     		//Prüfen, ob eine verbindung aufgebaut werden darf
     		Boolean connectionAllowed=false;
-    		if(parent.stupid.onlyWlan)
+    		if(ctxt.stupid.onlyWlan)
             {
     			//es darf nur über wlan eine Verbindung hergestellt werden
     			//prüfen, ob so eine Verbindung besteht
-             	if(Tools.isWifiConnected(parent))
+             	if(Tools.isWifiConnected(ctxt.context))
              	{
              		//es besteht verbindung
              		connectionAllowed=true;
@@ -66,7 +107,7 @@ public class MainDownloader implements Runnable{
              	else
                 {
              		//Keine Verbindung einen kleinen Hinweis ausgeben, dass keine Verbindung besteht
-             		parent.handler.post(new Toaster(parent,parent.getString(R.string.msg_noWlan),Toast.LENGTH_SHORT));
+             		ctxt.handler.post(new Toaster(ctxt,ctxt.activity.getString(R.string.msg_noWlan),Toast.LENGTH_SHORT));
                 }
             }
             else
@@ -78,60 +119,72 @@ public class MainDownloader implements Runnable{
     		//nun prüfen, ob die verbindung hergestellt werden darf
     		if(connectionAllowed)
     		{
+    			if (isCancelled()) 
+    				return bool[0];
     			DownloadFeedback downloadFeedback = new DownloadFeedback(-1,DownloadFeedback.NO_REFRESH);
     			try
         		{
         			//Jetzt den Stundplan mit der gesuchten Wochennummer downloaden
     				downloadFeedback=downloader(isOnlineAvailableIndex,ONLYTIMETABLE);
-    			
+    				if (isCancelled()) 
+    					return bool[0];
+    				//prüfen ob ein pageturn gemacht werden soll
+    				if(this.forcePageTurn)
+    				{
+	    				Calendar now = new GregorianCalendar();
+	    				if(ctxt.stupid.currentDate.get(Calendar.DAY_OF_YEAR) != now.get(Calendar.DAY_OF_YEAR))
+	    					ctxt.stupid.currentDate=(Calendar) this.requestedDate.clone();
+    				}
 	    		}
 	    		catch (Exception e)
 	    		{
 	    			//parent.disablePagerOnChangedListener=false;
-	    			parent.handler.post(new ErrorMessage(parent,e.getMessage()));
-	    			return;
+	    			ctxt.handler.post(new ErrorMessage(ctxt,e.getMessage()));
+	    			return bool[0];
 	    		}
         		
         		try
         		{
         			//den Index neu erstellen lassen
-        			parent.stupid.timeTableIndexer();
+        			ctxt.stupid.timeTableIndexer();
         		}
         		catch(Exception e)
         		{
         			//Keine Klasse ausgewählt!       
-        			parent.gotoSetup();
-        			return;
+        			Tools.gotoSetup(ctxt);
+        			return bool[0];
         		}
         		
-        		parent.handler.post(new UpdateTimeTableList(parent, downloadFeedback));
+        		ctxt.handler.post(new UpdateTimeTableList(ctxt, downloadFeedback));
     		}
 
 
     	}
     	else
     	{
-    		parent.stupid.progressDialog.dismiss();
+    		if(ctxt.stupid.progressDialog != null)
+    			ctxt.stupid.progressDialog.dismiss();
     		
-    		if(parent.stupid.onlyWlan)
+    		if(ctxt.stupid.onlyWlan)
             {
-             	if(Tools.isWifiConnected(parent))
+             	if(Tools.isWifiConnected(ctxt.context))
              	{
-             		parent.handler.post(new Toaster(parent,this.errorMessage, Toast.LENGTH_LONG));
+             		ctxt.handler.post(new Toaster(ctxt,this.errorMessage, Toast.LENGTH_SHORT));
              	}
              	else
                 {
-             		parent.handler.post(new Toaster(parent,parent.getString(R.string.msg_noWlan), Toast.LENGTH_LONG));
+             		ctxt.handler.post(new Toaster(ctxt,ctxt.activity.getString(R.string.msg_noWlan), Toast.LENGTH_SHORT));
                 }
             }
             else
          	{
-            	parent.handler.post(new Toaster(parent,this.errorMessage, Toast.LENGTH_LONG));
+            	ctxt.handler.post(new Toaster(ctxt,this.errorMessage, Toast.LENGTH_SHORT));
          	}
     		
     			
     		
     	}
+		return bool[0];
     	
 	}
 	
@@ -145,9 +198,9 @@ public class MainDownloader implements Runnable{
     	try
     	{
     		Boolean connectionAllowed=false;
-    		if(parent.stupid.onlyWlan)
+    		if(ctxt.stupid.onlyWlan)
             {
-             	if(Tools.isWifiConnected(parent))
+             	if(Tools.isWifiConnected(ctxt.context))
              	{
              		connectionAllowed=true;
              	}
@@ -169,22 +222,23 @@ public class MainDownloader implements Runnable{
 	    		switch(params)
 	    		{
 	    			case BOTH:
-	    				parent.stupid.progressDialog.setMax(80000);
-	    				parent.stupid.fetchSelectorsFromNet();
-	    				parent.stupid.progressDialog.setProgress(15000);
-	    				downloadFeedback = parent.stupid.fetchTimeTableFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index );
-	    				parent.stupid.progressDialog.setProgress(80000);
-	    				parent.handler.post(new UpdateTimeTableList(parent,downloadFeedback));
+	    				ctxt.stupid.progressDialog.setMax(80000);
+	    				ctxt.stupid.fetchSelectorsFromNet();
+	    				ctxt.stupid.progressDialog.setProgress(15000);
+	    				downloadFeedback = ctxt.stupid.fetchTimeTableFromNet(ctxt.stupid.weekList[weekIndex].description, ctxt.stupid.myElement, ctxt.stupid.typeList[ctxt.stupid.myType].index );
+	    				ctxt.stupid.progressDialog.setProgress(80000);
+	    				ctxt.handler.post(new UpdateTimeTableList(ctxt,downloadFeedback));
 	    				return downloadFeedback;
 	    			case ONLYTIMETABLE:
-	    				parent.stupid.progressDialog.setMax(65000);
-	    				downloadFeedback = parent.stupid.fetchTimeTableFromNet(parent.stupid.weekList[weekIndex].description, parent.stupid.myElement, parent.stupid.typeList[parent.stupid.myType].index);
-	    				parent.stupid.progressDialog.setProgress(65000);
+	    				int prgsLength = calculateProgress();
+	    				ctxt.stupid.progressDialog.setMax(prgsLength);
+	    				downloadFeedback = ctxt.stupid.fetchTimeTableFromNet(ctxt.stupid.weekList[weekIndex].description, ctxt.stupid.myElement, ctxt.stupid.typeList[ctxt.stupid.myType].index);
+	    				ctxt.stupid.progressDialog.setProgress(prgsLength);
 	    				return downloadFeedback;
 	    			case ONLYSELECTORS:
-	    				parent.stupid.progressDialog.setMax(15000);
-	    				parent.stupid.fetchSelectorsFromNet();
-	    				parent.stupid.progressDialog.setProgress(15000);
+	    				ctxt.stupid.progressDialog.setMax(15000);
+	    				ctxt.stupid.fetchSelectorsFromNet();
+	    				ctxt.stupid.progressDialog.setProgress(15000);
 	    				return new DownloadFeedback(-1,DownloadFeedback.NO_REFRESH);
 	    		}
 	    	}
@@ -194,6 +248,28 @@ public class MainDownloader implements Runnable{
     	{
     		throw e;			
 		}
+    }
+	
+	private int calculateProgress()
+	{
+		int result=0;
+		result+=12585; //ca. für readhtml. kann nur ca angegeben werden, da nicht berechenbar müsste aber immer ungefähr gleichbleiben
+		result+=46700; //ca. für xmltoArray. ebenfalls unbekannt müsste aber immer ungefähr gleichbleiben
+		result+=2000;	//ca. für convertXMLTableToWeekData
+		result+=1000;	//ca. für conerttoMultiDim
+		result+=100*ctxt.stupid.stupidData.size();
+		result+=500;
+		return result;
+	}
+	
+	
+	protected void onProgressUpdate(Integer... progress) {
+        //setProgressPercent(progress[0]);
+    }
+
+    protected void onPostExecute(Boolean bool) {
+    	if(this.postExec != null && bool)
+    		postExec.run();
     }
 	
 }

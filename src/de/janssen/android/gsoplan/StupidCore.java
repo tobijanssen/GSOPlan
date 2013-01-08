@@ -6,6 +6,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import de.janssen.android.gsoplan.runnables.MainDownloader;
+import de.janssen.android.gsoplan.runnables.RefreshPager;
 import android.app.ProgressDialog;
 import android.graphics.Point;
 
@@ -101,6 +103,138 @@ public class StupidCore {
 		
 		return weekData;
 	}
+
+	
+	/// Datum: 30.08.12
+	/// Autor: Tobias Janßen
+	///
+	///	Beschreibung:
+	///	Konvertiert ein Html Table Tag zu einem mehrdimensionalen Array und steuert einen progress dialog an
+	///	
+	///
+	///	Parameter:
+	///	
+	/// 
+	/// 
+	private WeekData convertXmlTableToWeekData(XmlTag htmlTableTag,ProgressDialog pd)
+	{
+		WeekData weekData = new WeekData(this);
+		weekData.setSyncDate();
+		weekData.timetable = new XmlTag[0][0]; 
+		// die tr heraussuchen:
+		// TODO:hier muss eine andere form des crawlers her, der nicht tiefer
+		// als x suchen soll
+		XmlTag tr = htmlTableTag.tagCrawlerFindFirstEntryOf(htmlTableTag, Xml.TR, new XmlTag());
+		// TODO: Abfangen wenn nichts gefunden wurde!
+
+		// TODO:das hier ist noch nicht optimal:
+		int rows = tr.parentTag.childTags.length;
+		int cols = 0;
+		Boolean colSpanFound = false;
+		// jedes td prüfen:
+		for (int i = 0; i < tr.childTags.length; i++) 
+		{
+			pd.incrementProgressBy(50);
+			// auf parameter prüfen
+			if (tr.childTags[i].parameters.length > 0) 
+			{
+				colSpanFound = false;
+				// jeden parameter überprüfen:
+				for (int parIndex = 0; parIndex < tr.childTags[i].parameters.length; parIndex++) 
+				{
+					if (tr.childTags[i].parameters[parIndex].name.equalsIgnoreCase("colspan")) 
+					{
+						String value = tr.childTags[i].parameters[parIndex].value;
+						int num = java.lang.Integer.parseInt(value);
+						cols += num;
+						colSpanFound = true;
+					}
+				}
+				if (!colSpanFound) 
+				{
+					cols++;
+				}
+			} 
+			else 
+			{
+				// kein colspan vorhanden, daher nur eine col dazuzählen:
+				cols++;
+			}
+			
+			
+				
+		}
+		weekData.timetable = new XmlTag[rows][cols];
+		
+		//die tabelle erstellen
+		for(int y = 0; y < tr.parentTag.childTags.length; y++)
+		{
+			pd.incrementProgressBy(50);
+			
+			XmlTag[] td = tr.parentTag.childTags[y].childTags;
+
+			Point insertPoint;
+			//jedes td prüfen:
+			for(int i=0; i < td.length; i++)
+			{				
+				insertPoint = getLastFreePosition(weekData);
+				//auf parameter prüfen
+				if(td[i].parameters.length >0)
+				{
+					int colspan = 0;
+					int rowspan = 0;
+					//jeden parameter überprüfen:
+					for(int parIndex=0;parIndex < td[i].parameters.length;parIndex++)
+					{
+						if(td[i].parameters[parIndex].name.equalsIgnoreCase("colspan"))
+						{
+							String value = td[i].parameters[parIndex].value;
+							colspan = java.lang.Integer.parseInt(value);
+						}
+						if( td[i].parameters[parIndex].name.equalsIgnoreCase("rowspan"))
+						{
+							String value = td[i].parameters[parIndex].value;
+							rowspan = Integer.parseInt(value);
+						}
+					}
+					
+					if(rowspan > 0 || colspan > 0)
+					{
+						int col = 0;
+						do
+						{
+							insertPoint = getLastFreePosition(weekData);
+							if(rowspan > 0)
+							{
+								for(int row = 0;row<rowspan;row++)
+								{
+									weekData.timetable[insertPoint.y+row][insertPoint.x]=td[i];
+								}
+							}
+							else
+							{	
+								weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
+							}
+							col++;
+						}
+						while(col<colspan);
+					}
+					else
+					{
+						weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
+					}
+				}
+				else
+				{
+					weekData.timetable[insertPoint.y][insertPoint.x]=td[i];
+				}
+					
+			}
+		}
+		
+		return weekData;
+	}
+	
 	
 	/// Datum: 30.08.12
 	/// Autor: Tobias Janßen
@@ -117,7 +251,6 @@ public class StupidCore {
 	{
 		// Größe des benötigten Arrays muss kalkuliert werden
 		WeekData weekData = new WeekData(this);
-		//TODO: sycnDate darf nur bei HTML gesetzt werden!!!
 		weekData.setSyncDate();
 		weekData.timetable = new XmlTag[0][0]; 
 		// die tr heraussuchen:
@@ -324,7 +457,7 @@ public class StupidCore {
 	// /
 	// /
 	// /
-	public void fetchSetupFromXml(Xml xml) throws Exception 
+	public void fetchSetupFromXml(Xml xml, MyContext ctxt) throws Exception 
 	{
 		XmlTag[] tagArray = Xml.xmlToArray(xml);
 		XmlTag parent = new XmlTag();
@@ -340,6 +473,20 @@ public class StupidCore {
 		XmlTag onlyWlan = parent.tagCrawlerFindFirstOf(parent, new XmlTag(Xml.onlyWlan), new XmlTag());
 		XmlTag resyncAfter = parent.tagCrawlerFindFirstOf(parent, new XmlTag(Xml.resyncAfter), new XmlTag());
 		XmlTag hideEmptyHours = parent.tagCrawlerFindFirstOf(parent, new XmlTag(Xml.hideEmptyHours), new XmlTag());
+		XmlTag defaultActivity = parent.tagCrawlerFindFirstOf(parent, new XmlTag(Xml.defaultActivity), new XmlTag());
+		
+		if(defaultActivity.dataContent != null)
+		{
+			if(defaultActivity.dataContent.equalsIgnoreCase(PlanActivity.class.toString()))
+				ctxt.defaultActivity=PlanActivity.class;
+			else if(defaultActivity.dataContent.equalsIgnoreCase(WeekPlanActivity.class.toString()))
+				ctxt.defaultActivity=WeekPlanActivity.class;
+		}
+		else
+		{
+			ctxt.defaultActivity=PlanActivity.class;
+		}
+		
 		
 		if(hideEmptyHours.dataContent != null)
 		{
@@ -521,10 +668,9 @@ public class StupidCore {
         
         //den XmlTimeTable in das WeekData format wandeln:
         WeekData weekData = new WeekData(this);
-        weekData = convertXmlTableToWeekData(xmlTimeTable);		//Konvertiert den angegebenen XmlTable in das WeekData-format.
-        this.progressDialog.setProgress(this.progressDialog.getProgress()+1000);
+        weekData = convertXmlTableToWeekData(xmlTimeTable,this.progressDialog);		//Konvertiert den angegebenen XmlTable in das WeekData-format.
         weekData = collapseWeekDataMultiDim(weekData);			//reduziert den Inhalt des WeekData.timetable auf den Kern, es werden doppelt einträe entfernt und leere spalten und zeilen herausgefiltert
-        
+        this.progressDialog.incrementProgressBy(1000);
         //Die aktuelle Zeit als SyncTime festhalten
         weekData.setSyncDate();
         
@@ -553,19 +699,19 @@ public class StupidCore {
         weekData.addParameter("weekId", selectedDateIndex);
         weekData.typeId = selectedType;
         weekData.addParameter("typeId", selectedType);
-        this.progressDialog.setProgress(this.progressDialog.getProgress()+1000);
+        
         
         //prüfen, ob bereits die Woche für die Klasse un den typ vorliegt:
 
         long existSyncTime=0;
-        WeekData exitWeekData= new WeekData(this);
+        WeekData existWeekData= new WeekData(this);
         //alle bestehden Daten abrufen:
         for(int y =0;y<this.stupidData.size();y++)
         {
-        	this.progressDialog.setProgress(this.progressDialog.getProgress()+50);
-        	exitWeekData=this.stupidData.get(y);
+        	this.progressDialog.incrementProgressBy(100);
+        	existWeekData=this.stupidData.get(y);
         	//prüfen, ob das bestehende Element, dem neu hinzuzufügenden entspricht(klasse,KW,Typ)
-        	if(exitWeekData.elementId.equalsIgnoreCase(shownElement)&& exitWeekData.weekId.equalsIgnoreCase(selectedDateIndex)&& exitWeekData.typeId.equalsIgnoreCase(selectedType))
+        	if(existWeekData.elementId.equalsIgnoreCase(shownElement)&& existWeekData.weekId.equalsIgnoreCase(selectedDateIndex)&& existWeekData.typeId.equalsIgnoreCase(selectedType))
         	{
         		//ja,es ist eine gleiche Woche bereits vorhanden
        			//prüfen, ob die alte syncTime älter ist als die neue
@@ -580,14 +726,12 @@ public class StupidCore {
         weekData.isDirty=true;
        	this.stupidData.add(weekData);	//fügt die geparste Woche den Hauptdaten hinzu
        	sort();
+       	this.progressDialog.incrementProgressBy(100);
        	for(int y =0;y<this.stupidData.size() && dataIndex == -1;y++)
        	{
        		if(this.stupidData.get(y).equals(weekData))
        			dataIndex=y;
        	}
-       	
-       	this.progressDialog.setProgress(this.progressDialog.getProgress()+1000);
-
        	return new DownloadFeedback(dataIndex,DownloadFeedback.NO_REFRESH);
         
 	}
@@ -832,6 +976,8 @@ public class StupidCore {
 		return weekOfYear;
 	}
 	
+
+	
 	/// Datum: 19.09.12
 	/// Autor: Tobias Janßen
 	///
@@ -1030,9 +1176,10 @@ public class StupidCore {
 	}
 	
 	/*	11.10.12
+	 * 	überarbeitet 11.12.12
 	 * 	Tobias Janssen
 	 * 
-	 * 	Sortiert die Daten nach Wochennummer
+	 * 	Sortiert die Daten nach Wochennummer und Jahren
 	 * 
 	 * 
 	 * 
@@ -1042,8 +1189,8 @@ public class StupidCore {
 		List <WeekData> newList = new ArrayList<WeekData>();
 		int currentObj = this.stupidData.size()-1;
 		int nextObj=currentObj-1;
-		int weekIdCurrent;
-		int weekIdNext;		
+		int yearWeekIdCurrent;
+		int yearWeekIdNext;		
 		while(this.stupidData.size() != 0)
 		{
 			//prüfen, ob es ein nächstes Objekt überhaupt noch gibt
@@ -1051,57 +1198,59 @@ public class StupidCore {
 			currentObj=this.stupidData.size()-1;
 			nextObj=this.stupidData.size()-2;
 
-				for(int i=nextObj;i>=0;i--)
+			for(int i=nextObj;i>=0;i--)
+			{
+				if(this.stupidData.size()==1)
 				{
-					if(this.stupidData.size()==1)
-					{
-						nextObj=-1;
-					}
-					else
-					{
-						//pürfen, ob das nextObj größer ist als das aktuelle
-						weekIdCurrent =Integer.decode(this.stupidData.get(currentObj).weekId);
-						weekIdNext=Integer.decode(this.stupidData.get(i).weekId);
-						if(weekIdNext > weekIdCurrent)
-						{
-							//das nextObj ist größer, daher wird der zeiger nun einen niedriger gesetzt
-							nextObj=i;
-						}
-						else
-						{
-							//das nextObj ist kleiner, daher nehmen wir nun das Object als current
-							currentObj=i;
-						}
-					}
-				}
-
-				//liste ist durch, ablegen
-				weekIdCurrent =Integer.decode(this.stupidData.get(currentObj).weekId);
-				if(nextObj != -1)
-				{
-					weekIdNext=Integer.decode(this.stupidData.get(nextObj).weekId);
-					if(weekIdNext > weekIdCurrent)
-					{
-						//das nextObj ist größer, daher wird erst das currentObject abgelegt
-						newList.add(this.stupidData.get(currentObj));
-						this.stupidData.remove(currentObj);
-
-						
-					}
-					else
-					{
-						//das nextObj ist kleiner, daher wird erst das nextObj abgelegt
-						newList.add(this.stupidData.get(nextObj));
-						this.stupidData.remove(nextObj);
-					}
+					nextObj=-1;
 				}
 				else
 				{
+					//pürfen, ob das nextObj größer ist als das aktuelle
+					yearWeekIdCurrent = Tools.calcIntYearDay(this.stupidData.get(currentObj).date);
+					
+					yearWeekIdNext=Tools.calcIntYearDay(this.stupidData.get(i).date); //Integer.decode(this.stupidData.get(i).weekId);
+					if(yearWeekIdNext > yearWeekIdCurrent)
+					{
+						//das nextObj ist größer, daher wird der zeiger nun einen niedriger gesetzt
+						nextObj=i;
+					}
+					else
+					{
+						//das nextObj ist kleiner, daher nehmen wir nun das Object als current
+						currentObj=i;
+					}
+				}
+			}
+
+			//liste ist durch, ablegen
+			yearWeekIdCurrent = Tools.calcIntYearDay(this.stupidData.get(currentObj).date);
+			//yearWeekIdCurrent =Integer.decode(this.stupidData.get(currentObj).weekId);
+			if(nextObj != -1)
+			{
+				//yearWeekIdNext=Integer.decode(this.stupidData.get(nextObj).weekId);
+				yearWeekIdNext=Tools.calcIntYearDay(this.stupidData.get(nextObj).date);
+				if(yearWeekIdNext > yearWeekIdCurrent)
+				{
+					//das nextObj ist größer, daher wird erst das currentObject abgelegt
 					newList.add(this.stupidData.get(currentObj));
 					this.stupidData.remove(currentObj);
+						
 				}
-				
+				else
+				{
+					//das nextObj ist kleiner, daher wird erst das nextObj abgelegt
+					newList.add(this.stupidData.get(nextObj));
+					this.stupidData.remove(nextObj);
+				}
 			}
+			else
+			{
+				newList.add(this.stupidData.get(currentObj));
+				this.stupidData.remove(currentObj);
+			}
+			
+		}
 
 		this.stupidData = newList;
 		
@@ -1193,5 +1342,134 @@ public class StupidCore {
 			}
 		}
 	}
+	
+	/*	5.10.12
+     * 	Tobias Janssen
+     * 
+     * 	Prüft, ob die eingestellte Woche(laut stupid.currentDate) bereits verfügbar ist 
+     * 	unternimmt weitere Maßnahmen, wenn nicht, oder veraltet
+     * 
+     */
+    public void checkAvailibilityOfWeek(MyContext ctxt, Boolean forceRefresh, int weekOffset)
+    {
+    	//eine Übersicht erstellen, welche Daten für die aktuelle Klasse überhaupt vorliegen
+    	try
+    	{
+    		timeTableIndexer();
+    	}
+    	catch(Exception e)
+    	{
+    		//Keine Klasse ausgewählt!
+    		//disablePagerOnChangedListener=false;
+    		Tools.gotoSetup(ctxt);
+    	}
+    	
+    	//Fehlermeldungen für den Fehlerfall einstellen und den weekOffset ggfl anpassen
+    	String notAvail ="";
+    	String loading="";
+    	String refreshing="";
+    	Boolean smoothScroll=false;
+    	switch(weekOffset)
+    	{
+	    	case Const.SELECTEDWEEK:
+				notAvail = ctxt.context.getString(R.string.msg_weekNotAvailable);
+				loading =  ctxt.context.getString(R.string.msg_loadingData);
+				refreshing =  ctxt.context.getString(R.string.msg_searchingNewDataSelected);
+				smoothScroll=true;
+				weekOffset=Const.THISWEEK;
+				break;
+    		case Const.NEXTWEEK:
+    			notAvail = ctxt.context.getString(R.string.msg_nextWeekNotAvailable);
+    			loading =  ctxt.context.getString(R.string.msg_loadingData);
+    			refreshing =  ctxt.context.getString(R.string.msg_searchingNewDataNext);
+    			break;
+    		case Const.LASTWEEK:
+    			notAvail = ctxt.context.getString(R.string.msg_foreWeekNotAvailable);
+    			loading =  ctxt.context.getString(R.string.msg_loadingData);
+    			refreshing =  ctxt.context.getString(R.string.msg_searchingNewDataLast);
+    			break;
+    		case Const.THISWEEK:
+    		default:
+    			notAvail = ctxt.context.getString(R.string.msg_weekNotAvailable);
+    			loading =  ctxt.context.getString(R.string.msg_loadingData);
+    			refreshing =  ctxt.context.getString(R.string.msg_searchingNewDataNow);
+    			break;
+    	}
+    	
+    	
+    	Calendar requestedWeek = (Calendar) ctxt.stupid.currentDate.clone();
+    	requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()+(86400000*7*weekOffset));//den weekOffset umsetzen
+    	
+    	int currentDay = requestedWeek.get(Calendar.DAY_OF_WEEK);
+    	if(currentDay != 2)
+    	{
+    		if(currentDay > 2)
+    			requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()-(86400000*(currentDay-2)));
+    		else if(currentDay < 2)
+    			requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()+(86400000*(2-currentDay)));
+     	}
+    	
+    	
+    	
+        //aus dieser Liste mithilfer der selektierten KalenderWoche den richtigen Index heraussuchen
+    	ctxt.weekDataIndexToShow = ctxt.stupid.getIndexOfWeekData(requestedWeek);
+        //prüfen, ob diese Woche bereits im Datenbestand ist
+        if(ctxt.weekDataIndexToShow ==-1)
+        {
+         	//Woche ist nicht lokal verfügbar       	
+        	//Downloader starten, dieser prüft, ob diese Woche erhältlich ist und unternimmt alle weitern Maßnahmen
+        	Tools.executeWithDialog(ctxt, new MainDownloader(ctxt,notAvail,requestedWeek,!forceRefresh),loading,ProgressDialog.STYLE_HORIZONTAL);
+        }
+        if(ctxt.weekDataIndexToShow !=-1)
+        {
+        	//Woche ist im Datenbestand vorhanden
+            //Nun prüfen, wie alt diese Daten sind:
+        	int dateCode = Tools.calcIntYearDay(requestedWeek);
+        	Calendar now = new GregorianCalendar();
+        	//den now kalender ebenfalls auf montag setzten
+        	currentDay = now.get(Calendar.DAY_OF_WEEK);
+        	if(currentDay != 2)
+        	{
+        		if(currentDay > 2)
+        			now.setTimeInMillis(now.getTimeInMillis()-(86400000*(currentDay-2)));
+        		else if(currentDay < 2)
+        			now.setTimeInMillis(now.getTimeInMillis()+(86400000*(2-currentDay)));
+         	}
+        	
+        	
+        	int nowCode = Tools.calcIntYearDay(now);
+        	if(dateCode < nowCode && !forceRefresh )
+        	{
+        		//diese Woche liegt bereits in der vergangenheit und muss nicht aktualisiert werden
+        		ctxt.handler.post(new RefreshPager(ctxt,smoothScroll));
+        	}
+        	else
+        	{
+	            Date date = new Date();
+	        	if(ctxt.stupid.myTimetables[ctxt.weekDataIndexToShow].syncTime + (ctxt.stupid.myResyncAfter*60*1000) < date.getTime() || forceRefresh)	
+	        	{
+	        		//veraltet neu herunterladen
+	        		Tools.executeWithDialog(ctxt,new MainDownloader(ctxt,notAvail,requestedWeek,!forceRefresh),refreshing,ProgressDialog.STYLE_HORIZONTAL);
+	        	}
+	        	else
+	        	{
+	        		ctxt.handler.post(new RefreshPager(ctxt,smoothScroll));
+	        	}
+        	}
+        }
+               
+    }
+    
+    /*	5.10.12
+     * 	Tobias Janssen
+     * 
+     * 	Prüft, ob die eingestellte Woche(laut stupid.currentDate) bereits verfügbar ist 
+     * 	unternimmt weitere Maßnahmen, wenn nicht, oder veraltet
+     * 
+     */
+    public void checkAvailibilityOfWeek(MyContext ctxt, int weekModificator)
+    {
+    	checkAvailibilityOfWeek(ctxt, false,weekModificator);
+    }
 	
 }

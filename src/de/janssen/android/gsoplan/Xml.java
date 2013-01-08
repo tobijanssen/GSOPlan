@@ -23,6 +23,7 @@ public class Xml
 	public static final String onlyWlan="onlyWlan";
 	public static final String resyncAfter="resyncAfter";
 	public static final String hideEmptyHours="hideEmptyHours";
+	public static final String defaultActivity="defaultActivity";
 	
     public static final String OPTION = "option";
     public static final String TR = "tr";
@@ -40,38 +41,39 @@ public class Xml
 	// /
 	// /
 	// /
-	public static String convertSetupToXml(StupidCore stupid) 
+	public static String convertSetupToXml(MyContext ctxt) 
 	{
 
-		String result = "<" + syncTime + ">" + stupid.syncTime + "</"
+		String result = "<" + syncTime + ">" + ctxt.stupid.syncTime + "</"
 				+ syncTime + ">\n";
 
 		result += "<" + elements;
-		for (int i = 0; i < stupid.elementList.length; i++) {
-			result += " " + stupid.elementList[i].description + "='"
-					+ stupid.elementList[i].index + "'";
+		for (int i = 0; i < ctxt.stupid.elementList.length; i++) {
+			result += " " + ctxt.stupid.elementList[i].description + "='"
+					+ ctxt.stupid.elementList[i].index + "'";
 		}
 		result += " />\n";
 
 		result += "<" + weekId;
-		for (int i = 0; i < stupid.weekList.length; i++) {
-			result += " " + stupid.weekList[i].description + "='"
-					+ stupid.weekList[i].index + "'";
+		for (int i = 0; i < ctxt.stupid.weekList.length; i++) {
+			result += " " + ctxt.stupid.weekList[i].description + "='"
+					+ ctxt.stupid.weekList[i].index + "'";
 		}
 		result += " />\n";
 		
 		result += "<"+types;
-		for (int i = 0; i < stupid.typeList.length; i++) 
+		for (int i = 0; i < ctxt.stupid.typeList.length; i++) 
 		{
-			result += " " + stupid.typeList[i].description + "='"
-					+ stupid.typeList[i].index + "'";
+			result += " " + ctxt.stupid.typeList[i].description + "='"
+					+ ctxt.stupid.typeList[i].index + "'";
 		}
 		result += " />\n";
-		result += "<"+myElement+">"+stupid.myElement+"</"+myElement+">";
-		result += "<"+myType+">"+stupid.myType+"</"+myType+">";
-		result += "<"+onlyWlan+">"+stupid.onlyWlan.toString()+"</"+onlyWlan+">";
-		result += "<"+resyncAfter+">"+stupid.myResyncAfter+"</"+resyncAfter+">";
-		result += "<"+hideEmptyHours+">"+stupid.hideEmptyHours.toString()+"</"+hideEmptyHours+">";
+		result += "<"+myElement+">"+ctxt.stupid.myElement+"</"+myElement+">";
+		result += "<"+myType+">"+ctxt.stupid.myType+"</"+myType+">";
+		result += "<"+onlyWlan+">"+ctxt.stupid.onlyWlan.toString()+"</"+onlyWlan+">";
+		result += "<"+resyncAfter+">"+ctxt.stupid.myResyncAfter+"</"+resyncAfter+">";
+		result += "<"+hideEmptyHours+">"+ctxt.stupid.hideEmptyHours.toString()+"</"+hideEmptyHours+">";
+		result += "<"+defaultActivity+">"+ctxt.defaultActivity.toString()+"</"+defaultActivity+">";
 		return result;
 	}
 	
@@ -98,42 +100,43 @@ public class Xml
 	// /
 	// /
 	// /
-	public static String convertSetupToXml(StupidCore stupid,ProgressDialog pd) {
+	public static String convertSetupToXml(MyContext ctxt,ProgressDialog pd) {
 		
 		
-		String result = "<"+syncTime+">"+stupid.syncTime+"</"+syncTime+">\n";
+		String result = "<"+syncTime+">"+ctxt.stupid.syncTime+"</"+syncTime+">\n";
 		
 		result += "<"+elements;
-		for (int i = 0; i < stupid.elementList.length; i++) 
+		for (int i = 0; i < ctxt.stupid.elementList.length; i++) 
 		{
 			pd.setProgress(pd.getProgress()+1);
-			result += " " + stupid.elementList[i].description + "='"
-					+ stupid.elementList[i].index + "'";
+			result += " " + ctxt.stupid.elementList[i].description + "='"
+					+ ctxt.stupid.elementList[i].index + "'";
 		}
 		result += " />\n";
 
 		result += "<"+weekId;
-		for (int i = 0; i < stupid.weekList.length; i++) 
+		for (int i = 0; i < ctxt.stupid.weekList.length; i++) 
 		{
 			pd.setProgress(pd.getProgress()+1);
-			result += " " + stupid.weekList[i].description + "='"
-					+ stupid.weekList[i].index + "'";
+			result += " " + ctxt.stupid.weekList[i].description + "='"
+					+ ctxt.stupid.weekList[i].index + "'";
 		}
 		result += " />\n";
 		
 		result += "<"+types;
-		for (int i = 0; i < stupid.typeList.length; i++) 
+		for (int i = 0; i < ctxt.stupid.typeList.length; i++) 
 		{
 			pd.setProgress(pd.getProgress()+1);
-			result += " " + stupid.typeList[i].description + "='"
-					+ stupid.typeList[i].index + "'";
+			result += " " + ctxt.stupid.typeList[i].description + "='"
+					+ ctxt.stupid.typeList[i].index + "'";
 		}
 		result += " />\n";
-		result += "<"+myElement+">"+stupid.myElement+"</"+myElement+">";
-		result += "<"+myType+">"+stupid.myType+"</"+myType+">";
-		result += "<"+onlyWlan+">"+stupid.onlyWlan.toString()+"</"+onlyWlan+">";
-		result += "<"+resyncAfter+">"+stupid.myResyncAfter+"</"+resyncAfter+">";
-		result += "<"+hideEmptyHours+">"+stupid.hideEmptyHours.toString()+"</"+hideEmptyHours+">";
+		result += "<"+myElement+">"+ctxt.stupid.myElement+"</"+myElement+">";
+		result += "<"+myType+">"+ctxt.stupid.myType+"</"+myType+">";
+		result += "<"+onlyWlan+">"+ctxt.stupid.onlyWlan.toString()+"</"+onlyWlan+">";
+		result += "<"+resyncAfter+">"+ctxt.stupid.myResyncAfter+"</"+resyncAfter+">";
+		result += "<"+hideEmptyHours+">"+ctxt.stupid.hideEmptyHours.toString()+"</"+hideEmptyHours+">";
+		result += "<"+defaultActivity+">"+ctxt.defaultActivity.toString()+"</"+defaultActivity+">";
 		return result;
 	}
 	

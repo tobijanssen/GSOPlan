@@ -1,21 +1,22 @@
 package de.janssen.android.gsoplan.runnables;
 
+import android.os.AsyncTask;
 import de.janssen.android.gsoplan.PlanActivity;
 
-public class PlanActivityLuncher implements Runnable{
+public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>{
 
 	private PlanActivity parent;
 	
 	public PlanActivityLuncher(PlanActivity parent){
 		this.parent=parent;
 	}
-	@Override
-	public void run() {
-        if(!parent.selfCheckIsRunning)
+	
+	protected Boolean doInBackground(Boolean... bool) {
+        if(!parent.ctxt.selfCheckIsRunning)
         	parent.selfCheck();
-		if (parent.stupid.progressDialog != null) 
+		if (parent.ctxt.stupid.progressDialog != null) 
 		{
-			parent.stupid.progressDialog.dismiss();
+			parent.ctxt.stupid.progressDialog.dismiss();
 		}
 		else
 		{
@@ -27,12 +28,13 @@ public class PlanActivityLuncher implements Runnable{
 			{
 
 			}
-			if (parent.stupid.progressDialog != null) 
+			if (parent.ctxt.stupid.progressDialog != null) 
 			{
-				parent.stupid.progressDialog.dismiss();
+				parent.ctxt.stupid.progressDialog.dismiss();
 			}
 			
 		}
+		return null;
 		
 	}
 

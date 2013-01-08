@@ -10,17 +10,23 @@
         android:orderInCategory="100" 
         android:showAsAction="collapseActionView" />
        
-	<item android:id="@+id/menu_save"
+	<!-- <item android:id="@+id/menu_save"
       	android:title="@string/menu_save"
        	android:orderInCategory="100"
-       	android:showAsAction="collapseActionView" />
+       	android:showAsAction="collapseActionView" /> -->
 		
     <item android:id="@+id/menu_refresh"
         android:title="@string/menu_refresh"
       	android:orderInCategory="100"
       	android:showAsAction="collapseActionView" />
+    
     <item android:id="@+id/menu_today"
         android:title="@string/menu_today"
+      	android:orderInCategory="100"
+       	android:showAsAction="collapseActionView"/>
+    
+    <item android:id="@+id/menu_weekPlan"
+        android:title="@string/menu_weekPlan"
       	android:orderInCategory="100"
        	android:showAsAction="collapseActionView"/>
         

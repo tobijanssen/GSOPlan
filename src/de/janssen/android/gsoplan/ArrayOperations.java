@@ -24,15 +24,7 @@ public class ArrayOperations
 		return newArray; 
 	}
 	
-	@Deprecated
-	public static Object RemoveAtIndex(Object array, int index)
-	{
-		int oldSize = java.lang.reflect.Array.getLength(array);
-		System.arraycopy(array, index+1, array, index, oldSize-1);
-		return ArrayOperations.ResizeArray(array, oldSize-1);
 		
-	}
-	
 	public static Object ResizeArray (Object oldArray, int newSize)
 	{
 		int oldSize = java.lang.reflect.Array.getLength(oldArray);

@@ -1,23 +1,15 @@
 package de.janssen.android.gsoplan;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import com.viewpagerindicator.TitlePageIndicator;
+
+import com.google.analytics.tracking.android.EasyTracker;
 
 import de.janssen.android.gsoplan.runnables.AppendPage;
 import de.janssen.android.gsoplan.runnables.ErrorMessage;
-import de.janssen.android.gsoplan.runnables.MainDownloader;
 import de.janssen.android.gsoplan.runnables.PlanActivityLuncher;
-import de.janssen.android.gsoplan.runnables.RefreshPager;
 import de.janssen.android.gsoplan.runnables.SetupPager;
-import de.janssen.android.gsoplan.runnables.ShowProgressDialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.app.ActionBar;
@@ -25,155 +17,28 @@ import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.Window;
 import android.widget.DatePicker;
 import android.widget.Toast;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
 
 
 
-public class PlanActivity extends Activity {
-
+public class PlanActivity extends Activity 
+{
+	public MyContext ctxt = new MyContext();	
 	
-	public StupidCore stupid = new StupidCore();
-	public Exception exception;
-	public MyArrayAdapter adapter;
-	public Calendar dateBackup;
-	public Handler handler;
-	public Boolean selfCheckIsRunning=false;
-	public int weekDataIndexToShow;
-	private ExecutorService executor = Executors.newSingleThreadExecutor();
-	private SerialExecutor execQueue = new SerialExecutor(executor);
-	public List<View> pages = new ArrayList<View>();
-	public List<Calendar> pageIndex = new ArrayList<Calendar>();;
-	public List<String> headlines = new ArrayList<String>();
-	public LayoutInflater inflater;
-	public PagerAdapter pageAdapter;
-	public ViewPager viewPager;
-	public Boolean disableNextPagerOnChangedEvent = false;
-	public TitlePageIndicator pageIndicator;
-	public int currentPage;
+	public PlanActivity()
+	{
+		ctxt.context=this;
+		ctxt.dayView=true;
+		ctxt.activity=this;
+	}
 	
 	
-	/*	5.10.12
-     * 	Tobias Janssen
-     * 
-     * 	Prüft, ob die eingestellte Woche(laut stupid.currentDate) bereits verfügbar ist 
-     * 	unternimmt weitere Maßnahmen, wenn nicht, oder veraltet
-     * 
-     */
-    public void checkAvailibilityOfWeek(Boolean forceRefresh, int weekOffset)
-    {
-    	//eine Übersicht erstellen, welche Daten für die aktuelle Klasse überhaupt vorliegen
-    	try
-    	{
-    		stupid.timeTableIndexer();
-    	}
-    	catch(Exception e)
-    	{
-    		//Keine Klasse ausgewählt!
-    		//disablePagerOnChangedListener=false;
-    		gotoSetup();
-    	}
-    	
-    	//Fehlermeldungen für den Fehlerfall einstellen und den weekOffset ggfl anpassen
-    	String notAvail ="";
-    	String loading="";
-    	String refreshing="";
-    	Boolean smoothScroll=false;
-    	switch(weekOffset)
-    	{
-	    	case Const.SELECTEDWEEK:
-				notAvail = this.getString(R.string.msg_weekNotAvailable);
-				loading =  this.getString(R.string.msg_loadingData);
-				refreshing =  this.getString(R.string.msg_searchingNewDataSelected);
-				smoothScroll=true;
-				weekOffset=Const.THISWEEK;
-				break;
-    		case Const.NEXTWEEK:
-    			notAvail = this.getString(R.string.msg_nextWeekNotAvailable);
-    			loading =  this.getString(R.string.msg_loadingData);
-    			refreshing =  this.getString(R.string.msg_searchingNewDataNext);
-    			break;
-    		case Const.LASTWEEK:
-    			notAvail = this.getString(R.string.msg_foreWeekNotAvailable);
-    			loading =  this.getString(R.string.msg_loadingData);
-    			refreshing =  this.getString(R.string.msg_searchingNewDataLast);
-    			break;
-    		case Const.THISWEEK:
-    		default:
-    			notAvail = this.getString(R.string.msg_weekNotAvailable);
-    			loading =  this.getString(R.string.msg_loadingData);
-    			refreshing =  this.getString(R.string.msg_searchingNewDataNow);
-    			break;
-    	}
-    	
-    	
-    	Calendar requestedWeek = (Calendar) stupid.currentDate.clone();
-    	requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()+(86400000*7*weekOffset));//den weekOffset umsetzen
-    	
-    	int currentDay = requestedWeek.get(Calendar.DAY_OF_WEEK);
-    	if(currentDay != 2)
-    	{
-    		if(currentDay > 2)
-    			requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()-(86400000*(currentDay-2)));
-    		else if(currentDay < 2)
-    			requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis()+(86400000*(2-currentDay)));
-     	}
-    	
-    	
-    	
-        //aus dieser Liste mithilfer der selektierten KalenderWoche den richtigen Index heraussuchen
-        weekDataIndexToShow = stupid.getIndexOfWeekData(requestedWeek);
-        //prüfen, ob diese Woche bereits im Datenbestand ist
-        if(weekDataIndexToShow ==-1)
-        {
-         	//Woche ist nicht lokal verfügbar       	
-        	//Downloader starten, dieser prüft, ob diese Woche erhältlich ist und unternimmt alle weitern Maßnahmen
-        	executeWithDialog(new MainDownloader(this,notAvail,requestedWeek),loading,ProgressDialog.STYLE_HORIZONTAL);
-        }
-        if(weekDataIndexToShow !=-1)
-        {
-        	//Woche ist im Datenbestand vorhanden
-            //Nun prüfen, wie alt diese Daten sind:
-        	if(stupid.getWeekOfYear(requestedWeek) < new GregorianCalendar().get(Calendar.WEEK_OF_YEAR) && !forceRefresh)
-        	{
-        		//diese Woche liegt bereits in der vergangenheit und muss nicht aktualisiert werden
-        		handler.post(new RefreshPager(this,smoothScroll));
-        	}
-        	else
-        	{
-	            Date date = new Date();
-	        	if(stupid.myTimetables[weekDataIndexToShow].syncTime + (stupid.myResyncAfter*60*1000) < date.getTime() || forceRefresh)	
-	        	{
-	        		//veraltet neu herunterladen
-	        		executeWithDialog(new MainDownloader(this,notAvail,requestedWeek),refreshing,ProgressDialog.STYLE_HORIZONTAL);
-	        	}
-	        	else
-	        	{
-	        		handler.post(new RefreshPager(this,smoothScroll));
-	        	}
-        	}
-        }
-               
-    }
-    
-    /*	5.10.12
-     * 	Tobias Janssen
-     * 
-     * 	Prüft, ob die eingestellte Woche(laut stupid.currentDate) bereits verfügbar ist 
-     * 	unternimmt weitere Maßnahmen, wenn nicht, oder veraltet
-     * 
-     */
-    public void checkAvailibilityOfWeek(int weekModificator)
-    {
-    	checkAvailibilityOfWeek(false,weekModificator);
-    }
     
     /// Datum: 20.09.12
   	/// Autor: Tobias Janßen
@@ -186,16 +51,16 @@ public class PlanActivity extends Activity {
     	Xml xml = new Xml();
     	
     	//Prüfen, ob die benötigten Dateien existieren:
-    	File setupFile = Tools.getFileSaveSetup(this, stupid);
+    	File setupFile = Tools.getFileSaveSetup(ctxt);
     	if(!setupFile.exists())
     		return 1;
     		
     	//die SetupDatei Laden
     	try
     	{
-    		xml.container = FileOPs.readFromFile(this,setupFile);
-    		stupid.clearSetup();
-    		stupid.fetchSetupFromXml(xml);
+    		xml.container = FileOPs.readFromFile(setupFile);
+    		ctxt.stupid.clearSetup();
+    		ctxt.stupid.fetchSetupFromXml(xml,ctxt);
     	}
     	catch(Exception e)
         {
@@ -203,13 +68,13 @@ public class PlanActivity extends Activity {
         }
     	
     	//prüfen, ob ein Element ausgewählt wurde:
-        if(stupid.myElement.equalsIgnoreCase(""))
+        if(ctxt.stupid.myElement.equalsIgnoreCase(""))
         {
         	return 3;
         }
     	
         //Prüfen, ob der Elementenordner existiert
-        File elementDir = new java.io.File(this.getFilesDir()+"/"+stupid.myElement);
+        File elementDir = new File(this.getFilesDir()+"/"+ctxt.stupid.myElement);
     	if(!elementDir.exists())
     		return 6;
         
@@ -224,26 +89,7 @@ public class PlanActivity extends Activity {
         return 0;
     } 
     
-    /// Datum: 28.09.12
-  	/// Autor: Tobias Janßen
-  	///
-  	///	Beschreibung:
-  	///	Erstellt einen neuen ProgressDialog mit übergebenem Text
-  	///	
-  	///
-  	///	Parameter:
-  	///	
-  	/// 
-  	/// 
-    public void executeWithDialog(Runnable run,String text, int style)
-    {
-    	
-    	handler.post(new ShowProgressDialog(this,style,text,run));
-		execQueue.execute(run);
-		
-    	
-    }
-    
+   
     /*
      * 
      */
@@ -261,7 +107,7 @@ public class PlanActivity extends Activity {
      */
     private void gotoDate()
     {
-    	handler.post(new Runnable(){
+    	ctxt.handler.post(new Runnable(){
 
     		@Override
 			public void run() {
@@ -272,28 +118,26 @@ public class PlanActivity extends Activity {
 					public void onDateSet(DatePicker view, int year,
 							int monthOfYear, int dayOfMonth) {
 						//Backup vom Datum erstellen, falls es das neue Datum nicht gibt
-						PlanActivity.this.dateBackup = (Calendar) PlanActivity.this.stupid.currentDate.clone();
+						ctxt.dateBackup = (Calendar) ctxt.stupid.currentDate.clone();
 						//das Ausgewählte Datum einstellen
-						PlanActivity.this.stupid.currentDate.set(year, monthOfYear, dayOfMonth);
+						ctxt.stupid.currentDate.set(year, monthOfYear, dayOfMonth);
 						//prüfen, ob es sich dabei um wochenend tage handelt:
-						switch(PlanActivity.this.stupid.currentDate.get(Calendar.DAY_OF_WEEK))
+						switch(ctxt.stupid.currentDate.get(Calendar.DAY_OF_WEEK))
 						{
 							case Calendar.SATURDAY:
-								PlanActivity.this.stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(1000*60*60*24*2));
+								ctxt.stupid.currentDate.setTimeInMillis(ctxt.stupid.currentDate.getTimeInMillis()+(1000*60*60*24*2));
 								break;
 							case Calendar.SUNDAY:
-								PlanActivity.this.stupid.currentDate.setTimeInMillis(stupid.currentDate.getTimeInMillis()+(1000*60*60*24*1));
+								ctxt.stupid.currentDate.setTimeInMillis(ctxt.stupid.currentDate.getTimeInMillis()+(1000*60*60*24*1));
 								break;
 							
 						}
-						checkAvailibilityOfWeek(Const.SELECTEDWEEK);
-						
-						
+						ctxt.stupid.checkAvailibilityOfWeek(ctxt,Const.SELECTEDWEEK);
 					}
 			    },
-			    PlanActivity.this.stupid.currentDate.get(Calendar.YEAR) ,
-			    PlanActivity.this.stupid.currentDate.get(Calendar.MONTH),
-			    PlanActivity.this.stupid.currentDate.get(Calendar.DAY_OF_MONTH));
+			    ctxt.stupid.currentDate.get(Calendar.YEAR) ,
+			    ctxt.stupid.currentDate.get(Calendar.MONTH),
+			    ctxt.stupid.currentDate.get(Calendar.DAY_OF_MONTH));
 				picker.show();
 				
 			}
@@ -305,36 +149,7 @@ public class PlanActivity extends Activity {
     	
     }
     
-    public boolean gotoSetup() {
-    	
-    	try 
-    	{
-    		Tools.saveFiles(this,stupid,executor);
-		} 
-    	catch(Exception e) 
-    	{
-    		
-		}
-	    Intent intent = new Intent(PlanActivity.this,SetupActivity.class);
-	    startActivityForResult(intent,1);	
-	    return true;
-    }
-	
-    public boolean gotoSetup(String putExtraName, Boolean value) {
-    	
-    	try 
-    	{
-    		Tools.saveFiles(this,stupid,executor);
-		} 
-    	catch(Exception e) 
-    	{
-    		
-		}
-	    Intent intent = new Intent(PlanActivity.this,SetupActivity.class);
-	    intent.putExtra(putExtraName, value);
-	    startActivityForResult(intent,1);	
-	    return true;
-    }
+    
     
     /* Datum: 11.10.12
 	 * Tobias Janßen
@@ -342,16 +157,16 @@ public class PlanActivity extends Activity {
 	 */
     public void initViewPager()
     {
-    	currentPage=0;
-        for(int i=0;i<stupid.stupidData.size();i++)
+    	ctxt.currentPage=0;
+        for(int i=0;i<ctxt.stupid.stupidData.size();i++)
         {
-        	handler.post(new AppendPage(stupid.stupidData.get(i), stupid, this));
+        	ctxt.handler.post(new AppendPage(ctxt.stupid.stupidData.get(i), ctxt));
         	//Tools.appendTimeTableToPager(stupid.stupidData.get(i), stupid, this);
         	
         }
-        currentPage=Tools.getPage(pageIndex,stupid.currentDate);
-
-        handler.post( new SetupPager(this, pageIndex, currentPage));
+        
+        
+        ctxt.handler.post( new SetupPager(ctxt, ctxt.pageIndex));
         
                
     }
@@ -364,11 +179,11 @@ public class PlanActivity extends Activity {
     	{
     		if (data.hasExtra("setupIsDirty")) 
     		{
-    			stupid.setupIsDirty = data.getExtras().getBoolean("setupIsDirty");
+    			ctxt.stupid.setupIsDirty = data.getExtras().getBoolean("setupIsDirty");
     		}
     		if (data.hasExtra("dataIsDirty")) 
     		{
-    			stupid.dataIsDirty = data.getExtras().getBoolean("dataIsDirty");
+    			ctxt.stupid.dataIsDirty = data.getExtras().getBoolean("dataIsDirty");
     		}
     	}
     	else
@@ -380,12 +195,43 @@ public class PlanActivity extends Activity {
     
     }
     
+	@Override
+	public void onStart() {
+		super.onStart();
+	    
+	    EasyTracker.getInstance().activityStart(this);
+	}
+
+
+    
     @Override
     public void onCreate(Bundle savedInstanceState) 
 	{
         super.onCreate(savedInstanceState);
         
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) 
+        {
+            
+        	// Get data via the key
+        	Long currentDate = extras.getLong("currentDate");
+        	ctxt.forceView = extras.getBoolean("forceView",false);
+        	if (currentDate != null) 
+        	{
+        		try
+        		{
+	        		Calendar cal = new GregorianCalendar();
+	        		cal.setTimeInMillis(currentDate);
+	        		ctxt.stupid.currentDate = (Calendar) cal.clone();
+        		}
+        		catch(Exception e){}
+        	}
+        	
+        } 
         
+        Resources r = ctxt.context.getResources();
+		ctxt.textSizes = r.getIntArray(R.array.TextSizes);
+		
         //Android Version prüfen, wenn neuer als API11, 
         Boolean actionBarAvailable = false;
         if(android.os.Build.VERSION.SDK_INT >= 11)
@@ -394,7 +240,7 @@ public class PlanActivity extends Activity {
         	actionBarAvailable=getWindow().requestFeature(Window.FEATURE_ACTION_BAR);
         }
          
-        inflater = LayoutInflater.from(this);
+        ctxt.inflater = LayoutInflater.from(this);
         setContentView(R.layout.activity_plan);
         //Wenn ActionBar verfügbar ist,
         if(actionBarAvailable)
@@ -403,10 +249,10 @@ public class PlanActivity extends Activity {
 	        ActionBar actionBar = getActionBar();
 	        actionBar.show();
         }
-        handler = new Handler();
+        ctxt.handler = new Handler();
         
        
-        executeWithDialog(new PlanActivityLuncher(this), getString(R.string.msg_start),ProgressDialog.STYLE_SPINNER);
+        Tools.executeWithDialog(ctxt,new PlanActivityLuncher(this), getString(R.string.msg_start),ProgressDialog.STYLE_SPINNER);
         
     }
     
@@ -424,20 +270,6 @@ public class PlanActivity extends Activity {
     protected void onDestroy()
     {
     	super.onDestroy();
-    	try 
-    	{
-			executor.shutdown();
-			executor.awaitTermination(120, TimeUnit.SECONDS);
-			if(!executor.isTerminated())
-			{
-				handler.post(new ErrorMessage(PlanActivity.this,"Beim Beenden ist ein Fehler aufgetreten"));
-			}
-		} 
-    	catch (InterruptedException e) 
-    	{
-			//hier ist nix zu tun...
-		}
-    	
     }
    
     
@@ -446,22 +278,31 @@ public class PlanActivity extends Activity {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.menu_setup:
-                gotoSetup();
+                Tools.gotoSetup(ctxt);
                 return true;
             case R.id.menu_gotoDate:
             	gotoDate();
             	return true;
-            case R.id.menu_save:
-            	Tools.saveFilesWithProgressDialog(this, stupid, executor, stupid.currentDate);
-            	return true;
+            /*case R.id.menu_save:
+            	Tools.saveFilesWithProgressDialog(ctxt, ctxt.stupid.currentDate);
+            	return true;*/
             case R.id.menu_refresh:
-            	refreshWeek();
+            	Tools.refreshWeek(ctxt);
             	return true;
             case R.id.menu_today:
-            	stupid.currentDate=new GregorianCalendar();
-            	checkAvailibilityOfWeek(Const.THISWEEK);
-            	viewPager.setCurrentItem(Tools.getPage(pageIndex, stupid.currentDate));
-            	
+            	ctxt.stupid.currentDate=new GregorianCalendar();
+            	ctxt.stupid.checkAvailibilityOfWeek(ctxt,Const.THISWEEK);
+            	if(ctxt.weekView)
+         		{
+            		 ctxt.viewPager.setCurrentItem(Tools.getPage(ctxt.pageIndex,ctxt.stupid.currentDate,Calendar.WEEK_OF_YEAR));
+         		}
+         		else
+         		{
+         			ctxt.viewPager.setCurrentItem(Tools.getPage(ctxt.pageIndex,ctxt.stupid.currentDate,Calendar.DAY_OF_YEAR));
+         		}
+            	return true;	
+            case R.id.menu_weekPlan:
+                Tools.gotoWeekPlan(ctxt);
             	return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -469,27 +310,58 @@ public class PlanActivity extends Activity {
     }
     
     
-    
 	@Override
 	protected void onResume() 
 	{
 	    super.onResume();
-
-	    if(stupid.dataIsDirty)
+	    if(ctxt.defaultActivity == null)
 	    {
-	    	stupid.clearData();
-	    	stupid.dataIsDirty=false;
-	    	stupid.setupIsDirty=false;
-	    	handler.postDelayed(new Runnable(){
+	    	Xml xml = new Xml();
+	    	
+	    	//Prüfen, ob die benötigten Dateien existieren:
+	    	File setupFile = Tools.getFileSaveSetup(ctxt);
+	    	if(setupFile.exists())
+	    	{
+		    	//die SetupDatei Laden
+		    	try
+		    	{
+		    		xml.container = FileOPs.readFromFile(setupFile);
+		    		ctxt.stupid.clearSetup();
+		    		ctxt.stupid.fetchSetupFromXml(xml,ctxt);
+		    	}
+		    	catch(Exception e)
+		        {
+		        	//Fehler beim Laden der SetupDatei
+		        }
+	    	}
+	    }
+	    
+	    
+	    
+	   
+		if(ctxt.defaultActivity != null && ctxt.defaultActivity.equals(WeekPlanActivity.class) && !ctxt.forceView)
+		{
+		   	//andere Ansicht gewählt
+			Intent intent = new Intent(ctxt.activity,ctxt.defaultActivity);
+			ctxt.activity.startActivity(intent);	
+		}
+   
+	    
+	    if(ctxt.stupid.dataIsDirty)
+	    {
+	    	ctxt.stupid.clearData();
+	    	ctxt.stupid.dataIsDirty=false;
+	    	ctxt.stupid.setupIsDirty=false;
+	    	ctxt.handler.postDelayed(new Runnable(){
 	    		@Override
 				public void run() {
 					PlanActivity.this.selfCheck();
 					
 				}}, 2000);
 	    }
-	    else if(stupid.setupIsDirty)
+	    else if(ctxt.stupid.setupIsDirty)
 	    {
-	    	stupid.setupIsDirty=false;
+	    	ctxt.stupid.setupIsDirty=false;
     		selfCheck();
 
 	    }
@@ -501,21 +373,16 @@ public class PlanActivity extends Activity {
 	protected void onStop()
 	{
     	super.onStop();
-    	for(int i=0;i<stupid.stupidData.size() && !stupid.dataIsDirty;i++)
+    	for(int i=0;i<ctxt.stupid.stupidData.size() && !ctxt.stupid.dataIsDirty;i++)
     	{
-    		if(stupid.stupidData.get(i).isDirty)
-    			stupid.dataIsDirty=true;
+    		if(ctxt.stupid.stupidData.get(i).isDirty)
+    			ctxt.stupid.dataIsDirty=true;
     	}
-    	if(stupid.dataIsDirty)
+    	if(ctxt.stupid.dataIsDirty)
 		{
 			try
 			{
-				Tools.saveFiles(this, stupid, executor);
-				
-	    		executor.shutdown();
-	    		executor.awaitTermination(120, TimeUnit.SECONDS);
-	    		if(!executor.isTerminated())
-	    			Toast.makeText(this,"Beim Beenden ist ein Fehler aufgetreten", Toast.LENGTH_LONG).show();
+				Tools.saveFiles(ctxt);
 			}
 			catch(Exception e)
 			{
@@ -523,16 +390,12 @@ public class PlanActivity extends Activity {
 			}
 			
 		}
+    	EasyTracker.getInstance().activityStop(this);
 	}
-    
-    /*	4.10.12
-     * 	Tobias Janssen
-     * 	Aktualisiert die aktuelle Woche
-     */
-    public void refreshWeek()
-    {
-    	checkAvailibilityOfWeek(Const.FORCEREFRESH,Const.THISWEEK);
-    }
+
+	    
+
+
     
     /// Datum: 21.09.12
   	/// Autor: Tobias Janßen
@@ -542,58 +405,48 @@ public class PlanActivity extends Activity {
   	///	
     public void selfCheck()
     {
-    	selfCheckIsRunning=true;
+    	ctxt.selfCheckIsRunning=true;
     	switch(checkStructure())
         {
         	case 0:	//Alles in Ordnung
         		try
         		{
-        			Tools.loadAllDataFiles(this, stupid);
+        			Tools.loadAllDataFiles(this, ctxt.stupid);
         		}
         		catch (Exception e)
         		{
-        			handler.post(new ErrorMessage(this, e.getMessage()));
+        			ctxt.handler.post(new ErrorMessage(ctxt, e.getMessage()));
         		}
-        		stupid.sort();
+        		ctxt.stupid.sort();
         		initViewPager();
-        		checkAvailibilityOfWeek(Const.THISWEEK);
+        		ctxt.stupid.checkAvailibilityOfWeek(ctxt,Const.THISWEEK);
         		break;
         		
         	case 1:	//FILESETUP fehlt
-        		gotoSetup(Const.FIRSTSTART,true);
+        		Tools.gotoSetup(ctxt,Const.FIRSTSTART,true);
         		break;
         		
         	case 2:	//FILESETUP laden fehlgeschlagen
-        		gotoSetup(Const.FIRSTSTART,true);
+        		Tools.gotoSetup(ctxt,Const.FIRSTSTART,true);
         		break;
         		
         	case 3:	//Keine Klasse ausgewählt
-        		gotoSetup(Const.FIRSTSTART,true);
+        		Tools.gotoSetup(ctxt,Const.FIRSTSTART,true);
         		break;
         	case 6:	//Elementenordner existiert nicht
         			//neuen anlegen
-        			java.io.File elementDir = new java.io.File(this.getFilesDir(),stupid.myElement);
+        			java.io.File elementDir = new java.io.File(this.getFilesDir(),ctxt.stupid.myElement);
         			elementDir.mkdir();
         			initViewPager();
-        			checkAvailibilityOfWeek(Const.THISWEEK);
+        			ctxt.stupid.checkAvailibilityOfWeek(ctxt,Const.THISWEEK);
     		break;
         	case 7:	//Keine Daten für diese Klasse vorhanden
         		initViewPager();
-        		checkAvailibilityOfWeek(Const.THISWEEK);
+        		ctxt.stupid.checkAvailibilityOfWeek(ctxt,Const.THISWEEK);
         		break;
         }
-    	selfCheckIsRunning=false;
+    	ctxt.selfCheckIsRunning=false;
     }
     
-    /*	14.11.12
-     * 	Tobias Janssen
-     * 	Terminiert den aktiven Thread im SerialExecutor
-     */
-    public void terminateActiveThread(Runnable runThread)
-    {
-    	execQueue.terminateActiveThread(runThread);
-    	
-    }
-
 }
 

@@ -1,17 +1,20 @@
 package de.janssen.android.gsoplan.runnables;
 
+import java.util.Calendar;
+
 import de.janssen.android.gsoplan.DownloadFeedback;
+import de.janssen.android.gsoplan.MyContext;
 import de.janssen.android.gsoplan.MyPagerAdapter;
-import de.janssen.android.gsoplan.PlanActivity;
 import de.janssen.android.gsoplan.Tools;
 
 public class UpdateTimeTableList implements Runnable{
 
-	private PlanActivity parent;
+	private MyContext ctxt;
 	private DownloadFeedback downloadFeedback;
-	public UpdateTimeTableList(PlanActivity parent, DownloadFeedback downloadFeedback )
+	
+	public UpdateTimeTableList(MyContext ctxt, DownloadFeedback downloadFeedback)
 	{
-		this.parent=parent;
+		this.ctxt=ctxt;
 		this.downloadFeedback=downloadFeedback;
 	}
 	
@@ -21,13 +24,14 @@ public class UpdateTimeTableList implements Runnable{
 		//prüfen, an welchen index die Daten gefügt wurden
     	if( downloadFeedback.indexOfData !=-1)
     	{
-    		int currentPage=parent.viewPager.getCurrentItem();
+    		int currentPage=ctxt.viewPager.getCurrentItem();
     		//prüfen, ob die daten adiiert wurden, oder ob ein Datensatz aktualisiert wurde
-    		if(parent.stupid.stupidData.size()-1 == downloadFeedback.indexOfData && !downloadFeedback.refreshData)
+    		if(ctxt.stupid.stupidData.size()-1 == downloadFeedback.indexOfData && !downloadFeedback.refreshData)
     		{
     			//append der daten
     			//
-            	Tools.appendTimeTableToPager(parent.stupid.stupidData.get(downloadFeedback.indexOfData), parent.stupid, parent);
+            	Tools.appendTimeTableToPager(ctxt.stupid.stupidData.get(downloadFeedback.indexOfData), ctxt);
+
     		}
     		else
     		{
@@ -37,27 +41,41 @@ public class UpdateTimeTableList implements Runnable{
     			{
 
 	    			//refresh der daten
-	    			Tools.replaceTimeTableInPager(parent.stupid.stupidData.get(parent.weekDataIndexToShow), parent.stupid, parent);
+    				//TODO: ISSUE# 11 ArrayList.get() ArrayIndexOutOfBoundsException :weil  ctxt.weekDataIndexToShow = -1
+    				if(ctxt.weekDataIndexToShow == -1)
+    				{
+    					ctxt.weekDataIndexToShow = downloadFeedback.indexOfData;	
+    				}
+    				
+	    			Tools.replaceTimeTableInPager(ctxt.stupid.stupidData.get(ctxt.weekDataIndexToShow), ctxt);
     			}
     			else
     			{
-    				Tools.appendTimeTableToPager(parent.stupid.stupidData.get(downloadFeedback.indexOfData), parent.stupid, parent);
+    				Tools.appendTimeTableToPager(ctxt.stupid.stupidData.get(downloadFeedback.indexOfData),ctxt);
     			}
     			
     		}
-    		parent.disableNextPagerOnChangedEvent=true;
-    		currentPage=Tools.getPage(parent.pageIndex,parent.stupid.currentDate);
-            parent.pageAdapter = new MyPagerAdapter(parent.pages,parent.headlines);
-            
-            parent.viewPager.setAdapter(parent.pageAdapter);
-            parent.viewPager.setCurrentItem(currentPage, false);
-            
-            parent.pageIndicator.setViewPager(parent.viewPager);
-            parent.pageIndicator.notifyDataSetChanged();
-            
-    		if (parent.stupid.progressDialog != null) 
+    		ctxt.disableNextPagerOnChangedEvent=true;
+    		if(ctxt.weekView)
     		{
-    			parent.stupid.progressDialog.dismiss();
+    			currentPage=Tools.getPage(ctxt.pageIndex,ctxt.stupid.currentDate,Calendar.WEEK_OF_YEAR);
+    		}
+    		else
+    		{
+    			currentPage=Tools.getPage(ctxt.pageIndex,ctxt.stupid.currentDate,Calendar.DAY_OF_YEAR);
+    		}
+    		
+    		ctxt.pageAdapter = new MyPagerAdapter(ctxt.pages,ctxt.headlines);
+            
+    		ctxt.viewPager.setAdapter(ctxt.pageAdapter);
+    		ctxt.viewPager.setCurrentItem(currentPage, false);
+            
+    		ctxt.pageIndicator.setViewPager(ctxt.viewPager);
+    		ctxt.pageIndicator.notifyDataSetChanged();
+            
+    		if (ctxt.stupid.progressDialog != null) 
+    		{
+    			ctxt.stupid.progressDialog.dismiss();
     		}
     	}
     }

@@ -1,29 +1,29 @@
 package de.janssen.android.gsoplan.runnables;
 
-import de.janssen.android.gsoplan.PlanActivity;
+import de.janssen.android.gsoplan.MyContext;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 
 public class ErrorMessage implements Runnable{
 
-	private PlanActivity parent;
+	private MyContext ctxt;
 	private String errorMessage;
-	public ErrorMessage(PlanActivity parent, String errorMessage)
+	public ErrorMessage(MyContext ctxt, String errorMessage)
 	{
-		this.parent=parent;
+		this.ctxt=ctxt;
 		this.errorMessage=errorMessage;
 	}
 	
 	@Override
 	public void run() {
-		if(parent.stupid.progressDialog != null && parent.stupid.progressDialog.isShowing())
+		if(ctxt.stupid.progressDialog != null && ctxt.stupid.progressDialog.isShowing())
 		{
-			parent.stupid.progressDialog.dismiss();
+			ctxt.stupid.progressDialog.dismiss();
 		}
 		if(!errorMessage.equalsIgnoreCase(""))
 		{
-			AlertDialog.Builder dialog = new AlertDialog.Builder(parent);
+			AlertDialog.Builder dialog = new AlertDialog.Builder(ctxt.context);
 			dialog.setMessage(errorMessage);
 			dialog.setPositiveButton("Ok", new OnClickListener(){
 	

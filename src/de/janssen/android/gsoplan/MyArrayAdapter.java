@@ -10,20 +10,20 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 public class MyArrayAdapter extends ArrayAdapter<TimetableViewObject> {
-	  private final Context context;
+	  private final MyContext ctxt;
 	  private final List<TimetableViewObject> values1;
 
 	  
-	  public MyArrayAdapter(Context context, List<TimetableViewObject> values1) {
-		    super(context, R.layout.rowlayout, values1);
-		    this.context = context;
+	  public MyArrayAdapter(MyContext ctxt, List<TimetableViewObject> values1) {
+		    super(ctxt.context, R.layout.rowlayout, values1);
+		    this.ctxt = ctxt;
 		    this.values1 = values1;
 		  }
 	  
 	  @Override
 	  public View getView(int position, View convertView, ViewGroup parent) 
 	  {
-		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		LayoutInflater inflater = (LayoutInflater) ctxt.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		View rowView = inflater.inflate(R.layout.rowlayout, null);
 		TextView textView = (TextView) rowView.findViewById(R.id.label);
 		
