@@ -1,10 +1,16 @@
+/*
+ * RefreshPager.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan.runnables;
 
 import java.util.Calendar;
 
 import de.janssen.android.gsoplan.MyContext;
-import de.janssen.android.gsoplan.MyPagerAdapter;
 import de.janssen.android.gsoplan.Tools;
+import de.janssen.android.gsoplan.view.MyPagerAdapter;
 
 public class RefreshPager implements Runnable{
 

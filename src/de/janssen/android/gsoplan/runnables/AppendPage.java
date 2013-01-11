@@ -1,8 +1,14 @@
+/*
+ * AppendPage.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan.runnables;
 
 import de.janssen.android.gsoplan.MyContext;
 import de.janssen.android.gsoplan.Tools;
-import de.janssen.android.gsoplan.WeekData;
+import de.janssen.android.gsoplan.core.WeekData;
 
 public class AppendPage implements Runnable
 {

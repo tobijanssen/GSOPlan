@@ -1,3 +1,11 @@
+/*
+ * WorkerQueue.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
+
+
 package de.janssen.android.gsoplan;
 
 import java.util.ArrayDeque;
@@ -16,7 +24,6 @@ public class WorkerQueue implements Runnable{
 	final Queue<Boolean> tasksBools = new ArrayDeque<Boolean>();
 	public ExecutorService monit; 	
 	private AsyncTask<Boolean, Integer, Boolean> currentTask;
-	private Boolean curentTaskPostrun;
 	private Boolean exitMonitThread;
 	private Calendar born;
 	
@@ -27,11 +34,10 @@ public class WorkerQueue implements Runnable{
 		this.monit.execute(this);
 	}
 	
-	public synchronized void execute(final AsyncTask<Boolean, Integer, Boolean> newTask, Boolean postRun) 
+	public synchronized void execute(final AsyncTask<Boolean, Integer, Boolean> newTask) 
 	{
 		
 		tasks.add(newTask);
-		tasksBools.add(postRun);
 		if (currentTask == null) 
 		{
 			scheduleNext();
@@ -40,7 +46,6 @@ public class WorkerQueue implements Runnable{
 		{
 			if(this.currentTask.isCancelled())
 			{
-			
 				this.currentTask = null;
 				scheduleNext();
 			}
@@ -51,33 +56,40 @@ public class WorkerQueue implements Runnable{
 	
 	
 		
-	protected synchronized void scheduleNext() 
+	public synchronized void scheduleNext() 
 	{
 
-		currentTask = tasks.poll();
-		curentTaskPostrun = this.tasksBools.poll();
-		
 		if (currentTask != null) 
 		{
-			try
+			currentTask = tasks.poll();
+			if (currentTask != null) 
 			{
-				currentTask.execute(curentTaskPostrun);
-			    born = new GregorianCalendar();
-			}
-			catch(Exception e)
-			{
-				Boolean debugMe=true;
+				try
+				{
+					currentTask = currentTask.execute();
+				    born = new GregorianCalendar();
+				}
+				catch(Exception e)
+				{
+					Boolean debugMe=true;
+				}
 			}
 		}
-		else if(!tasks.isEmpty())
+		else 
 		{
-			Boolean debugMe=true;
+			currentTask = tasks.poll();
+			if(currentTask != null)
+			{
+				currentTask = currentTask.execute();
+				born = new GregorianCalendar();
+			}
 		}
 			
 	}
 	
 	public void run() 
 	{
+		
 		while(!this.exitMonitThread)
 		{
 			try
@@ -114,17 +126,35 @@ public class WorkerQueue implements Runnable{
 		
 	}
 	
+	public void awaitTermination(int timeInMillisToTerminate)
+	{
+		try
+		{
+			
+			while(true)
+			{
+				Thread.sleep(500);
+				
+				if(tasks.isEmpty())
+					return;
+				else
+					scheduleNext();				
+			}
+		}
+		catch(Exception e)
+		{
+			
+		}
+	}
+	
+	
+	
 	/*	14.11.12
-	 * 	Tobias Janssen
+	 * 	@author Tobias Janssen
 	 * 	Terminiert den aktiven Thread im SerialExecutor
 	 */
 	public void terminateActiveThread()
 	{
-
-			//this.currentThread.interrupt();
 		this.currentTask.cancel(true);
-		
-		
-		
 	}
 }

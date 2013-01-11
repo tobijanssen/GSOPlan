@@ -1,11 +1,10 @@
-Change Notes Version 1.02 Beta:
+Change Notes Version 1.03 Beta:
 
 Verbesserungen:
-	- #11: Wochenansicht hinzugefügt
-	- Im Setup kann nun die Standart-Ansicht gewählt werden 
-	- Abbrechbare Updates (mit der Zurück-Taste)
+	- Einstellungen überarbeitet
+	- Design überarbeitet
 Bugfixes:
-	- Issue #13 gefixt: Probleme beim Jahreswechsel behoben
-	- Issue #12 gefixt: bei fehlender Verbindung wurde immer die erste Seite des Pagers angezeigt
-	- unzählige kleine Bugfixes
+        
+	- Screen-Rotate Error gefixt
+	- diverse Fixes + Tweaks
 	

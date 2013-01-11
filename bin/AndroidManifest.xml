@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.janssen.android.gsoplan"
-    android:versionCode="3"
-    android:versionName="1.02 Beta" >
+    android:versionCode="4"
+    android:versionName="1.03 Beta" >
 
     <uses-sdk
         android:minSdkVersion="10"
         android:targetSdkVersion="17" />
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /><!-- für google Analytics -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+ <!-- für google Analytics -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
@@ -18,32 +19,35 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Light" >
-        
+        <!-- android:theme="@android:style/Theme.Light" > -->
+         
         <activity
             android:name="de.janssen.android.gsoplan.MainActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>   
-           
+        </activity>
         <activity
-            android:name="de.janssen.android.gsoplan.PlanActivity"
-            android:exported="false"
+            android:name="de.janssen.android.gsoplan.view.PlanActivity"
             android:configChanges="keyboardHidden|orientation"
-            android:screenOrientation="portrait"
-            android:label="@string/title_activity_plan" >
+            android:exported="false"
+            android:label="@string/title_activity_plan"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <activity
-            android:name="de.janssen.android.gsoplan.SetupActivity"
-            android:exported="false"
+            android:theme="@style/Theme.CustomPreferences"
+            android:name="de.janssen.android.gsoplan.view.AppPreferences"
             android:configChanges="keyboardHidden|orientation"
+            android:exported="false"
             android:label="@string/title_activity_setup" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -52,12 +56,24 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="de.janssen.android.gsoplan.WeekPlanActivity"
-            android:exported="false"
+            android:name="de.janssen.android.gsoplan.view.WeekPlanActivity"
             android:configChanges="keyboardHidden|orientation"
+            android:exported="false"
             android:label="@string/title_activity_week_plan"
             android:screenOrientation="landscape" >
             <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="de.janssen.android.gsoplan.AboutGSOPlan"
+            android:theme="@android:style/Theme.Light"
+            android:configChanges="keyboardHidden|orientation"
+            android:exported="false"
+            android:label="@string/title_activity_about_gsoplan" >
+             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />

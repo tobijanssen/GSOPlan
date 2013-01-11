@@ -1,9 +1,16 @@
+
+/*
+ * ArrayOperations.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan;
 
 public class ArrayOperations 
 {
 	/// Datum: 30.08.12
-	/// Autor: Tobias Janßen
+	/// Autor: @author Tobias Janssen
 	///	Beschreibung:
 	///	Vergrößert das angegebene Array und hängt das Object an  
 	///

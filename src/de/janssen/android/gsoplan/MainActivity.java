@@ -1,32 +1,32 @@
+/*
+ * MainActivity.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
+
 package de.janssen.android.gsoplan;
 
 import java.io.File;
-
-import com.google.analytics.tracking.android.EasyTracker;
-
+import de.janssen.android.gsoplan.core.FileOPs;
+import de.janssen.android.gsoplan.xml.Xml;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
+import android.view.View;
+
 
 public class MainActivity extends Activity {
 
-	public MyContext ctxt = new MyContext();
+	public MyContext ctxt = new MyContext(this, this);
 	
-	
-	public MainActivity()
-	{
-		ctxt.context=this;
-		ctxt.activity=this;
-	}
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		loadData();
-		Intent intent = new Intent(ctxt.activity,ctxt.defaultActivity);
-		ctxt.activity.startActivity(intent);	
+		loadData();	
 	}
 
 	@Override
@@ -36,43 +36,64 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
-	@Override
-	public void onStart() {
-		super.onStart();
-	    
-	    EasyTracker.getInstance().activityStart(this);
-	}
-
-	@Override
-	public void onStop() 
-	{
-		super.onStop();
-	    EasyTracker.getInstance().activityStop(this);
-	}
-
-	   
-	@Override
-	protected void onResume() 
-	{
-	    super.onResume();
-	    this.finish();
-	}
 	
 	 public void loadData()
+	 {
+		// die SetupDatei Laden
+	    try 
 	    {
-	    	// die SetupDatei Laden
-	    	try {
-	    		Xml xml = new Xml();
-	    		File setupFile = Tools.getFileSaveSetup(ctxt);
-	    		xml.container = FileOPs.readFromFile(setupFile);
-	    		ctxt.stupid.clearSetup();
-	    		ctxt.stupid.fetchSetupFromXml(xml,ctxt);
+	    	Xml xml = new Xml();
+	    	File setupFile = Tools.getFileSaveElement(ctxt);
+	    	xml.container = FileOPs.readFromFile(setupFile);
+	    	ctxt.stupid.clearElements();
+	    	ctxt.stupid.fetchElementsFromXml(xml,ctxt);
 	    		
-	    	} 
-	    	catch (Exception e) 
+	    } 
+	    catch (Exception e) 
+	    {
+	    	try 
 	    	{
-	    		ctxt.defaultActivity=PlanActivity.class;
-	    	}
+				ctxt.setDefaultActivity("Tag");
+			}
+	    	catch (Exception e1) 
+	    	{
+				// kommt nicht vor
+			}
 	    }
+	    ctxt.getPrefs(this.getApplicationContext());
+	    try
+	    {
+		    if(!Tools.isNewVersion(ctxt))
+		    {
+		    	//version bereits bekannt
+		    	//default activity starten
+		    	continueAppStart();
+		    }
+	    }
+	    catch(Exception e)
+	    {
+	    	//fehler beim lesen der Versionsdatei
+	    	//egal, laden fortsetzen
+	    	continueAppStart();
+	   	 
+	    }
+	 }
+	 
+	 public void continueAppStart(View view)
+	 {
+			Intent intent = new Intent(ctxt.activity,ctxt.getDefaultActivityClass());
+			//intent.putExtra("newVersionInfo", true);
+			//intent.putExtra("newVersionMsg", );
+			ctxt.activity.startActivity(intent);
+			this.finish();
+	 }
+	 
+	 public void continueAppStart()
+	 {
+		Intent intent = new Intent(ctxt.activity,ctxt.getDefaultActivityClass());
+		ctxt.activity.startActivity(intent);
+		this.finish();
+	 }
+
 	
 }

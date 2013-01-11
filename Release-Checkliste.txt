@@ -1,5 +1,27 @@
 Checkliste für neue Releases:
 
+Start:
+1. Kommt der Aktualisierungsbilschirm?
+1.1 Kommt er beim zweiten Start?
+1.2 Stimmen die Informationen - App-Version, Datum, Change-List   
+
+Update:
+1. Funktionieren meine alten Einstellungen der Vor-Version noch
+2. Sind die Stundenplan-Daten noch da?
+
+Neuinstallation
+1. Wird korrekt darauf hingewiesen, dass das Setup gestaltet wird?
+2. Wird das Setup gestartet, und wird nach Auswahl der benötigten Elemente nicht erneut aufgerufen?
+
+Einstellungen:
+1. Funktioniert die Art-Auswahl?
+1.1 Werden danach die Element Daten korrekt geladen
+2. Funktioeniert die Element auswahl?
+2.1 Werden nach zurückkehren die Daten im Stundenplan neu geladen
+3. Funktioniert nur WLan
+4. Funktioniert Stunden ausblenen
+5. Funktioniert die Standart Ansicht festlegung?
+6. Werden bei Über GSOPlan korrekte Daten angezeigt?
 
 Datums-Auswahl:
 
@@ -24,10 +46,25 @@ Aktualisierungsrate:
 1.4 an einem Wochenende, das in der Vergangenheit liegt
 1.5 an einem Freitag in der Zukunft
 
+Ansichten:
+1. Funktioniert die Tagesansicht
+2. Funktioniert die Wochenansicht
+3. Funktionieren Abbrechbare Updates
 
 Beenden:
 1. Testen, ob Ordnungsgemäß beendet wird:
 1.1 App destroyen
 1.2 Task verkleinern
 1.3 Task wiederstarten
-1.4 Sind Daten gespeichert worden?   
+1.4 Sind Daten gespeichert worden?
+
+Andere Android version:
+1. Läuft die App auf dem Nexus 7 mit allen Tests?
+2. Läuft die App auf dem Ace1 mit allen Tests?
+
+PRE-REALEASE:
+1. Stimmt die Versions Nummer:
+1.1 im Manifest
+1.2 im string.xml
+
+

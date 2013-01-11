@@ -1,3 +1,10 @@
+/*
+ * Tools.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
+
 package de.janssen.android.gsoplan;
 
 import java.io.File;
@@ -5,20 +12,34 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
-import de.janssen.android.gsoplan.runnables.DismissProgress;
-import de.janssen.android.gsoplan.runnables.Download;
-import de.janssen.android.gsoplan.runnables.SaveData;
-import de.janssen.android.gsoplan.runnables.SaveSetup;
+import de.janssen.android.gsoplan.asyncTasks.Download;
+import de.janssen.android.gsoplan.asyncTasks.SaveData;
+import de.janssen.android.gsoplan.asyncTasks.SaveElement;
+import de.janssen.android.gsoplan.core.FileOPs;
+import de.janssen.android.gsoplan.core.Stupid;
+import de.janssen.android.gsoplan.core.WeekData;
 import de.janssen.android.gsoplan.runnables.ShowProgressDialog;
+import de.janssen.android.gsoplan.view.AppPreferences;
+import de.janssen.android.gsoplan.view.LinearLayoutBordered;
+import de.janssen.android.gsoplan.view.MyArrayAdapter;
+import de.janssen.android.gsoplan.view.PlanActivity;
+import de.janssen.android.gsoplan.view.TimetableViewObject;
+import de.janssen.android.gsoplan.view.WeekPlanActivity;
+import de.janssen.android.gsoplan.xml.Xml;
+import de.janssen.android.gsoplan.xml.XmlTag;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.content.pm.PackageInfo;
 import android.graphics.Color;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TableLayout;
@@ -79,7 +100,8 @@ public class Tools{
 		}
 
 	}
-	  
+
+    
 	
 	/* 5.10.12
      * Tobias Janssen
@@ -90,7 +112,7 @@ public class Tools{
     private static SaveData buildSaveData(MyContext ctxt,WeekData weekData)
     {
     	File file = getFileSaveData(ctxt,weekData);   	
-		return new SaveData(weekData,file);
+		return new SaveData(weekData,file,ctxt);
     }
     
     /* 5.10.12
@@ -99,10 +121,22 @@ public class Tools{
      * 
      * 
      */
-    private static SaveSetup buildSaveSetup(MyContext ctxt)
+    private static SaveElement buildSaveElement(MyContext ctxt,Boolean showDialog)
     {
-    	File file = getFileSaveSetup(ctxt);
-		return new SaveSetup(ctxt, file);
+    	File file = getFileSaveElement(ctxt);
+		return new SaveElement(ctxt, file,showDialog);
+    }
+    
+    /* 5.10.12
+     * Tobias Janssen
+     * Generiert ein SaveSetup Object, das dann ausgeführt werden kann
+     * 
+     * 
+     */
+    private static SaveElement buildSaveElement(MyContext ctxt,Runnable postRun,Boolean showDialog)
+    {
+    	File file = getFileSaveElement(ctxt);
+		return new SaveElement(ctxt, file,postRun,showDialog);
     }
     
     /*	24.10.12
@@ -341,7 +375,7 @@ public class Tools{
      */
     private static List<TimetableViewObject> createTimetableDayViewObject(WeekData weekData, MyContext ctxt, Calendar currentDay)
     {
-    	StupidCore stupid = ctxt.stupid;
+    	Stupid stupid = ctxt.stupid;
     	int x = currentDay.get(Calendar.DAY_OF_WEEK)-1;
 		List<TimetableViewObject> list = new ArrayList<TimetableViewObject>();
 
@@ -420,13 +454,13 @@ public class Tools{
     
     
     /*	14.09.12
-  	 *	Tobias Janßen
+  	 *	@author Tobias Janssen
   	 *
   	 *	Lädt die Selectoren von der GSO-Seite und parsed diese in die availableOnline Arrays
   	 */ 
     public static void fetchOnlineSelectors(MyContext ctxt,Runnable postRun)
     {
-    	StupidCore stupid = ctxt.stupid;
+    	Stupid stupid = ctxt.stupid;
     	
        	try
     	{
@@ -438,10 +472,8 @@ public class Tools{
             	if(Tools.isWifiConnected(ctxt.context))
             	{
             		//Verbindung vorhanden
-            		stupid.progressDialog = ProgressDialog.show(ctxt.context, ctxt.context.getString(R.string.setup_message_dlElements_title), ctxt.context.getString(R.string.setup_message_dlElements_body), true,false);
-	            	stupid.setupIsDirty=true;
-	            	Download download = new Download(stupid,true,false,postRun);
-	            	ctxt.executor.execute(download,true);
+	            	Download download = new Download(ctxt,true,false,postRun);
+	            	ctxt.executor.execute(download);
             	}
             	else
                 {
@@ -452,10 +484,10 @@ public class Tools{
             else
         	{
             	//Es dürfen Daten auch ohne Wlan geladen werden
-            	stupid.progressDialog = ProgressDialog.show(ctxt.context, ctxt.context.getString(R.string.setup_message_dlElements_title), ctxt.context.getString(R.string.setup_message_dlElements_body), true,false);
-            	stupid.setupIsDirty=true;
-            	Download download = new Download(stupid,true,false,postRun);
-            	ctxt.executor.execute(download,true);
+            	//ctxt.progressDialog = ProgressDialog.show(ctxt.context, ctxt.context.getString(R.string.setup_message_dlElements_title), ctxt.context.getString(R.string.setup_message_dlElements_body), true,false);
+            	//stupid.setupIsDirty=true;
+            	Download download = new Download(ctxt,true,false,postRun);
+            	ctxt.executor.execute(download);
         	}
             
     	}
@@ -480,6 +512,9 @@ public class Tools{
    	}
     
     
+    
+    
+    
     /* 5.10.12
      * Tobias Janssen
      * Generiert ein SaveData Object, das dann ausgeführt werden kann
@@ -493,15 +528,68 @@ public class Tools{
     	return new File(ctxt.context.getFilesDir()+"/"+weekData.elementId,filename);
     }
     
+    
+    /* Datum: 10.01.13
+	 * @author Tobias Janssen
+	 * Prüft anhand einer Datei, welche Version zuvor installiert war.
+	 * Liefert false, wenn Versionen übereinstimmen und true wenn abweichung   
+	 */
+    public static Boolean isNewVersion(MyContext ctxt) throws Exception
+    {
+    	//App Version abfragen
+		Context cont = ctxt.context.getApplicationContext();
+		PackageInfo pInfo = cont.getPackageManager().getPackageInfo(cont.getPackageName(), 0);
+		String currentVersion = pInfo.versionName;
+    	
+    	//zuerst prüfen, ob versionsdatei vorhanden
+    	String filename=Const.FILEVERSION; 
+    	File vFile = new File(ctxt.context.getFilesDir(),filename);
+    	if(!vFile.exists())
+    	{
+    		//Datei existiert nicht!
+    		//Neu anlegen
+
+    		String fileContent="<version>"+currentVersion+"</version>"; 		
+    		FileOPs.saveToFile(fileContent, vFile);
+    		return true;
+    	}
+    	else
+    	{
+    		Xml xml = new Xml();
+    		xml.container = FileOPs.readFromFile(vFile);
+    		XmlTag root = new XmlTag("root");
+    		root.childTags=Xml.xmlToArray(xml);
+    		XmlTag versionTag = root.tagCrawlerFindFirstEntryOf(root, "version", new XmlTag());
+    		if(versionTag != null && versionTag.dataContent != null )
+    		{
+    			if(currentVersion.equalsIgnoreCase(versionTag.dataContent))
+    				return false;
+    			else
+    			{
+    				String fileContent="<version>"+currentVersion+"</version>"; 		
+    	    		FileOPs.saveToFile(fileContent, vFile);
+    	    		return true;
+    			}
+    				
+    		}
+    		else
+    		{
+    			String fileContent="<version>"+currentVersion+"</version>"; 		
+        		FileOPs.saveToFile(fileContent, vFile);
+    			return true;
+    		}
+    	}
+		
+    }
     /* 5.10.12
      * Tobias Janssen
      * Generiert ein SaveData Object, das dann ausgeführt werden kann
      * 
      * 
      */
-    public static File getFileSaveSetup(MyContext ctxt)
+    public static File getFileSaveElement(MyContext ctxt)
     {
-    	String filename=Const.FILESETUP;
+    	String filename=Const.FILEELEMENT;
     	return new File(ctxt.context.getFilesDir(),filename);
     }
     
@@ -579,7 +667,7 @@ public class Tools{
     }
     
     /*	02.10.12
-  	 *	Tobias Janßen
+  	 *	@author Tobias Janssen
   	 *
   	 *	Liefert den aktuellen Wochentag.
   	 *	Wochenendtage liefern den nächsten Montag und setzen das currentDate entsprechend um
@@ -605,7 +693,7 @@ public class Tools{
     }
 
     /*	24.09.12
-  	 *  Tobias Janßen
+  	 *  @author Tobias Janssen
   	 *  
   	 *	Liefert die KalenderWoche des angegebenen Datums zurück
   	 */	
@@ -935,11 +1023,11 @@ public class Tools{
      * 
      * 
      */
-    public static void loadAllDataFiles(Context context,StupidCore stupid) throws Exception
+    public static void loadAllDataFiles(Context context,Stupid stupid) throws Exception
     {
     	try
     	{
-	    	File elementDir = new java.io.File(context.getFilesDir()+"/"+stupid.myElement);
+	    	File elementDir = new java.io.File(context.getFilesDir()+"/"+stupid.getMyElement());
 	    	File[] files = elementDir.listFiles();
 	        for(int f=0;f<files.length;f++)
 	        {
@@ -959,7 +1047,7 @@ public class Tools{
      * 	Lädt den angegebenen File und hängt diesen an die Daten im StupidCore an
      * 
      */
-    private static void loadNAppendFile(Context context,StupidCore stupid, File file) throws Exception
+    private static void loadNAppendFile(Context context,Stupid stupid, File file) throws Exception
     {
     	
     	try 
@@ -1040,21 +1128,24 @@ public class Tools{
 			}
 		}
 	}
-	
+	public static void saveFiles(MyContext ctxt) throws Exception
+    {
+		saveFiles(ctxt, false);
+    }
 	/* 	2.10.12
-  	 *	Tobias Janßen
+  	 *	@author Tobias Janssen
   	 *
   	 *	Prüft, ob welche Daten im StupidCore dirty sind, und speichert diese
   	 */ 
-    public static void saveFiles(MyContext ctxt) throws Exception
+    public static void saveFiles(MyContext ctxt,Boolean showDialog) throws Exception
     {
-    	StupidCore stupid = ctxt.stupid;
-		SaveSetup saveSetup = buildSaveSetup(ctxt);
+    	Stupid stupid = ctxt.stupid;
+		SaveElement saveSetup = buildSaveElement(ctxt,showDialog);
 		SaveData saveData;
     	
     	if(stupid.setupIsDirty)
     	{
-    		ctxt.executor.execute(saveSetup,false);
+    		ctxt.executor.execute(saveSetup);
     	}
     	if(saveSetup.exception!=null)
 		{
@@ -1069,7 +1160,7 @@ public class Tools{
     		saveData = buildSaveData(ctxt,weekData);
     		if(weekData.isDirty)
     		{
-    			ctxt.executor.execute(saveData,false);
+    			ctxt.executor.execute(saveData);
     			if(saveData.exception!=null)
     			{
     				throw saveData.exception;
@@ -1081,26 +1172,27 @@ public class Tools{
     }
 	
 	/* 	14.09.12
-  	 *	Tobias Janßen
+  	 *	@author Tobias Janssen
   	 *
   	 *	Speichert den aktuellen StupidCore
   	 */	
+    @Deprecated
     public static void saveFilesWithProgressDialog(MyContext ctxt, Calendar currentDate )
     {
-    	StupidCore stupid = ctxt.stupid;
+    	Stupid stupid = ctxt.stupid;
     	
     	//ProgressDialog initialisieren
     	
-    	stupid.progressDialog =  new ProgressDialog(ctxt.context);
-    	stupid.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-    	stupid.progressDialog.setMessage(ctxt.context.getString(R.string.msg_saving));
-    	stupid.progressDialog.setCancelable(false);
-    	stupid.progressDialog.setProgress(0);
+    	ctxt.progressDialog =  new ProgressDialog(ctxt.context);
+    	ctxt.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+    	ctxt.progressDialog.setMessage(ctxt.context.getString(R.string.msg_saving));
+    	ctxt.progressDialog.setCancelable(false);
+    	ctxt.progressDialog.setProgress(0);
 		
 		//Prüfen, welche Aufgaben zu erledigen sind, dementsprechend den maximal Wert einstellen
     	if(stupid.elementList.length>0 && stupid.setupIsDirty)
     	{
-    		stupid.progressDialog.setMax(stupid.elementList.length+stupid.weekList.length+50);
+    		ctxt.progressDialog.setMax(stupid.elementList.length+stupid.weekList.length+50);
     	}
     	int dataToSaveCounter=0;
     	for(int d=0;d<stupid.stupidData.size();d++)
@@ -1112,18 +1204,18 @@ public class Tools{
     	}
     	if(dataToSaveCounter>0)
     	{
-    		stupid.progressDialog.setMax(stupid.progressDialog.getMax()+dataToSaveCounter*
+    		ctxt.progressDialog.setMax(ctxt.progressDialog.getMax()+dataToSaveCounter*
     				(stupid.stupidData.get(0).timetable.length*stupid.stupidData.get(0).timetable[0].length+stupid.stupidData.get(0).timetable.length)
     				+dataToSaveCounter);
     	}
     	
-    	stupid.progressDialog.show();
+    	ctxt.progressDialog.show();
 
    		
     	if(stupid.setupIsDirty)
     	{
-    		SaveSetup saveSetup = buildSaveSetup(ctxt);
-    		ctxt.executor.execute(saveSetup,false);
+    		SaveElement saveSetup = buildSaveElement(ctxt,true);
+    		ctxt.executor.execute(saveSetup);
     	}
     	
     	SaveData saveData;
@@ -1134,66 +1226,51 @@ public class Tools{
     		saveData = buildSaveData(ctxt, weekData);
     		if(weekData.isDirty)
     		{
-    			ctxt.executor.execute(saveData,false);
+    			ctxt.executor.execute(saveData);
     		}
     	}
-    	ctxt.executor.execute(new DismissProgress(stupid),false);
+    	//ctxt.executor.execute(new DismissProgress(ctxt),false);
     }
 	
 	/* 	14.09.12
-  	 *	Tobias Janßen
+  	 *	@author Tobias Janssen
   	 *
   	 *	Speichert das aktuelle StupidCore-Setup ohne ProgressDialog
   	 */ 
-    public static void saveSetup(MyContext ctxt)
+    public static void saveElements(MyContext ctxt,Boolean showDialog)
     {
-    	StupidCore stupid = ctxt.stupid;
-    	if(stupid.setupIsDirty)
-    	{
-    		SaveSetup saveSetup = buildSaveSetup(ctxt);
-    		ctxt.executor.execute(saveSetup,false);
-    	}
+    	SaveElement saveElement = buildSaveElement(ctxt,showDialog);
+    	ctxt.executor.execute(saveElement);
+    }
+    
+	/* 	14.09.12
+  	 *	@author Tobias Janssen
+  	 *
+  	 *	Speichert das aktuelle StupidCore-Setup ohne ProgressDialog
+  	 */ 
+    public static void saveElements(MyContext ctxt,Runnable postRun,Boolean showDialog)
+    {
+    	SaveElement saveElement = buildSaveElement(ctxt,postRun,showDialog);
+    	ctxt.executor.execute(saveElement);
     }
 
     /* 	14.09.12
-  	 * 	Tobias Janßen
+  	 * 	@author Tobias Janssen
   	 *
   	 *	Speichert das aktuelle StupidCore-Setup mit einem ProgressDialog
   	 */	
+    @Deprecated
     public static void saveSetupWithProgressDialog(MyContext ctxt)
     {
-    	StupidCore stupid = ctxt.stupid;
-    	
-    	//ProgressDialog initialisieren
-    	stupid.progressDialog =  new ProgressDialog(ctxt.context);
-    	stupid.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-    	stupid.progressDialog.setMessage(ctxt.context.getString(R.string.msg_saving));
-    	stupid.progressDialog.setCancelable(false);
-    	stupid.progressDialog.setProgress(0);
-		
-		//Prüfen, welche Aufgaben zu erledigen sind, dementsprechend den maximal Wert einstellen
-    	if(stupid.setupIsDirty)
-    	{
-    		stupid.progressDialog.setMax(stupid.elementList.length+stupid.weekList.length+50);
-    	}
-    	stupid.progressDialog.show();
-
-   		
-    	if(stupid.setupIsDirty)
-    	{
-    		SaveSetup saveSetup = buildSaveSetup(ctxt);
-    		ctxt.executor.execute(saveSetup,false);
-    	}
-
-    	if(!stupid.setupIsDirty)
-    	{
-    		stupid.progressDialog.dismiss();
-    	}
-   		
+    	//SaveSetup saveSetup = buildSaveSetup(ctxt);
+    	//ctxt.executor.execute(saveSetup,false);
+   		SaveElement saveElement = buildSaveElement(ctxt,true);
+   		executeWithDialog(ctxt, saveElement,ctxt.context.getString(R.string.msg_saving),ProgressDialog.STYLE_HORIZONTAL);   		
     }
     
+   
     /// Datum: 10.12.12
-  	/// Autor: Tobias Janßen
+  	/// Autor: @author Tobias Janssen
   	///
   	///	Beschreibung:
   	///	Erstellt einen neuen ProgressDialog mit übergebenem Text
@@ -1203,11 +1280,12 @@ public class Tools{
   	///	
   	/// 
   	/// 
+    @Deprecated
     public static void executeWithDialog(MyContext ctxt, AsyncTask<Boolean, Integer, Boolean> newTask,String text, int style)
     {
     	
     	ctxt.handler.post(new ShowProgressDialog(ctxt,style,text,newTask));
-    	ctxt.executor.execute(newTask,false);
+    	ctxt.executor.execute(newTask);
     }
     
     public static boolean gotoSetup(MyContext ctxt) {
@@ -1221,7 +1299,9 @@ public class Tools{
     		
 		}
     	ctxt.forceView=false;
-	    Intent intent = new Intent(ctxt.activity,SetupActivity.class);
+    	//Intent intent = new Intent(ctxt.activity,SetupActivity.class);
+	    Intent intent = new Intent(ctxt.activity,AppPreferences.class);
+    	
 	    ctxt.activity.startActivityForResult(intent,1);	
 	    return true;
     }
@@ -1237,7 +1317,8 @@ public class Tools{
     		
 		}
     	ctxt.forceView=false;
-	    Intent intent = new Intent(ctxt.activity,SetupActivity.class);
+	    //Intent intent = new Intent(ctxt.activity,SetupActivity.class);
+	    Intent intent = new Intent(ctxt.activity,AppPreferences.class);
 	    intent.putExtra(putExtraName, value);
 	    ctxt.activity.startActivityForResult(intent,1);	
 	    return true;
@@ -1285,4 +1366,102 @@ public class Tools{
     {
     	ctxt.stupid.checkAvailibilityOfWeek(ctxt,Const.FORCEREFRESH,Const.THISWEEK);
     }
+    /*
+     * @author Tobias Janssen
+     * übersetzt die Settings aus den alten Versionen in das neue Format und löscht anschließend die alte datei
+     * 
+     * @param ctxt			MyContext der Applikation
+     */
+    public static void translateOldSettings(MyContext ctxt)
+    {
+    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctxt.context);
+		
+		//dies ist für die umstellung auf version 1.03 beta
+		//prüfen, ob die datei noch existiert
+		File oldFile = new File(ctxt.context.getFilesDir(),"gsoStupidSetup.xml");
+		if(oldFile.exists())
+		{
+			try 
+			{
+
+				String content = FileOPs.readFromFile(oldFile);					//Content aus File laden
+				Xml xml = new Xml(content);										//xml-Objekt erzeugen			
+				XmlTag[] xmlTag = xml.xmlToXmlTagArray();						//und den Content konvertiern
+				XmlTag parent = new XmlTag("parent");							
+				parent.childTags = xmlTag;
+				ctxt.stupid.clearElements();
+				ctxt.stupid.fetchElementsFromXml(new Xml(content), ctxt);			//Daten in den Stupid-Core laden
+				String xmlContent = Xml.convertElementsToXml(ctxt);				//Daten in das neue Format konvertieren
+				
+				FileOPs.saveToFile(xmlContent ,Tools.getFileSaveElement(ctxt));	//Daten speichern
+				
+				//Einstellungen umsetzten
+				XmlTag myElement = parent.tagCrawlerFindFirstOf(parent, new XmlTag("myElement"), new XmlTag());
+				XmlTag myType = parent.tagCrawlerFindFirstOf(parent, new XmlTag("myType"), new XmlTag());
+				XmlTag onlyWlan = parent.tagCrawlerFindFirstOf(parent, new XmlTag("onlyWlan"), new XmlTag());
+				XmlTag resyncAfter = parent.tagCrawlerFindFirstOf(parent, new XmlTag("resyncAfter"), new XmlTag());
+				XmlTag hideEmptyHours = parent.tagCrawlerFindFirstOf(parent, new XmlTag("hideEmptyHours"), new XmlTag());
+				XmlTag defaultActivity = parent.tagCrawlerFindFirstOf(parent, new XmlTag("defaultActivity"), new XmlTag());
+				
+				Editor editPrefs = prefs.edit();
+				if(myElement.dataContent != null)
+					editPrefs.putString("listElement", myElement.dataContent);
+				if(myType.dataContent != null)
+				{
+					if(myType.dataContent.equalsIgnoreCase("0"))
+					{
+						editPrefs.putString("listType", "Klassen");
+					}
+					if(myType.dataContent.equalsIgnoreCase("1"))
+					{
+						editPrefs.putString("listType", "Lehrer");
+					}
+					if(myType.dataContent.equalsIgnoreCase("2"))
+					{
+						editPrefs.putString("listType", "Räume");
+					}
+				}
+				if(onlyWlan.dataContent != null)
+				{
+					if(onlyWlan.dataContent.equalsIgnoreCase("true"))
+						editPrefs.putBoolean("boxWlan", true);
+					else
+						editPrefs.putBoolean("boxWlan", false);
+				}
+				if(hideEmptyHours.dataContent != null)
+				{
+					if(hideEmptyHours.dataContent.equalsIgnoreCase("true"))
+						editPrefs.putBoolean("boxHide", true);
+					else
+						editPrefs.putBoolean("boxHide", false);
+				}
+				if(resyncAfter.dataContent != null)
+					editPrefs.putString("listResync", resyncAfter.dataContent);
+				if(resyncAfter.dataContent != null)
+					editPrefs.putString("listResync", resyncAfter.dataContent);
+				if(defaultActivity.dataContent != null)
+				{
+					if(defaultActivity.dataContent.equalsIgnoreCase("class de.janssen.android.gsoplan.WeekPlanActivity"))
+						editPrefs.putString("listActivity", "Woche");
+					if(defaultActivity.dataContent.equalsIgnoreCase("class de.janssen.android.gsoplan.PlanActivity"))
+						editPrefs.putString("listActivity", "Tag");
+				}
+				editPrefs.apply();
+				
+	        	String element = prefs.getString("listElement", "");
+	        	ctxt.stupid.setMyElement(element);
+	        	
+	        	//löschen der alten Datei
+	        	oldFile.delete();
+	        	
+			}
+			catch (Exception e) 
+			{
+			
+			}
+			
+			
+		}
+    }
+    
 }

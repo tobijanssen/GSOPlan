@@ -1,3 +1,9 @@
+/*
+ * ErrorMessage.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan.runnables;
 
 import de.janssen.android.gsoplan.MyContext;
@@ -9,30 +15,64 @@ public class ErrorMessage implements Runnable{
 
 	private MyContext ctxt;
 	private String errorMessage;
+	private OnClickListener onClick;
+	private String positvButtonText ="Ok";
+	
+	public ErrorMessage(MyContext ctxt, String errorMessage,OnClickListener onClick,String positvButtonText)
+	{
+		this.ctxt=ctxt;
+		this.errorMessage=errorMessage;
+		this.onClick = onClick;
+		this.positvButtonText=positvButtonText;
+	}
+	
+	public ErrorMessage(MyContext ctxt, String errorMessage,OnClickListener onClick)
+	{
+		this.ctxt=ctxt;
+		this.errorMessage=errorMessage;
+		this.onClick = onClick;
+	}
+	public ErrorMessage(MyContext ctxt, String errorMessage,String positvButtonText)
+	{
+		this.ctxt=ctxt;
+		this.errorMessage=errorMessage;
+		this.onClick = null;
+		this.positvButtonText=positvButtonText;
+	}
+	
 	public ErrorMessage(MyContext ctxt, String errorMessage)
 	{
 		this.ctxt=ctxt;
 		this.errorMessage=errorMessage;
+		this.onClick = null;
 	}
 	
 	@Override
 	public void run() {
-		if(ctxt.stupid.progressDialog != null && ctxt.stupid.progressDialog.isShowing())
+		if(ctxt.progressDialog != null && ctxt.progressDialog.isShowing())
 		{
-			ctxt.stupid.progressDialog.dismiss();
+			ctxt.progressDialog.dismiss();
 		}
 		if(!errorMessage.equalsIgnoreCase(""))
 		{
 			AlertDialog.Builder dialog = new AlertDialog.Builder(ctxt.context);
 			dialog.setMessage(errorMessage);
-			dialog.setPositiveButton("Ok", new OnClickListener(){
-	
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
+			if(onClick == null)
+			{
+				dialog.setPositiveButton(positvButtonText, new OnClickListener(){
+		
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						
+					}
 					
-				}
+				});
+			}
+			else
+			{
+				dialog.setPositiveButton(positvButtonText,this.onClick);
+			}
 				
-			});
 			dialog.show();
 		}
 	}

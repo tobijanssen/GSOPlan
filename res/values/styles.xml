@@ -1,9 +1,37 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
-
+	
     <style name="AppTheme" parent="android:Theme.Light">
 	    <item name="android:textColor">#FFFFFF</item>
     	<item name="android:typeface">monospace</item>
     	<item name="android:textSize">20sp</item>
-	</style>
+    	
+		
+  	</style>
 
+    
+    <style name="CustomWindowTitleBackground" >
+        <item name="android:background">#3A599A</item>       
+        <item name="android:singleLine">true</item>
+        <item name="android:textAppearance">@android:style/TextAppearance.WindowTitle</item>
+        <item name="android:shadowColor">#BB000000</item>
+        <item name="android:shadowRadius">2.75</item>
+       
+    </style>
+    
+    <style name="PreferenceCategoryCustom">
+        <item name="android:layout">@layout/preference_category</item>
+        <!-- The title should not dim if the category is disabled, instead only the preference children should dim. -->
+        <item name="android:shouldDisableView">false</item>
+        <item name="android:selectable">false</item>
+    </style>
+  
+
+    
+    <style name="Theme.CustomPreferences" parent="@android:Theme.Light" >
+        <item name="android:windowTitleStyle">@style/CustomWindowTitleBackground</item>
+        <item name="android:preferenceCategoryStyle">@style/PreferenceCategoryCustom</item>
+
+    </style>
+	      
+	 
 </resources>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory android:title="@string/catergory1_title" >
+        <ListPreference
+            android:defaultValue=""
+            android:key="listType"
+            android:summary="@string/summary_type"
+            android:title="@string/title_type" >
+        </ListPreference>
+        <ListPreference
+            android:defaultValue=""
+            android:key="listElement"
+            android:summary="@string/summary_element"
+            android:title="@string/title_element" >
+        </ListPreference>
+        <ListPreference
+            android:defaultValue="10"
+            android:key="listResync"
+            android:summary="@string/summary_resyncafter"
+            android:title="@string/title_resyncafter" >
+        </ListPreference>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/catergory2_title" >
+        <ListPreference
+            android:defaultValue="Tag"
+            android:key="listActivity"
+            android:summary="@string/summary_first_activity"
+            android:title="@string/title_first_activity" >
+        </ListPreference>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="boxHide"
+            android:summary="@string/summary_daybegin"
+            android:title="@string/title_daybegin" >
+        </CheckBoxPreference>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="boxWlan"
+            android:summary="@string/summary_wlan"
+            android:title="@string/title_wlan" >
+        </CheckBoxPreference>
+		<Preference 
+		    android:title="@string/app_about" >
+		    <intent 
+		        android:action="android.intent.action.VIEW"
+		        android:targetPackage="de.janssen.android.gsoplan"
+		        android:targetClass="de.janssen.android.gsoplan.AboutGSOPlan"
+		    />
+		</Preference>
+    </PreferenceCategory>
+
+</PreferenceScreen>

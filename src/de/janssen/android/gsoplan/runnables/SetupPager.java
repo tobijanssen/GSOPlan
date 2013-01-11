@@ -1,3 +1,9 @@
+/*
+ * SetupPager.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan.runnables;
 
 import java.util.ArrayList;
@@ -8,9 +14,9 @@ import android.support.v4.view.ViewPager.OnPageChangeListener;
 import com.viewpagerindicator.TitlePageIndicator;
 import de.janssen.android.gsoplan.Const;
 import de.janssen.android.gsoplan.MyContext;
-import de.janssen.android.gsoplan.MyPagerAdapter;
 import de.janssen.android.gsoplan.R;
 import de.janssen.android.gsoplan.Tools;
+import de.janssen.android.gsoplan.view.MyPagerAdapter;
 
 public class SetupPager implements Runnable{
 

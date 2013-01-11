@@ -1,3 +1,9 @@
+/*
+ * Toaster.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan.runnables;
 
 import android.widget.Toast;
@@ -17,7 +23,7 @@ public class Toaster implements Runnable{
 	
 	@Override
 	public void run() {
-		ctxt.stupid.progressDialog.dismiss();
+		ctxt.progressDialog.dismiss();
 		
 		Toast.makeText(ctxt.context, this.toastText, duration).show();
 	}

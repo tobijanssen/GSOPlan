@@ -1,3 +1,9 @@
+/*
+ * ShowProgressDialog.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan.runnables;
 
 import android.app.ProgressDialog;
@@ -11,14 +17,12 @@ public class ShowProgressDialog implements Runnable{
 	private MyContext ctxt;
 	private int style;
 	private String text;
-	private Runnable runThread;
 	private AsyncTask<Boolean, Integer, Boolean> newTask;
 	
-	public ShowProgressDialog(MyContext ctxt,int style, String text, Runnable runThread){
+	public ShowProgressDialog(MyContext ctxt,int style, String text){
 		this.ctxt=ctxt;
 		this.style=style;
 		this.text=text;
-		this.runThread=runThread;
 	}
 	
 	public ShowProgressDialog(MyContext ctxt,int style, String text,AsyncTask<Boolean, Integer, Boolean> newTask){
@@ -30,14 +34,14 @@ public class ShowProgressDialog implements Runnable{
 	}
 	@Override
 	public void run() {
-		if(ctxt.stupid.progressDialog != null && ctxt.stupid.progressDialog.isShowing())
-			ctxt.stupid.progressDialog.dismiss();
-		ctxt.stupid.progressDialog =  new ProgressDialog(ShowProgressDialog.this.ctxt.context);
-		ctxt.stupid.progressDialog.setProgressStyle(style);
-		ctxt.stupid.progressDialog.setMessage(text);
-		ctxt.stupid.progressDialog.setCancelable(true);
-		ctxt.stupid.progressDialog.setProgress(0);
-		ctxt.stupid.progressDialog.setOnCancelListener(new OnCancelListener(){
+		if(ctxt.progressDialog != null && ctxt.progressDialog.isShowing())
+			ctxt.progressDialog.dismiss();
+		ctxt.progressDialog =  new ProgressDialog(ShowProgressDialog.this.ctxt.context);
+		ctxt.progressDialog.setProgressStyle(style);
+		ctxt.progressDialog.setMessage(text);
+		ctxt.progressDialog.setCancelable(true);
+		ctxt.progressDialog.setProgress(0);
+		ctxt.progressDialog.setOnCancelListener(new OnCancelListener(){
 
 			@Override
 			public void onCancel(DialogInterface dialog) {
@@ -45,7 +49,7 @@ public class ShowProgressDialog implements Runnable{
 					newTask.cancel(true);
 				
 			}});
-		ctxt.stupid.progressDialog.show();
+		ctxt.progressDialog.show();
 		
 	}
 	

@@ -1,11 +1,17 @@
+/*
+ * UpdateTimeTableList.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan.runnables;
 
 import java.util.Calendar;
 
 import de.janssen.android.gsoplan.DownloadFeedback;
 import de.janssen.android.gsoplan.MyContext;
-import de.janssen.android.gsoplan.MyPagerAdapter;
 import de.janssen.android.gsoplan.Tools;
+import de.janssen.android.gsoplan.view.MyPagerAdapter;
 
 public class UpdateTimeTableList implements Runnable{
 
@@ -41,7 +47,6 @@ public class UpdateTimeTableList implements Runnable{
     			{
 
 	    			//refresh der daten
-    				//TODO: ISSUE# 11 ArrayList.get() ArrayIndexOutOfBoundsException :weil  ctxt.weekDataIndexToShow = -1
     				if(ctxt.weekDataIndexToShow == -1)
     				{
     					ctxt.weekDataIndexToShow = downloadFeedback.indexOfData;	
@@ -73,9 +78,9 @@ public class UpdateTimeTableList implements Runnable{
     		ctxt.pageIndicator.setViewPager(ctxt.viewPager);
     		ctxt.pageIndicator.notifyDataSetChanged();
             
-    		if (ctxt.stupid.progressDialog != null) 
+    		if (ctxt.progressDialog != null) 
     		{
-    			ctxt.stupid.progressDialog.dismiss();
+    			ctxt.progressDialog.dismiss();
     		}
     	}
     }

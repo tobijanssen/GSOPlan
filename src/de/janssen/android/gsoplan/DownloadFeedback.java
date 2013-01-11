@@ -1,3 +1,9 @@
+/*
+ * DownloadFeedback.java
+ * 
+ * Tobias Janssen, 2013
+ * GNU GENERAL PUBLIC LICENSE Version 2
+ */
 package de.janssen.android.gsoplan;
 
 public class DownloadFeedback {

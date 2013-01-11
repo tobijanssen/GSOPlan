@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    
     <string name="app_name">GSOPlan</string>
-    <string name="menu_setup">Setup</string>
+    <string name="app_version">Version 1.03 Beta</string>
+    <string name="app_author">Tobias Janßen</string>
+    <string name="app_version_date">vom 12.01.2013</string>
+    <string name="menu_setup">Einstellungen</string>
     <string name="title_activity_week_plan">GSOPlan - Wochenansicht</string>
-    <string name="title_activity_setup">Setup</string>
+    <string name="title_activity_setup">GSOPlan - Einstellungen</string>
     <string name="title_activity_plan">GSOPlan - Tagesansicht</string>
     <string name="title_activity_main">GSOPLAN Starter</string>
+    <string name="title_activity_about_gsoplan">Über GSOPlan</string>
     <string name="menu_save">Speichern</string>
     <string name="menu_gotoDate">Gehe zu Datum</string>
     <string name="menu_refresh">Jetzt aktualisieren</string>
@@ -27,20 +32,47 @@
     <string name="msg_saving">Speichern…</string>
     <string name="msg_start">Bitte warten…</string>
 
+    <!-- Fehler-Meldungen -->
+    <string name="setup_message_error_dlElements_1">Beim downloaden der Elemente ist ein Fehler aufgetreten!</string>
+    <!-- siehe unter CONST -->
+
+
     <!-- Setup Section -->
 
+    <string name="catergory1_title">Stundenplan Einstellungen</string>
+    <string name="catergory2_title">App Einstellungen</string>
     <string name="title_element">Element</string>
+    <string name="summary_element">Legt die Klasse, Lehrer, oder den Raum fest</string>
     <string name="title_readyButton">Fertig</string>
     <string name="title_type">Art</string>
-    <string name="title_resyncafter">Aktualisierungsrate des Stundeplans</string>
-    <string name="title_daybegin">Freistunden zu Beginn des Tages ausblenden</string>
-    <string name="setup_message_dlElements_title">Downloade Elementenliste…</string>
-    <string name="setup_message_dlElements_body"></string>
-    <string name="setup_message_error_dlElements_1">Beim downloaden der Elemente ist ein Fehler aufgetreten!</string>
-    <string name="title_ask4net">Datenübertragung nur über WLAN zulassen</string>
-    <string name="title_default_activity">Standart-Ansicht</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="summary_type">Legt den Typ des Elementes fest</string>
+    <string name="title_resyncafter">Aktualisierungsrate</string>
+    <string name="summary_resyncafter">Nach angegebener Zeit wird automatisch Aktualisiert</string>
+    <string name="title_first_activity">Standart-Ansicht</string>
+    <string name="summary_first_activity">Legt die Ansicht fest, die beim Appstart aufgerufen wird</string>
+    <string name="title_daybegin">Freistunden ausblenden</string>
+    <string name="summary_daybegin">Entfernt Freistunden zu Beginn des Tages</string>
+    <string name="setup_message_dlElements_body">Downloade Elementenliste…</string>
+    <string name="title_wlan">Nur WLAN nutzen</string>
+    <string name="summary_wlan">Datenübertragung nur über WLAN zulassen</string>
     <string name="menu_settings">Settings</string>
+    <string name="app_about">Über GSOPlan</string>
     
-
+    <string name="app_recent_changes_header">Letzte Änderungen:\n</string>
+    <string name="app_recent_changes_msg">
+        Einstellungen überarbeitet\nDesign überarbeitet\nScreen-Rotate Error gefixt\ndiverse Fixes + Tweaks\n
+    </string>
+    <string name="app_newVersion_msg">
+        Die Einstellungen wurden bei diesem Update überarbeitet und die bestehenden Daten können nicht übernommen werden.\n 
+    </string>
+    <string name="app_didyaknow_header">Wusstest Du schon?,</string>
+    <string name="app_didyaknow_msg">
+        	dass Du die Updates mit Hilfe der Zurück-Taste abbrechen kannst!?\n\n
+			dass Du in den Einstellungen die Wochenansicht als Standart festlegen kannst!?\n\n
+			dass Du mir bei Fehlern + Problemen gerne eine Email schreiben kannst!?
+    </string>
+    <string name="app_msg_info">Eine neue Version wurde installiert!</string>
+    <string name="app_button_weiter">Weiter…</string>
+    <string name="app_rateme">Dir gefällt GSOPlan?\nDann bewerte die App im Play-Store:</string>
+    <string name="app_rateme_button">zum Play-Store…</string>
 </resources>
