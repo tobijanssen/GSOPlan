@@ -21,11 +21,14 @@ public class MyOnItemLongClickListener implements OnItemLongClickListener
     @Override
     public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2, long arg3)
     {
+	//TODO: ist noch nicht fertig!
+	/*
 	LinearLayout row = (LinearLayout) arg1;
 	TextView tv = (TextView) row.getChildAt(1);
 	String myText = (String) tv.getText();
 	String newText = Tools.decodeContraction(ctxt,myText);
 	ctxt.handler.post(new Toaster(ctxt,newText,Toast.LENGTH_LONG));
+	*/
 	return false;
     }
 

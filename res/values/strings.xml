@@ -3,9 +3,9 @@
 
     
     <string name="app_name">GSOPlan</string>
-    <string name="app_version">Version 1.03 Beta</string>
+    <string name="app_version">Version 1.03a Beta</string>
     <string name="app_author">Tobias Janßen</string>
-    <string name="app_version_date">vom 12.01.2013</string>
+    <string name="app_version_date">vom 27.01.2013</string>
     <string name="menu_setup">Einstellungen</string>
     <string name="title_activity_week_plan">GSOPlan - Wochenansicht</string>
     <string name="title_activity_setup">GSOPlan - Einstellungen</string>
@@ -60,7 +60,7 @@
     
     <string name="app_recent_changes_header">Letzte Änderungen:\n</string>
     <string name="app_recent_changes_msg">
-        Einstellungen überarbeitet\nDesign überarbeitet\nScreen-Rotate Error gefixt\ndiverse Fixes + Tweaks\n
+        - Error View is not attached to WindowManager sollte nun behoben sein\n\n- Ein Fehler bei der Stundenplan-Konvertierung führte in der KW 08 zu einen Absturz -> behoben\n
     </string>
     <string name="app_newVersion_msg">
         Die Einstellungen wurden bei diesem Update überarbeitet und die bestehenden Daten können nicht übernommen werden.\n 
@@ -71,7 +71,7 @@
 			dass Du in den Einstellungen die Wochenansicht als Standart festlegen kannst!?\n\n
 			dass Du mir bei Fehlern + Problemen gerne eine Email schreiben kannst!?
     </string>
-    <string name="app_msg_info">Eine neue Version wurde installiert!</string>
+    <string name="app_msg_info">Ein Hotfix wurde installiert!</string>
     <string name="app_button_weiter">Weiter…</string>
     <string name="app_rateme">Dir gefällt GSOPlan?\nDann bewerte die App im Play-Store:</string>
     <string name="app_rateme_button">zum Play-Store…</string>
