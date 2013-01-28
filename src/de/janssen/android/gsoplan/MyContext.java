@@ -21,7 +21,6 @@ import de.janssen.android.gsoplan.view.MyArrayAdapter;
 import de.janssen.android.gsoplan.view.PlanActivity;
 import de.janssen.android.gsoplan.view.WeekPlanActivity;
 import de.janssen.android.gsoplan.xml.Xml;
-import de.janssen.android.gsoplan.xml.XmlOPs;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;

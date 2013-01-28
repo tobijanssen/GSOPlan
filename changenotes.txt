@@ -1,10 +1,7 @@
-Change Notes Version 1.04 Beta:
+Change Notes Version 1.03a Beta:
 
-Verbesserungen:
-	- 
-	- 
 Bugfixes:
         
 	- Error "View is not attached to WindowManager" sollte nun behoben sein
-	- 
+	- Ein Fehler bei der Stundenplan-Konvertierung führte in KW 08 zu einen Absturz -> behoben
 	
