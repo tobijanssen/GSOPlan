@@ -1,10 +1,10 @@
-Change Notes Version 1.03 Beta:
+Change Notes Version 1.04 Beta:
 
 Verbesserungen:
-	- Einstellungen überarbeitet
-	- Design überarbeitet
+	- 
+	- 
 Bugfixes:
         
-	- Screen-Rotate Error gefixt
-	- diverse Fixes + Tweaks
+	- Error "View is not attached to WindowManager" sollte nun behoben sein
+	- 
 	

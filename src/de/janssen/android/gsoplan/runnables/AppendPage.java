@@ -12,22 +12,20 @@ import de.janssen.android.gsoplan.core.WeekData;
 
 public class AppendPage implements Runnable
 {
-	private WeekData weekData;
-	private MyContext ctxt;
-	
-	
-	public AppendPage(WeekData weekData, MyContext ctxt )
-	{
-		this.weekData=weekData;
-		this.ctxt=ctxt;
-	}
-	
-	@Override
-	public void run() 
-	{
-		
-		Tools.appendTimeTableToPager(weekData, ctxt);
-	}
+    private WeekData weekData;
+    private MyContext ctxt;
 
-	
+    public AppendPage(WeekData weekData, MyContext ctxt)
+    {
+	this.weekData = weekData;
+	this.ctxt = ctxt;
+    }
+
+    @Override
+    public void run()
+    {
+
+	Tools.appendTimeTableToPager(weekData, ctxt);
+    }
+
 }

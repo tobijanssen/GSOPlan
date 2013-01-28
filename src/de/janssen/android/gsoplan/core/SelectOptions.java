@@ -6,8 +6,9 @@
  */
 package de.janssen.android.gsoplan.core;
 
-public class SelectOptions {
-	public String index="";
-	public String description="";
+public class SelectOptions
+{
+    public String index = "";
+    public String description = "";
 
 }
