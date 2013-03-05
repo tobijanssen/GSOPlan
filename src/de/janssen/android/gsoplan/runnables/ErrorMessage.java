@@ -19,6 +19,14 @@ public class ErrorMessage implements Runnable
     private OnClickListener onClick;
     private String positvButtonText = "Ok";
 
+    
+    /**
+     * Erzeugt neue Fehlermeldung
+     * @param ctxt			MyContext der Applikation
+     * @param errorMessage		String der die Meldung enthält
+     * @param onClick			OnClickListener für positiven Klick
+     * @param positvButtonText		String Positive Button Text
+     */
     public ErrorMessage(MyContext ctxt, String errorMessage, OnClickListener onClick, String positvButtonText)
     {
 	this.ctxt = ctxt;
@@ -27,13 +35,24 @@ public class ErrorMessage implements Runnable
 	this.positvButtonText = positvButtonText;
     }
 
+    /**
+     * Erzeugt neue Fehlermeldung
+     * @param ctxt			MyContext der Applikation
+     * @param errorMessage		String der die Meldung enthält
+     * @param onClick			OnClickListener für positiven Klick
+     */
     public ErrorMessage(MyContext ctxt, String errorMessage, OnClickListener onClick)
     {
 	this.ctxt = ctxt;
 	this.errorMessage = errorMessage;
 	this.onClick = onClick;
     }
-
+    /**
+     * Erzeugt neue Fehlermeldung
+     * @param ctxt			MyContext der Applikation
+     * @param errorMessage		String der die Meldung enthält
+     * @param positvButtonText		String Positive Button Text
+     */
     public ErrorMessage(MyContext ctxt, String errorMessage, String positvButtonText)
     {
 	this.ctxt = ctxt;
@@ -41,7 +60,11 @@ public class ErrorMessage implements Runnable
 	this.onClick = null;
 	this.positvButtonText = positvButtonText;
     }
-
+    /**
+     * Erzeugt neue Fehlermeldung
+     * @param ctxt			MyContext der Applikation
+     * @param errorMessage		String der die Meldung enthält
+     */
     public ErrorMessage(MyContext ctxt, String errorMessage)
     {
 	this.ctxt = ctxt;
@@ -56,7 +79,7 @@ public class ErrorMessage implements Runnable
 	{
 	    ctxt.progressDialog.dismiss();
 	}
-	if (errorMessage != null && !errorMessage.equalsIgnoreCase(""))
+	if (ctxt.mIsRunning && errorMessage != null && !errorMessage.equalsIgnoreCase(""))
 	{
 	    AlertDialog.Builder dialog = new AlertDialog.Builder(ctxt.context);
 	    dialog.setMessage(errorMessage);

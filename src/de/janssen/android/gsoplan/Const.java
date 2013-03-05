@@ -19,6 +19,10 @@ public class Const
     public final static String FILEVERSION = "Version.xml";
     public final static String FIRSTSTART = "FirstStart";
     public final static int CONNECTIONTIMEOUT = 5000;
+    public final static String CHECKBOXPROFILID = "checkboxUseFav";
 
-    public final static String errXml = "Die XML Konvertierung hat nicht geklappt!\nBitte erneut versuchen!";
+    public final static String ERROR_XMLFAILURE = "Die XML Konvertierung hat nicht geklappt!\nBitte erneut versuchen!";
+    public final static String ERROR_NOSERVER = "Keine Verbindung zum Server!\nEs wird eine Internetverbindung benötigt!";
+    public final static String ERROR_CONNTIMEOUT = "Verbindungs-Timeout! Server nicht erreichbar!";
+    public final static String ERROR_NOTIMETABLE_FOR_REFRESH = "Es existiert noch kein Stundenplan, der Aktualisiert werden kann!\nBitte kontrollieren Sie die Internetverbindung und anschließend die Einstellungen!";
 }

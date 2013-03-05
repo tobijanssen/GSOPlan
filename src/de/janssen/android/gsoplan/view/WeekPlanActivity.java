@@ -57,7 +57,7 @@ public class WeekPlanActivity extends Activity
 		{
 		    Calendar cal = new GregorianCalendar();
 		    cal.setTimeInMillis(currentDate);
-		    ctxt.stupid.currentDate = (Calendar) cal.clone();
+		    ctxt.getCurStupid().currentDate = (Calendar) cal.clone();
 		}
 		catch (Exception e)
 		{
@@ -84,15 +84,28 @@ public class WeekPlanActivity extends Activity
 	{
 	    // ActionBar hinzufügen
 	    ActionBar actionBar = getActionBar();
-	    actionBar.show();
+	    if(ctxt.mIsRunning)
+		actionBar.show();
 	}
 	ctxt.handler = new Handler();
 	ctxt.executor.execute(new WeekPlanActivityLuncher(this));
     }
-
+    
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu)
+    {
+	//prüfen, ob ein zweites profil genutz werden soll
+	if(!ctxt.getCheckboxPreference(Const.CHECKBOXPROFILID))
+	{
+	    //wenn nicht die option dazu entfernen
+	    menu.removeItem(R.id.menu_favorite);
+	}
+	return super.onPrepareOptionsMenu(menu);
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
+	ctxt.appMenu = menu;
 	getMenuInflater().inflate(R.menu.activity_week_plan, menu);
 	return true;
     }
@@ -107,24 +120,19 @@ public class WeekPlanActivity extends Activity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
-	if (resultCode == RESULT_OK && requestCode == 1)
-	{
-	    if (data.hasExtra("setupIsDirty"))
-	    {
-		ctxt.stupid.setupIsDirty = data.getExtras().getBoolean("setupIsDirty");
-	    }
-	    if (data.hasExtra("dataIsDirty"))
-	    {
-		ctxt.stupid.dataIsDirty = data.getExtras().getBoolean("dataIsDirty");
-	    }
-	}
-	else
-	{
-	    Intent intent = getIntent();
-	    finish();
-	    startActivity(intent);
-	}
-
+	ctxt.handler.post(new Runnable(){
+		
+		@Override
+		public void run()
+		{
+		    ctxt.switchStupid();
+		    Tools.saveProfilSameThread(ctxt, ctxt.getSelector());
+		    
+		    Intent intent = new Intent(ctxt.activity, WeekPlanActivity.class);
+		    ctxt.activity.startActivity(intent);
+		    finish();
+		}
+	    });
     }
 
     @Override
@@ -147,21 +155,37 @@ public class WeekPlanActivity extends Activity
 	    Tools.refreshWeek(ctxt);
 	    return true;
 	case R.id.menu_today:
-	    ctxt.stupid.currentDate = new GregorianCalendar();
-	    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.THISWEEK);
+	    ctxt.getCurStupid().currentDate = new GregorianCalendar();
+	    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.THISWEEK);
 	    if (ctxt.weekView)
 	    {
-		ctxt.viewPager.setCurrentItem(Tools.getPage(ctxt.pageIndex, ctxt.stupid.currentDate,
+		ctxt.pager.viewPager.setCurrentItem(Tools.getPage(ctxt.pager.pageIndex, ctxt.getCurStupid().currentDate,
 			Calendar.WEEK_OF_YEAR));
 	    }
 	    else
 	    {
-		ctxt.viewPager.setCurrentItem(Tools.getPage(ctxt.pageIndex, ctxt.stupid.currentDate,
+		ctxt.pager.viewPager.setCurrentItem(Tools.getPage(ctxt.pager.pageIndex, ctxt.getCurStupid().currentDate,
 			Calendar.DAY_OF_YEAR));
 	    }
 	    return true;
 	case R.id.menu_dayPlan:
 	    Tools.gotoDayPlan(ctxt);
+	    return true;
+	case R.id.menu_favorite:
+	    
+	    ctxt.handler.post(new Runnable(){
+		
+		@Override
+		public void run()
+		{
+		    ctxt.switchStupid();
+		    Tools.saveProfilSameThread(ctxt, ctxt.getSelector());
+		    
+		    Intent intent = new Intent(ctxt.activity, WeekPlanActivity.class);
+		    ctxt.activity.startActivity(intent);
+		    finish();
+		}
+	    });
 	    return true;
 	default:
 	    return super.onOptionsItemSelected(item);
@@ -172,70 +196,30 @@ public class WeekPlanActivity extends Activity
     protected void onResume()
     {
 	super.onResume();
-	ctxt.getPrefs(this.getApplicationContext());
-	/*
-	 * if(ctxt.defaultActivity == null) { Xml xml = new Xml();
-	 * 
-	 * //Prüfen, ob die benötigten Dateien existieren: File setupFile =
-	 * Tools.getFileSaveSetup(ctxt); if(setupFile.exists()) { //die
-	 * SetupDatei Laden try { xml.container =
-	 * FileOPs.readFromFile(setupFile); ctxt.stupid.clearSetup();
-	 * ctxt.stupid.fetchSetupFromXml(xml,ctxt); } catch(Exception e) {
-	 * //Fehler beim Laden der SetupDatei } } }
-	 */
-
-	if (ctxt.getDefaultActivity().equalsIgnoreCase("Tag") && !ctxt.forceView)
-	{
-	    // andere Ansicht gewählt
-	    Intent intent = new Intent(ctxt.activity, ctxt.getDefaultActivityClass());
-	    ctxt.activity.startActivity(intent);
-	}
-
-	if (ctxt.stupid.dataIsDirty)
-	{
-	    ctxt.stupid.clearData();
-	    ctxt.stupid.dataIsDirty = false;
-	    ctxt.stupid.setupIsDirty = false;
-	    ctxt.handler.postDelayed(new Runnable()
-	    {
-		@Override
-		public void run()
-		{
-		    WeekPlanActivity.this.ctxt.selfCheck();
-
-		}
-	    }, 2000);
-	}
-	else if (ctxt.stupid.setupIsDirty)
-	{
-	    ctxt.stupid.setupIsDirty = false;
-	    ctxt.selfCheck();
-
-	}
-
+	ctxt.mIsRunning=true;
+    }
+    @Override
+    protected void onPause()
+    {
+	super.onPause();
+	ctxt.mIsRunning=false;
     }
 
     @Override
     protected void onStop()
     {
 	super.onStop();
-	for (int i = 0; i < ctxt.stupid.stupidData.size() && !ctxt.stupid.dataIsDirty; i++)
+	try
 	{
-	    if (ctxt.stupid.stupidData.get(i).isDirty)
-		ctxt.stupid.dataIsDirty = true;
+	    ctxt.getCurStupid().saveFiles(ctxt);
 	}
-	if (ctxt.stupid.dataIsDirty)
+	catch (Exception e)
 	{
-	    try
-	    {
-		Tools.saveFiles(ctxt);
-	    }
-	    catch (Exception e)
-	    {
+	    if(ctxt.mIsRunning)
 		Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-	    }
-
 	}
+
+
 	EasyTracker.getInstance().activityStop(this);
     }
 
@@ -258,35 +242,40 @@ public class WeekPlanActivity extends Activity
 	    @Override
 	    public void run()
 	    {
-		DatePickerDialog picker = new DatePickerDialog(WeekPlanActivity.this,
-			new DatePickerDialog.OnDateSetListener()
-			{
-			    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth)
+		if(ctxt.mIsRunning)
+		{
+		    DatePickerDialog picker = new DatePickerDialog(WeekPlanActivity.this,
+			    new DatePickerDialog.OnDateSetListener()
 			    {
-				// Backup vom Datum erstellen, falls es das neue
-				// Datum nicht gibt
-				ctxt.dateBackup = (Calendar) ctxt.stupid.currentDate.clone();
-				// das Ausgewählte Datum einstellen
-				ctxt.stupid.currentDate.set(year, monthOfYear, dayOfMonth);
-				// prüfen, ob es sich dabei um wochenend tage
-				// handelt:
-				switch (ctxt.stupid.currentDate.get(Calendar.DAY_OF_WEEK))
+				public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth)
 				{
-				case Calendar.SATURDAY:
-				    ctxt.stupid.currentDate.setTimeInMillis(ctxt.stupid.currentDate.getTimeInMillis()
-					    + (1000 * 60 * 60 * 24 * 2));
-				    break;
-				case Calendar.SUNDAY:
-				    ctxt.stupid.currentDate.setTimeInMillis(ctxt.stupid.currentDate.getTimeInMillis()
-					    + (1000 * 60 * 60 * 24 * 1));
-				    break;
+				    // Backup vom Datum erstellen, falls es das
+				    // neue
+				    // Datum nicht gibt
+				    ctxt.dateBackup = (Calendar) ctxt.getCurStupid().currentDate.clone();
+				    // das Ausgewählte Datum einstellen
+				    ctxt.getCurStupid().currentDate.set(year, monthOfYear, dayOfMonth);
+				    // prüfen, ob es sich dabei um wochenend
+				    // tage
+				    // handelt:
+				    switch (ctxt.getCurStupid().currentDate.get(Calendar.DAY_OF_WEEK))
+				    {
+				    case Calendar.SATURDAY:
+					ctxt.getCurStupid().currentDate.setTimeInMillis(ctxt.getCurStupid().currentDate
+						.getTimeInMillis() + (1000 * 60 * 60 * 24 * 2));
+					break;
+				    case Calendar.SUNDAY:
+					ctxt.getCurStupid().currentDate.setTimeInMillis(ctxt.getCurStupid().currentDate
+						.getTimeInMillis() + (1000 * 60 * 60 * 24 * 1));
+					break;
 
+				    }
+				    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.SELECTEDWEEK);
 				}
-				ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.SELECTEDWEEK);
-			    }
-			}, ctxt.stupid.currentDate.get(Calendar.YEAR), ctxt.stupid.currentDate.get(Calendar.MONTH),
-			ctxt.stupid.currentDate.get(Calendar.DAY_OF_MONTH));
-		picker.show();
+			    }, ctxt.getCurStupid().currentDate.get(Calendar.YEAR), ctxt.getCurStupid().currentDate
+				    .get(Calendar.MONTH), ctxt.getCurStupid().currentDate.get(Calendar.DAY_OF_MONTH));
+		    picker.show();
+		}
 	    }
 	});
     }

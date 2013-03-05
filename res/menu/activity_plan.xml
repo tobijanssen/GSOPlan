@@ -5,6 +5,12 @@
         android:title="@string/menu_setup"
         android:orderInCategory="100"
         android:showAsAction="collapseActionView" />
+	
+	<item android:id="@+id/menu_favorite"
+	    android:icon="@drawable/ic_menu_cc"
+        android:title="@string/menu_favorite"
+        android:orderInCategory="100"
+        android:showAsAction="collapseActionView" />
     
     <item android:id="@+id/menu_gotoDate"
        	android:icon="@drawable/ic_menu_goto"

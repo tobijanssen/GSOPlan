@@ -8,14 +8,14 @@
 package de.janssen.android.gsoplan;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
-import de.janssen.android.gsoplan.asyncTasks.Download;
-import de.janssen.android.gsoplan.asyncTasks.SaveData;
-import de.janssen.android.gsoplan.asyncTasks.SaveElement;
+
+import com.viewpagerindicator.TitlePageIndicator;
+
+import de.janssen.android.gsoplan.asyncTasks.SaveProfil;
 import de.janssen.android.gsoplan.core.FileOPs;
 import de.janssen.android.gsoplan.core.Stupid;
 import de.janssen.android.gsoplan.core.WeekData;
@@ -29,37 +29,33 @@ import de.janssen.android.gsoplan.view.WeekPlanActivity;
 import de.janssen.android.gsoplan.xml.XmlOPs;
 import de.janssen.android.gsoplan.xml.Xml;
 import de.janssen.android.gsoplan.xml.XmlSearch;
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageInfo;
 import android.graphics.Color;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.support.v4.view.ViewPager;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemLongClickListener;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class Tools
 {
-
-    /**
+    /** 
+     * fügt der Liste der Pages und Headlines den übergebenen TimeTable hinzu
      * @author Tobias Janssen
      * 
-     *         fügt der Liste der Pages und Headlines den übergebenen TimeTable
-     *         hinzu
+     * @param weekData
+     * @param ctxt
      */
     public static void appendTimeTableToPager(WeekData weekData, MyContext ctxt)
     {
@@ -82,7 +78,7 @@ public class Tools
 	    // createTimetableWeekViewObject(weekData, ctxt, currentDay);
 
 	    View page = createWeekPage(weekData, ctxt);
-	    insertWeekPage(ctxt, currentDay, page, createWeekHeader(weekData, currentDay), 0, ctxt.pageIndex.size());
+	    insertWeekPage(ctxt, currentDay, page, createWeekHeader(weekData, currentDay), 0, ctxt.pager.pageIndex.size());
 
 	    // currentDay.roll(Calendar.WEEK_OF_YEAR,true);
 	    currentDay.setTimeInMillis(currentDay.getTimeInMillis() + 86400000);
@@ -96,7 +92,7 @@ public class Tools
 		List<TimetableViewObject> list = createTimetableDayViewObject(weekData, ctxt, currentDay);
 
 		View page = createPage(weekData, ctxt, list);
-		insertDayPage(ctxt, currentDay, page, createDayHeader(weekData, currentDay), 0, ctxt.pageIndex.size());
+		insertDayPage(ctxt, currentDay, page, createDayHeader(weekData, currentDay), 0, ctxt.pager.pageIndex.size());
 
 		// currentDay.roll(Calendar.DAY_OF_YEAR,1);
 		currentDay.setTimeInMillis(currentDay.getTimeInMillis() + 86400000);
@@ -106,35 +102,6 @@ public class Tools
 
     }
 
-    /**
-     * @author Tobias Janssen Generiert ein SaveData Object, das dann ausgeführt
-     *         werden kann
-     */
-    private static SaveData buildSaveData(MyContext ctxt, WeekData weekData)
-    {
-	File file = getFileSaveData(ctxt, weekData);
-	return new SaveData(weekData, file, ctxt);
-    }
-
-    /**
-     * @author Tobias Janssen Generiert ein SaveSetup Object, das dann
-     *         ausgeführt werden kann
-     */
-    private static SaveElement buildSaveElement(MyContext ctxt, Boolean showDialog)
-    {
-	File file = getFileSaveElement(ctxt);
-	return new SaveElement(ctxt, file, showDialog);
-    }
-
-    /**
-     * @author Tobias Janssen Generiert ein SaveSetup Object, das dann
-     *         ausgeführt werden kann
-     */
-    private static SaveElement buildSaveElement(MyContext ctxt, Runnable postRun, Boolean showDialog)
-    {
-	File file = getFileSaveElement(ctxt);
-	return new SaveElement(ctxt, file, postRun, showDialog);
-    }
 
     /**
      * 
@@ -201,8 +168,6 @@ public class Tools
 	MyArrayAdapter adapter = new MyArrayAdapter(ctxt, list);
 	listView.setAdapter(adapter);
 
-	listView.setOnItemLongClickListener(new MyOnItemLongClickListener(ctxt));
-
 	TextView syncTime = (TextView) page.findViewById(R.id.syncTime);
 	Calendar sync = new GregorianCalendar();
 	sync.setTimeInMillis(weekData.syncTime);
@@ -218,8 +183,9 @@ public class Tools
     }
 
     /**
-     * @author Tobias Janssen Erstellt eine Stundeplan Seite des ViewPagers,
-     *         inkl Header und Footer Hier wird die Wochenansicht generiert
+     * Erstellt eine Stundeplan Seite des ViewPagers, inkl Header und Footer<p>
+     * Hier wird die Wochenansicht generiert
+     * @author Tobias Janssen 
      * 
      * @param weekData
      * @param ctxt
@@ -253,7 +219,7 @@ public class Tools
 	    tv.setTextSize(ctxt.textSizes[0]);
 	    if (x == 0)
 	    {
-		tv.setText(ctxt.stupid.timeslots[0]);
+		tv.setText(ctxt.getCurStupid().timeslots[0]);
 		tv.setTextColor(Color.parseColor("#3A599A"));
 
 	    }
@@ -275,7 +241,7 @@ public class Tools
 	Boolean rowIsEmpty = true;
 	// herausfinden ab wann die stunden beginnen, dies nur durchführen, wenn
 	// leestunden entfernt werden sollen
-	if (ctxt.stupid.hideEmptyHours)
+	if (ctxt.getCurStupid().hideEmptyHours)
 	{
 	    for (int y = start; y < weekData.timetable.length && rowIsEmpty; y++)
 	    {
@@ -300,7 +266,7 @@ public class Tools
 	rowIsEmpty = true;
 	// herausfinden ab wann die stunden beginnen, dies nur durchführen, wenn
 	// leestunden entfernt werden sollen
-	if (ctxt.stupid.hideEmptyHours)
+	if (ctxt.getCurStupid().hideEmptyHours)
 	{
 	    for (int y = stop; y > 0 && rowIsEmpty; y--)
 	    {
@@ -330,6 +296,7 @@ public class Tools
 	{
 	    start = 1;
 	}
+	//den Stundenplan zusammensetzten
 	for (int y = start; y <= stop; y++)
 	{
 	    tr = new TableRow(ctxt.context);
@@ -343,12 +310,13 @@ public class Tools
 		ll.setBackgroundColor(Color.WHITE);
 		View textview = ctxt.inflater.inflate(R.layout.textview, null);
 		TextView tv = (TextView) textview.findViewById(R.id.textview);
+		
 		// TextView tv = new TextView(ctxt.context);
 
 		tv.setTextSize(10);
 		if (x == 0)
 		{
-		    tv.setText(ctxt.stupid.timeslots[y]);
+		    tv.setText(ctxt.getCurStupid().timeslots[y]);
 		    tv.setTextColor(Color.parseColor("#3A599A"));
 
 		}
@@ -358,7 +326,7 @@ public class Tools
 		    {
 			String colorString = weekData.timetable[y][x].getColorParameter();
 			tv.setTextColor(Color.parseColor(colorString));
-			tv.setText(weekData.timetable[y][x].getDataContent().replace("\n", " ") + "\t");
+			tv.setText(weekData.timetable[y][x].getDataContent().replace("\n", " ")) ;
 		    }
 		}
 		ll.addView(tv);
@@ -394,7 +362,7 @@ public class Tools
     private static List<TimetableViewObject> createTimetableDayViewObject(WeekData weekData, MyContext ctxt,
 	    Calendar currentDay)
     {
-	Stupid stupid = ctxt.stupid;
+	Stupid stupid = ctxt.getCurStupid();
 	int x = currentDay.get(Calendar.DAY_OF_WEEK) - 1;
 	List<TimetableViewObject> list = new ArrayList<TimetableViewObject>();
 
@@ -471,89 +439,9 @@ public class Tools
 	return list;
     }
 
-    /**
-     * 
-     * @author Tobias Janssen
-     * 
-     *         Lädt die Selectoren von der GSO-Seite und parsed diese in die
-     *         availableOnline Arrays
-     * 
-     * @param ctxt
-     * @param postRun
-     */
-    public static void fetchOnlineSelectors(MyContext ctxt, Runnable postRun)
-    {
-	Stupid stupid = ctxt.stupid;
+    
 
-	try
-	{
-	    // prüfen ob Datenübertragung nur über Wlan zulässig ist:
-	    if (stupid.onlyWlan)
-	    {
-		// Es dürfen Daten nur bei bestehender Wlan verbindung geladen
-		// werden
-		// Prüfen, ob Wlan verbindung besteht
-		if (Tools.isWifiConnected(ctxt.context))
-		{
-		    // Verbindung vorhanden
-		    Download download = new Download(ctxt, true, false, postRun);
-		    ctxt.executor.execute(download);
-		}
-		else
-		{
-		    // Keine Wlan Verbindung vorhanden, Fehler-Meldung ausgeben
-		    Toast.makeText(ctxt.context, "Keine Wlan Verbindung!", Toast.LENGTH_SHORT).show();
-		}
-	    }
-	    else
-	    {
-		// Es dürfen Daten auch ohne Wlan geladen werden
-		// ctxt.progressDialog = ProgressDialog.show(ctxt.context,
-		// ctxt.context.getString(R.string.setup_message_dlElements_title),
-		// ctxt.context.getString(R.string.setup_message_dlElements_body),
-		// true,false);
-		// stupid.setupIsDirty=true;
-		Download download = new Download(ctxt, true, false, postRun);
-		ctxt.executor.execute(download);
-	    }
 
-	}
-	catch (Exception e)
-	{
-	    new AlertDialog.Builder(ctxt.context).setTitle("Fehler")
-		    .setMessage(ctxt.context.getString(R.string.setup_message_error_dlElements_1))
-		    .setPositiveButton("OK", new DialogInterface.OnClickListener()
-		    {
-			public void onClick(DialogInterface dialog, int which)
-			{
-			    // continue with delete
-			}
-		    }).setNegativeButton("Abbrechen", new DialogInterface.OnClickListener()
-		    {
-			public void onClick(DialogInterface dialog, int which)
-			{
-			    // do nothing
-			}
-		    }).show();
-
-	}
-    }
-
-    /**
-     * @author Tobias Janssen Generiert ein SaveData Object, das dann ausgeführt
-     *         werden kann
-     * 
-     * @param ctxt
-     * @param weekData
-     * @return
-     */
-    private static File getFileSaveData(MyContext ctxt, WeekData weekData)
-    {
-
-	String filename = Tools.getWeekOfYearToDisplay(weekData.date) + "_" + weekData.date.get(Calendar.YEAR) + "_"
-		+ Const.FILEDATA;
-	return new File(ctxt.context.getFilesDir() + "/" + weekData.elementId, filename);
-    }
 
     /**
      * @author Tobias Janssen Prüft anhand einer Datei, welche Version zuvor
@@ -611,18 +499,7 @@ public class Tools
 
     }
 
-    /**
-     * @author Tobias Janssen Generiert ein SaveData Object, das dann ausgeführt
-     *         werden kann
-     * 
-     * @param ctxt
-     * @return
-     */
-    public static File getFileSaveElement(MyContext ctxt)
-    {
-	String filename = Const.FILEELEMENT;
-	return new File(ctxt.context.getFilesDir(), filename);
-    }
+
 
     /**
      * @author Tobias Janssen
@@ -736,30 +613,7 @@ public class Tools
 	}
     }
 
-    /**
-     * @author Tobias Janssen
-     * 
-     *         Liefert die KalenderWoche des angegebenen Datums zurück
-     * 
-     * @param date
-     * @return
-     */
-    private static int getWeekOfYearToDisplay(Calendar date)
-    {
-	Calendar copy = (Calendar) date.clone();
-	int currentDay = copy.get(Calendar.DAY_OF_WEEK);
-	if (currentDay < 5)
-	{
-	    copy.setTimeInMillis(date.getTimeInMillis() + (86400000 * (5 - currentDay)));
-	}
-	else if (currentDay > 5)
-	{
-	    copy.setTimeInMillis(date.getTimeInMillis() - +(86400000 * (currentDay - 5)));
-	}
-	int result = 0;
-	result = copy.get(Calendar.WEEK_OF_YEAR);
-	return result;
-    }
+
 
     /**
      * @author Tobias Janssen
@@ -784,10 +638,10 @@ public class Tools
 	{
 	    // es existiert keiner, oder max ein eintrag
 	    // daher prüfen, ob ein eintrag besteht
-	    if (ctxt.pageIndex.size() >= 1)
+	    if (ctxt.pager.pageIndex.size() >= 1)
 	    {
 		// ja, einen eintrag gibt es bereits
-		int pageDate = calcIntYearDay(ctxt.pageIndex.get(midPos));
+		int pageDate = calcIntYearDay(ctxt.pager.pageIndex.get(midPos));
 		int currentDate = calcIntYearDay(currentWeek);
 
 		// prüfen, ob die bestehende seite "älter" als die
@@ -795,31 +649,31 @@ public class Tools
 		if (pageDate < currentDate)
 		{
 		    // die page indexieren
-		    ctxt.pageIndex.add(midPos + 1, (Calendar) currentWeek.clone());
-		    ctxt.pages.add(midPos + 1, page);
-		    ctxt.headlines.add(midPos + 1, header);
+		    ctxt.pager.pageIndex.add(midPos + 1, (Calendar) currentWeek.clone());
+		    ctxt.pager.pages.add(midPos + 1, page);
+		    ctxt.pager.headlines.add(midPos + 1, header);
 		}
 		else
 		{
 		    // die page indexieren
-		    ctxt.pageIndex.add(midPos, (Calendar) currentWeek.clone());
-		    ctxt.pages.add(midPos, page);
-		    ctxt.headlines.add(midPos, header);
+		    ctxt.pager.pageIndex.add(midPos, (Calendar) currentWeek.clone());
+		    ctxt.pager.pages.add(midPos, page);
+		    ctxt.pager.headlines.add(midPos, header);
 		}
 	    }
 	    else
 	    {
 		// nein es ist alles leer, daher einfach einfügen
 		// die page indexieren
-		ctxt.pageIndex.add(midPos, (Calendar) currentWeek.clone());
-		ctxt.pages.add(midPos, page);
-		ctxt.headlines.add(midPos, header);
+		ctxt.pager.pageIndex.add(midPos, (Calendar) currentWeek.clone());
+		ctxt.pager.pages.add(midPos, page);
+		ctxt.pager.headlines.add(midPos, header);
 	    }
 	}
 	else
 	{
 
-	    int pageDate = calcIntYearDay(ctxt.pageIndex.get(midPos));
+	    int pageDate = calcIntYearDay(ctxt.pager.pageIndex.get(midPos));
 	    int currentDate = calcIntYearDay(currentWeek);
 
 	    // prüfen, ob die bestehende seite "älter" als die hinzuzufügende
@@ -831,19 +685,19 @@ public class Tools
 		// prüfen, ob direkte nachbarschaft besteht
 		// dazu erstmal prüfen, ob der nächste nachbar überhaupt
 		// existiert
-		if (midPos + 1 >= ctxt.pageIndex.size())
+		if (midPos + 1 >= ctxt.pager.pageIndex.size())
 		{
 		    // existiert gar keiner mehr; daher page hinzufügen
 
 		    // die page indexieren
-		    ctxt.pageIndex.add(midPos + 1, (Calendar) currentWeek.clone());
-		    ctxt.pages.add(midPos + 1, page);
-		    ctxt.headlines.add(midPos + 1, header);
+		    ctxt.pager.pageIndex.add(midPos + 1, (Calendar) currentWeek.clone());
+		    ctxt.pager.pages.add(midPos + 1, page);
+		    ctxt.pager.headlines.add(midPos + 1, header);
 		}
 		else
 		{
 		    // es ist ein nachbar vorhanden
-		    int pageNeighborDate = calcIntYearDay(ctxt.pageIndex.get(midPos + 1));
+		    int pageNeighborDate = calcIntYearDay(ctxt.pager.pageIndex.get(midPos + 1));
 		    // prüfen, ob dieser näher dran liegt als die currentPage
 		    if (pageNeighborDate < currentDate)
 		    {
@@ -855,9 +709,9 @@ public class Tools
 			// nein, currentPage ist näher
 			// also dazwischen einfügen
 			// die page indexieren
-			ctxt.pageIndex.add(midPos + 1, (Calendar) currentWeek.clone());
-			ctxt.pages.add(midPos + 1, page);
-			ctxt.headlines.add(midPos + 1, header);
+			ctxt.pager.pageIndex.add(midPos + 1, (Calendar) currentWeek.clone());
+			ctxt.pager.pages.add(midPos + 1, page);
+			ctxt.pager.headlines.add(midPos + 1, header);
 
 		    }
 		}
@@ -874,23 +728,23 @@ public class Tools
 		    // existiert gar kein eintrag; daher page hinzufügen
 
 		    // die page indexieren
-		    ctxt.pageIndex.add((Calendar) currentWeek.clone());
-		    ctxt.pages.add(page);
-		    ctxt.headlines.add(header);
+		    ctxt.pager.pageIndex.add((Calendar) currentWeek.clone());
+		    ctxt.pager.pages.add(page);
+		    ctxt.pager.headlines.add(header);
 		}
 		else
 		{
 		    // prüfen, ob der vorgänger Nachbar kleiner ist
-		    int pageNeighborDate = calcIntYearDay(ctxt.pageIndex.get(midPos - 1));
+		    int pageNeighborDate = calcIntYearDay(ctxt.pager.pageIndex.get(midPos - 1));
 
 		    if (pageNeighborDate < currentDate)
 		    {
 			// ja davorige page ist kleiner
 			// also dazwischen einfügen
 			// die page indexieren
-			ctxt.pageIndex.add(midPos, (Calendar) currentWeek.clone());
-			ctxt.pages.add(midPos, page);
-			ctxt.headlines.add(midPos, header);
+			ctxt.pager.pageIndex.add(midPos, (Calendar) currentWeek.clone());
+			ctxt.pager.pages.add(midPos, page);
+			ctxt.pager.headlines.add(midPos, header);
 
 		    }
 		    else
@@ -954,10 +808,10 @@ public class Tools
 	{
 	    // es existiert keiner, oder max ein eintrag
 	    // daher prüfen, ob ein eintrag besteht
-	    if (ctxt.pageIndex.size() >= 1)
+	    if (ctxt.pager.pageIndex.size() >= 1)
 	    {
 		// ja, einen eintrag gibt es bereits
-		int pageDate = calcIntYearDay(ctxt.pageIndex.get(midPos));
+		int pageDate = calcIntYearDay(ctxt.pager.pageIndex.get(midPos));
 		int currentDate = calcIntYearDay(currentDay);
 
 		// prüfen, ob die bestehende seite "älter" als die
@@ -965,31 +819,31 @@ public class Tools
 		if (pageDate < currentDate)
 		{
 		    // die page indexieren
-		    ctxt.pageIndex.add(midPos + 1, (Calendar) currentDay.clone());
-		    ctxt.pages.add(midPos + 1, page);
-		    ctxt.headlines.add(midPos + 1, header);
+		    ctxt.pager.pageIndex.add(midPos + 1, (Calendar) currentDay.clone());
+		    ctxt.pager.pages.add(midPos + 1, page);
+		    ctxt.pager.headlines.add(midPos + 1, header);
 		}
 		else
 		{
 		    // die page indexieren
-		    ctxt.pageIndex.add(midPos, (Calendar) currentDay.clone());
-		    ctxt.pages.add(midPos, page);
-		    ctxt.headlines.add(midPos, header);
+		    ctxt.pager.pageIndex.add(midPos, (Calendar) currentDay.clone());
+		    ctxt.pager.pages.add(midPos, page);
+		    ctxt.pager.headlines.add(midPos, header);
 		}
 	    }
 	    else
 	    {
 		// nein es ist alles leer, daher einfach einfügen
 		// die page indexieren
-		ctxt.pageIndex.add(midPos, (Calendar) currentDay.clone());
-		ctxt.pages.add(midPos, page);
-		ctxt.headlines.add(midPos, header);
+		ctxt.pager.pageIndex.add(midPos, (Calendar) currentDay.clone());
+		ctxt.pager.pages.add(midPos, page);
+		ctxt.pager.headlines.add(midPos, header);
 	    }
 	}
 	else
 	{
 	    // daten Tag des Jahres abrufen
-	    int pageDate = calcIntYearDay(ctxt.pageIndex.get(midPos));
+	    int pageDate = calcIntYearDay(ctxt.pager.pageIndex.get(midPos));
 	    int currentDate = calcIntYearDay(currentDay);
 
 	    // prüfen, ob die bestehende seite "älter" als die hinzuzufügende
@@ -1001,20 +855,20 @@ public class Tools
 		// prüfen, ob direkte nachbarschaft besteht
 		// dazu erstmal prüfen, ob der nächste nachbar überhaupt
 		// existiert
-		if (midPos + 1 >= ctxt.pageIndex.size())
+		if (midPos + 1 >= ctxt.pager.pageIndex.size())
 		{
 		    // existiert gar keiner mehr; daher page hinzufügen
 
 		    // die page indexieren
-		    ctxt.pageIndex.add(midPos + 1, (Calendar) currentDay.clone());
-		    ctxt.pages.add(midPos + 1, page);
-		    ctxt.headlines.add(midPos + 1, header);
+		    ctxt.pager.pageIndex.add(midPos + 1, (Calendar) currentDay.clone());
+		    ctxt.pager.pages.add(midPos + 1, page);
+		    ctxt.pager.headlines.add(midPos + 1, header);
 		}
 		else
 		{
 		    // es ist ein nachbar vorhanden
 		    // prüfen, ob dieser näher dran liegt als die currentPage
-		    int pageNeighborDate = calcIntYearDay(ctxt.pageIndex.get(midPos + 1));
+		    int pageNeighborDate = calcIntYearDay(ctxt.pager.pageIndex.get(midPos + 1));
 		    if (pageNeighborDate < currentDate)
 		    {
 			// ja alte page ist ein näherer nachbar
@@ -1025,9 +879,9 @@ public class Tools
 			// nein, currentPage ist näher
 			// also dazwischen einfügen
 			// die page indexieren
-			ctxt.pageIndex.add(midPos + 1, (Calendar) currentDay.clone());
-			ctxt.pages.add(midPos + 1, page);
-			ctxt.headlines.add(midPos + 1, header);
+			ctxt.pager.pageIndex.add(midPos + 1, (Calendar) currentDay.clone());
+			ctxt.pager.pages.add(midPos + 1, page);
+			ctxt.pager.headlines.add(midPos + 1, header);
 
 		    }
 		}
@@ -1044,22 +898,22 @@ public class Tools
 		    // existiert gar kein eintrag; daher page hinzufügen
 
 		    // die page indexieren
-		    ctxt.pageIndex.add((Calendar) currentDay.clone());
-		    ctxt.pages.add(page);
-		    ctxt.headlines.add(header);
+		    ctxt.pager.pageIndex.add((Calendar) currentDay.clone());
+		    ctxt.pager.pages.add(page);
+		    ctxt.pager.headlines.add(header);
 		}
 		else
 		{
 		    // prüfen, ob der vorgänger Nachbar kleiner ist
-		    int pageNeighborDate = calcIntYearDay(ctxt.pageIndex.get(midPos - 1));
+		    int pageNeighborDate = calcIntYearDay(ctxt.pager.pageIndex.get(midPos - 1));
 		    if (pageNeighborDate < currentDate)
 		    {
 			// ja davorige page ist kleiner
 			// also dazwischen einfügen
 			// die page indexieren
-			ctxt.pageIndex.add(midPos, (Calendar) currentDay.clone());
-			ctxt.pages.add(midPos, page);
-			ctxt.headlines.add(midPos, header);
+			ctxt.pager.pageIndex.add(midPos, (Calendar) currentDay.clone());
+			ctxt.pager.pages.add(midPos, page);
+			ctxt.pager.headlines.add(midPos, header);
 
 		    }
 		    else
@@ -1072,26 +926,7 @@ public class Tools
 	}
     }
 
-    /**
-     * @author Tobias Janssen
-     * 
-     *         Prüft, ob eine Wlan verbindung besteht, und liefert das Ergebnis
-     * 
-     * @param context
-     * @return
-     */
-    public static Boolean isWifiConnected(Context context)
-    {
-	WifiManager wifi = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-	WifiInfo wifiinfo = wifi.getConnectionInfo();
 
-	if (wifiinfo.getNetworkId() == -1)
-	{
-	    return false;
-	}
-	else
-	    return true;
-    }
 
     /**
      * @author Tobias Janssen Lädt alle verfügbaren Daten-Datein
@@ -1117,6 +952,59 @@ public class Tools
 	}
 
     }
+    /**
+     * Lädt die Profildatei. Sie enthält den zuletzt gewählten Index des StupidCores
+     * 
+     * 
+     * @param ctxt
+     */
+    public static void loadProfileFile(MyContext ctxt)
+    {
+	try
+	{
+	    File dir = new java.io.File(ctxt.context.getFilesDir() + "/");
+	    Xml xml = new Xml("root", FileOPs.readFromFile(new File(dir, "profil.xml")));
+	    xml.parseXml();
+	    XmlSearch xmlSearch = new XmlSearch();
+	    Xml profil = xmlSearch.tagCrawlerFindFirstOf(xml, new Xml(Xml.PROFIL));
+	    if (profil != null)
+	    {
+		if (profil.getType().equalsIgnoreCase(Xml.PROFIL))
+		{
+		    String value = profil.getDataContent();
+		    if (value.equalsIgnoreCase("1"))
+			ctxt.switchStupidTo(1);
+		    if (value.equalsIgnoreCase("0"))
+			ctxt.switchStupidTo(0);
+		}
+	    }
+	}
+	catch (Exception e)
+	{
+	    
+	}
+    }
+    
+    /**
+     * Speichert das aktuelle Profil
+     * @param ctxt
+     */
+    public static void saveProfilSameThread(MyContext ctxt, int index)
+    {
+	try
+	{
+	    File dir = new java.io.File(ctxt.context.getFilesDir() + "/");
+	    File profilFile = new File(dir, "profil.xml");
+	    String xmlContent = XmlOPs.createProfileXml(ctxt, index);
+	    FileOPs.saveToFile(xmlContent, profilFile);
+	}
+	catch (Exception e)
+	{
+	    
+	}
+    }
+    
+
 
     /**
      * @author Tobias Janssen
@@ -1170,15 +1058,15 @@ public class Tools
 	    String header = createWeekHeader(weekData, currentDay);
 	    // location suchen
 	    int location = -1;
-	    for (int i = 0; i < ctxt.headlines.size() && location == -1; i++)
+	    for (int i = 0; i < ctxt.pager.headlines.size() && location == -1; i++)
 	    {
-		if (ctxt.headlines.get(i).equals(header))
+		if (ctxt.pager.headlines.get(i).equals(header))
 		    location = i;
 	    }
 	    if (location == -1)
 		location = 0;
-	    ctxt.pages.set(location, page);
-	    ctxt.headlines.set(location, header);
+	    ctxt.pager.pages.set(location, page);
+	    ctxt.pager.headlines.set(location, header);
 
 	    // currentDay.roll(Calendar.WEEK_OF_YEAR,true);
 	    currentDay.setTimeInMillis(currentDay.getTimeInMillis() + 86400000);
@@ -1194,15 +1082,15 @@ public class Tools
 
 		// location suchen
 		int location = -1;
-		for (int i = 0; i < ctxt.headlines.size() && location == -1; i++)
+		for (int i = 0; i < ctxt.pager.headlines.size() && location == -1; i++)
 		{
-		    if (ctxt.headlines.get(i).equals(header))
+		    if (ctxt.pager.headlines.get(i).equals(header))
 			location = i;
 		}
 		if (location == -1)
 		    location = 0;
-		ctxt.pages.set(location, page);
-		ctxt.headlines.set(location, header);
+		ctxt.pager.pages.set(location, page);
+		ctxt.pager.headlines.set(location, header);
 
 		currentDay.setTimeInMillis(currentDay.getTimeInMillis() + 86400000);
 		// currentDay.roll(Calendar.DAY_OF_YEAR,true);
@@ -1210,173 +1098,9 @@ public class Tools
 	}
     }
 
-    /**
-     * @author Tobias Janssen
-     * 
-     * @param ctxt
-     * @throws Exception
-     */
-    public static void saveFiles(MyContext ctxt) throws Exception
-    {
-	saveFiles(ctxt, false);
-    }
 
-    /**
-     * 
-     * @author Tobias Janssen
-     * 
-     *         Prüft, ob welche Daten im StupidCore dirty sind, und speichert
-     *         diese
-     * 
-     * @param ctxt
-     * @param showDialog
-     * @throws Exception
-     */
-    public static void saveFiles(MyContext ctxt, Boolean showDialog) throws Exception
-    {
-	Stupid stupid = ctxt.stupid;
-	SaveElement saveSetup = buildSaveElement(ctxt, showDialog);
-	SaveData saveData;
 
-	if (stupid.setupIsDirty)
-	{
-	    ctxt.executor.execute(saveSetup);
-	}
-
-	WeekData weekData;
-	for (int d = 0; d < stupid.stupidData.size(); d++)
-	{
-	    weekData = stupid.stupidData.get(d);
-	    saveData = buildSaveData(ctxt, weekData);
-	    if (weekData.isDirty)
-	    {
-		ctxt.executor.execute(saveData);
-	    }
-	    stupid.dataIsDirty = false;
-	}
-
-    }
-
-    /**
-     * 14.09.12
-     * 
-     * @author Tobias Janssen
-     * 
-     *         Speichert den aktuellen StupidCore
-     * 
-     * @param ctxt
-     * @param currentDate
-     */
-    @Deprecated
-    public static void saveFilesWithProgressDialog(MyContext ctxt, Calendar currentDate)
-    {
-	Stupid stupid = ctxt.stupid;
-
-	// ProgressDialog initialisieren
-
-	ctxt.progressDialog = new ProgressDialog(ctxt.context);
-	ctxt.progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-	ctxt.progressDialog.setMessage(ctxt.context.getString(R.string.msg_saving));
-	ctxt.progressDialog.setCancelable(false);
-	ctxt.progressDialog.setProgress(0);
-
-	// Prüfen, welche Aufgaben zu erledigen sind, dementsprechend den
-	// maximal Wert einstellen
-	if (stupid.elementList.length > 0 && stupid.setupIsDirty)
-	{
-	    ctxt.progressDialog.setMax(stupid.elementList.length + stupid.weekList.length + 50);
-	}
-	int dataToSaveCounter = 0;
-	for (int d = 0; d < stupid.stupidData.size(); d++)
-	{
-	    if (stupid.stupidData.get(d).isDirty)
-	    {
-		dataToSaveCounter++;
-	    }
-	}
-	if (dataToSaveCounter > 0)
-	{
-	    ctxt.progressDialog
-		    .setMax(ctxt.progressDialog.getMax()
-			    + dataToSaveCounter
-			    * (stupid.stupidData.get(0).timetable.length * stupid.stupidData.get(0).timetable[0].length + stupid.stupidData
-				    .get(0).timetable.length) + dataToSaveCounter);
-	}
-
-	ctxt.progressDialog.show();
-
-	if (stupid.setupIsDirty)
-	{
-	    SaveElement saveSetup = buildSaveElement(ctxt, true);
-	    ctxt.executor.execute(saveSetup);
-	}
-
-	SaveData saveData;
-	WeekData weekData;
-	for (int d = 0; d < stupid.stupidData.size(); d++)
-	{
-	    weekData = stupid.stupidData.get(d);
-	    saveData = buildSaveData(ctxt, weekData);
-	    if (weekData.isDirty)
-	    {
-		ctxt.executor.execute(saveData);
-	    }
-	}
-	// ctxt.executor.execute(new DismissProgress(ctxt),false);
-    }
-
-    /**
-     * 14.09.12
-     * 
-     * @author Tobias Janssen
-     * 
-     *         Speichert das aktuelle StupidCore-Setup ohne ProgressDialog
-     * 
-     * @param ctxt
-     * @param showDialog
-     */
-    public static void saveElements(MyContext ctxt, Boolean showDialog)
-    {
-	SaveElement saveElement = buildSaveElement(ctxt, showDialog);
-	ctxt.executor.execute(saveElement);
-    }
-
-    /**
-     * 14.09.12
-     * 
-     * @author Tobias Janssen
-     * 
-     *         Speichert das aktuelle StupidCore-Setup ohne ProgressDialog
-     * 
-     * @param ctxt
-     * @param postRun
-     * @param showDialog
-     */
-    public static void saveElements(MyContext ctxt, Runnable postRun, Boolean showDialog)
-    {
-	SaveElement saveElement = buildSaveElement(ctxt, postRun, showDialog);
-	ctxt.executor.execute(saveElement);
-    }
-
-    /**
-     * 14.09.12
-     * 
-     * @author Tobias Janssen
-     * 
-     *         Speichert das aktuelle StupidCore-Setup mit einem ProgressDialog
-     * 
-     * @param ctxt
-     */
-    @Deprecated
-    public static void saveSetupWithProgressDialog(MyContext ctxt)
-    {
-	// SaveSetup saveSetup = buildSaveSetup(ctxt);
-	// ctxt.executor.execute(saveSetup,false);
-	SaveElement saveElement = buildSaveElement(ctxt, true);
-	executeWithDialog(ctxt, saveElement, ctxt.context.getString(R.string.msg_saving),
-		ProgressDialog.STYLE_HORIZONTAL);
-    }
-
+    
     /**
      * @author Tobias Janssen Erstellt einen neuen ProgressDialog mit
      *         übergebenem Text
@@ -1396,6 +1120,7 @@ public class Tools
     }
 
     /**
+     * 
      * @author Tobias Janssen
      * @param ctxt
      * @return
@@ -1405,7 +1130,7 @@ public class Tools
 
 	try
 	{
-	    Tools.saveFiles(ctxt);
+	    ctxt.getCurStupid().saveFiles(ctxt);
 	}
 	catch (Exception e)
 	{
@@ -1431,7 +1156,7 @@ public class Tools
 
 	try
 	{
-	    Tools.saveFiles(ctxt);
+	    ctxt.getCurStupid().saveFiles(ctxt);
 	}
 	catch (Exception e)
 	{
@@ -1455,14 +1180,14 @@ public class Tools
 
 	try
 	{
-	    Tools.saveFiles(ctxt);
+	    ctxt.getCurStupid().saveFiles(ctxt);
 	}
 	catch (Exception e)
 	{
 
 	}
 	Intent intent = new Intent(ctxt.activity, WeekPlanActivity.class);
-	intent.putExtra("currentDate", ctxt.stupid.currentDate.getTimeInMillis());
+	intent.putExtra("currentDate", ctxt.getCurStupid().currentDate.getTimeInMillis());
 	intent.putExtra("forceView", true);
 	ctxt.activity.startActivity(intent);
 	return true;
@@ -1478,14 +1203,14 @@ public class Tools
 
 	try
 	{
-	    Tools.saveFiles(ctxt);
+	    ctxt.getCurStupid().saveFiles(ctxt);
 	}
 	catch (Exception e)
 	{
 
 	}
 	Intent intent = new Intent(ctxt.activity, PlanActivity.class);
-	intent.putExtra("currentDate", ctxt.stupid.currentDate.getTimeInMillis());
+	intent.putExtra("currentDate", ctxt.getCurStupid().currentDate.getTimeInMillis());
 	intent.putExtra("forceView", true);
 	ctxt.activity.startActivity(intent);
 	return true;
@@ -1498,7 +1223,7 @@ public class Tools
      */
     public static void refreshWeek(MyContext ctxt)
     {
-	ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.FORCEREFRESH, Const.THISWEEK);
+	ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.FORCEREFRESH, Const.THISWEEK);
     }
 
     /**
@@ -1524,8 +1249,8 @@ public class Tools
 								// File laden
 		Xml xml = new Xml("root", content); // xml-Objekt erzeugen
 		xml.parseXml(); // und den Content konvertiern
-		ctxt.stupid.clearElements();
-		ctxt.stupid.fetchElementsFromXml(xml, ctxt); // Daten
+		ctxt.getCurStupid().clearElements();
+		ctxt.getCurStupid().fetchElementsFromXml(xml, ctxt); // Daten
 							     // in
 							     // den
 							     // Stupid-Core
@@ -1536,7 +1261,7 @@ public class Tools
 								       // Format
 								       // konvertieren
 
-		FileOPs.saveToFile(xmlContent, Tools.getFileSaveElement(ctxt)); // Daten
+		FileOPs.saveToFile(xmlContent, ctxt.getCurStupid().getFileSaveElement(ctxt)); // Daten
 										// speichern
 
 		// Einstellungen umsetzten
@@ -1555,20 +1280,20 @@ public class Tools
 
 		Editor editPrefs = prefs.edit();
 		if (myElement.getDataContent() != null)
-		    editPrefs.putString("listElement", myElement.getDataContent());
+		    editPrefs.putString("listElement1", myElement.getDataContent());
 		if (myType.getDataContent() != null)
 		{
 		    if (myType.getDataContent().equalsIgnoreCase("0"))
 		    {
-			editPrefs.putString("listType", "Klassen");
+			editPrefs.putString("listType1", "Klassen");
 		    }
 		    if (myType.getDataContent().equalsIgnoreCase("1"))
 		    {
-			editPrefs.putString("listType", "Lehrer");
+			editPrefs.putString("listType1", "Lehrer");
 		    }
 		    if (myType.getDataContent().equalsIgnoreCase("2"))
 		    {
-			editPrefs.putString("listType", "Räume");
+			editPrefs.putString("listType1", "Räume");
 		    }
 		}
 		if (onlyWlan.getDataContent() != null)
@@ -1600,8 +1325,8 @@ public class Tools
 		}
 		editPrefs.apply();
 
-		String element = prefs.getString("listElement", "");
-		ctxt.stupid.setMyElement(element);
+		String element = prefs.getString("listElement1", "");
+		ctxt.getCurStupid().setMyElement(element);
 
 		// löschen der alten Datei
 		oldFile.delete();
@@ -1613,62 +1338,28 @@ public class Tools
 	    }
 
 	}
-    }
-
-    public static String decodeContraction(MyContext ctxt, String input)
-    {
-	Faecher faecher = new Faecher();
-	Lehrer lehrer = new Lehrer();
-	String[] parts = input.split("  ");
-	// TODO: ist noch nicht fertig
-	String result = "";
-
-	if (ctxt.stupid.getMyType() == 0)		//Schüler
+	//Dies ist für die Umstellung von Version 1.03b auf 1.04
+	//Der ElementsDateiname hat sich geändert und heißt nun 0Elements.xml 
+	oldFile = new File(ctxt.context.getFilesDir(), "Elements.xml");
+	if(oldFile.exists())
 	{
-	    if (parts.length == 3)
-	    {
-		for (int i = 0; i < lehrer.list.size(); i++)
-		{
-		    if (lehrer.list.get(i).getName().equalsIgnoreCase(parts[0].replace(" ", "")))
-		    {
-			result += lehrer.list.get(i).getValue();
-		    }
-		}
-
-		result += " im Raum ";
-		result += parts[1];
-		result += "\n\n";
-		for (int i = 0; i < faecher.list.size(); i++)
-		{
-		    if (faecher.list.get(i).getName().equalsIgnoreCase(parts[2].replace(" ", "")))
-		    {
-			result += faecher.list.get(i).getValue();
-		    }
-		}
-
-	    }
+	    oldFile.renameTo(new File(ctxt.context.getFilesDir(),"0Elements.xml"));
+	    Editor editPrefs = prefs.edit();
+	    String oldElement = prefs.getString("listElement", "");
+	    editPrefs.remove("listElement");
+	    editPrefs.putString("listElement1", oldElement);
+	    String oldType = prefs.getString("listType", "Klassen");
+	    editPrefs.putString("listType1", oldType);
+	    editPrefs.remove("listType");
+	    editPrefs.apply();
 	}
-	else if (ctxt.stupid.getMyType() == 1)		//Lehrer
-	{
-	    if (parts.length == 3)
-	    {
-		result+= "Klasse "+parts[0];
-
-		result += " im Raum ";
-		result += parts[2];
-		result += "\n\n";
-		for (int i = 0; i < faecher.list.size(); i++)
-		{
-		    if (faecher.list.get(i).getName().equalsIgnoreCase(parts[1].replace(" ", "")))
-		    {
-			result += faecher.list.get(i).getValue();
-		    }
-		}
-
-	    }
-	}
-	    
-	return result;
     }
+    
+
+
+ 
+    
+    
+
 
 }

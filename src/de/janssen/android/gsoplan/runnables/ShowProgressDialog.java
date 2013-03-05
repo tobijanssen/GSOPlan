@@ -57,7 +57,8 @@ public class ShowProgressDialog implements Runnable
 
 	    }
 	});
-	ctxt.progressDialog.show();
+	if(ctxt.mIsRunning)
+	    ctxt.progressDialog.show();
 
     }
 

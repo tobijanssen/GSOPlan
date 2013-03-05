@@ -14,10 +14,16 @@ import de.janssen.android.gsoplan.view.WeekPlanActivity;
 public class WeekPlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
 {
     private WeekPlanActivity parent;
+    private Runnable preExec = null;
 
     public WeekPlanActivityLuncher(WeekPlanActivity parent)
     {
 	this.parent = parent;
+    }
+    public WeekPlanActivityLuncher(WeekPlanActivity parent, Runnable preExec)
+    {
+	this.parent = parent;
+	this.preExec=preExec;
     }
 
     @Override
@@ -27,7 +33,10 @@ public class WeekPlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean
 	parent.ctxt.progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 	parent.ctxt.progressDialog.setMessage(parent.getString(R.string.msg_start));
 	parent.ctxt.progressDialog.setCancelable(true);
-	parent.ctxt.progressDialog.show();
+	if(parent.ctxt.mIsRunning)
+	    parent.ctxt.progressDialog.show();
+	if(preExec != null)
+	    preExec.run();
 	super.onPreExecute();
     }
 
@@ -43,7 +52,7 @@ public class WeekPlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean
     @Override
     protected void onPostExecute(Boolean result)
     {
-	if (parent.ctxt.progressDialog != null && parent.ctxt.progressDialog.isShowing())
+	if (parent.ctxt.mIsRunning && parent.ctxt.progressDialog != null && parent.ctxt.progressDialog.isShowing())
 	{
 	    parent.ctxt.progressDialog.dismiss();
 	}

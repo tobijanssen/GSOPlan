@@ -27,19 +27,19 @@ public class RefreshPager implements Runnable
     @Override
     public void run()
     {
-	if (ctxt.pagerReady)
+	if (ctxt.pager.pagerReady)
 	{
 	    int newPage;
 	    if (ctxt.weekView)
 	    {
-		newPage = Tools.getPage(ctxt.pageIndex, ctxt.stupid.currentDate, Calendar.WEEK_OF_YEAR);
+		newPage = Tools.getPage(ctxt.pager.pageIndex, ctxt.getCurStupid().currentDate, Calendar.WEEK_OF_YEAR);
 	    }
 	    else
 	    {
-		newPage = Tools.getPage(ctxt.pageIndex, ctxt.stupid.currentDate, Calendar.DAY_OF_YEAR);
+		newPage = Tools.getPage(ctxt.pager.pageIndex, ctxt.getCurStupid().currentDate, Calendar.DAY_OF_YEAR);
 	    }
-	    ctxt.currentPage = ctxt.viewPager.getCurrentItem();
-	    if (newPage != ctxt.currentPage)// newPage != (parent.currentPage
+	    ctxt.pager.currentPage = ctxt.pager.viewPager.getCurrentItem();
+	    if (newPage != ctxt.pager.currentPage)// newPage != (parent.currentPage
 					    // -1) && newPage !=
 					    // (parent.currentPage + 1) &&
 	    {
@@ -47,18 +47,18 @@ public class RefreshPager implements Runnable
 		if (newPage != 0) // Dort scheint ein bug zu sein; bei Seite 0
 				  // wird onPageselected Event nicht gestartet,
 				  // daher nicht disablen
-		    ctxt.disableNextPagerOnChangedEvent = true;
+		    ctxt.pager.disableNextPagerOnChangedEvent = true;
 
-		ctxt.currentPage = newPage;
-		ctxt.pageAdapter = new MyPagerAdapter(ctxt.pages, ctxt.headlines);
+		ctxt.pager.currentPage = newPage;
+		ctxt.pager.pageAdapter = new MyPagerAdapter(ctxt.pager.pages, ctxt.pager.headlines);
 
-		ctxt.viewPager.setAdapter(ctxt.pageAdapter);
-		ctxt.viewPager.setCurrentItem(ctxt.currentPage, smoothScroll);
+		ctxt.pager.viewPager.setAdapter(ctxt.pager.pageAdapter);
+		ctxt.pager.viewPager.setCurrentItem(ctxt.pager.currentPage, smoothScroll);
 
-		ctxt.pageIndicator.setViewPager(ctxt.viewPager);
-		ctxt.pageIndicator.notifyDataSetChanged();
+		ctxt.pager.pageIndicator.setViewPager(ctxt.pager.viewPager);
+		ctxt.pager.pageIndicator.notifyDataSetChanged();
 
-		ctxt.pageIndicator.setCurrentItem(newPage);
+		ctxt.pager.pageIndicator.setCurrentItem(newPage);
 	    }
 	}
 

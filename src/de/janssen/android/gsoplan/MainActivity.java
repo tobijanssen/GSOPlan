@@ -9,9 +9,7 @@
 
 package de.janssen.android.gsoplan;
 
-import java.io.File;
-import de.janssen.android.gsoplan.core.FileOPs;
-import de.janssen.android.gsoplan.xml.Xml;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Intent;

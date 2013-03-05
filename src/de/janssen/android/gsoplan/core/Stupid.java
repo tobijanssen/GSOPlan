@@ -6,6 +6,7 @@
  */
 package de.janssen.android.gsoplan.core;
 
+import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -18,13 +19,21 @@ import de.janssen.android.gsoplan.DownloadFeedback;
 import de.janssen.android.gsoplan.MyContext;
 import de.janssen.android.gsoplan.R;
 import de.janssen.android.gsoplan.Tools;
+import de.janssen.android.gsoplan.asyncTasks.Download;
 import de.janssen.android.gsoplan.asyncTasks.MainDownloader;
+import de.janssen.android.gsoplan.asyncTasks.SaveData;
+import de.janssen.android.gsoplan.asyncTasks.SaveElement;
+import de.janssen.android.gsoplan.asyncTasks.SaveProfil;
+import de.janssen.android.gsoplan.runnables.ErrorMessage;
 import de.janssen.android.gsoplan.runnables.RefreshPager;
 import de.janssen.android.gsoplan.xml.XmlOPs;
 import de.janssen.android.gsoplan.xml.Xml;
 import de.janssen.android.gsoplan.xml.XmlSearch;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.graphics.Point;
+import android.widget.Toast;
 
 public class Stupid
 {
@@ -37,8 +46,7 @@ public class Stupid
     public Boolean hideEmptyHours = true;
     public long syncTime = 0;
     public List<WeekData> stupidData = new ArrayList<WeekData>();
-    public Boolean dataIsDirty = false;
-    public Boolean setupIsDirty = false;
+    private Boolean isDirty = false;
     public final String[] timeslots = new String[] { "", "7.45 - 8.30", "8.30 - 9.15", "9.35 - 10.20", "10.20 - 11.05",
 	    "11.25 - 12.10", "12.10 - 12.55", "13.15 - 14.00", "14.00 - 14.45", "15.05 - 15.50", "15.50 - 16.35",
 	    "16.55 - 17.40", "17.40 - 18.25", "18.25 - 19.10", "19.30 - 20.15", "20.15 - 21.00" };
@@ -49,6 +57,16 @@ public class Stupid
     final String NAVBARURL = "http://stupid.gso-koeln.de/frames/navbar.htm";
     final String URLSTUPID = "http://stupid.gso-koeln.de/";
 
+    /**
+     * Setzt isDirty auf den übergebenen Parameter
+     * 
+     * @param arg
+     */
+    public void setIsDirty(Boolean arg)
+    {
+	this.isDirty=arg;
+    }
+    
     /**
      * @return Long
      */
@@ -73,10 +91,25 @@ public class Stupid
 
     /**
      * @return
+     * 
      */
     public int getMyType()
     {
 	return this.myType;
+    }
+
+    /**
+     * @param value
+     * @throws Exception
+     */
+    public void setMyType(int value) throws Exception
+    {
+	if (value < this.typeList.length && value >= 0)
+	{
+	    this.myType = value;
+	    return;
+	}
+	throw new Exception("Type ist ungültig");
     }
 
     /**
@@ -96,25 +129,20 @@ public class Stupid
     }
 
     /**
-     * @param value
-     * @throws Exception
-     */
-    public void setMyType(int value) throws Exception
-    {
-	if (value < this.typeList.length && value >= 0)
-	{
-	    this.myType = value;
-	    return;
-	}
-	throw new Exception("Type ist ungültig");
-    }
-
-    /**
      * @return
      */
     public String getMyElement()
     {
 	return this.myElement;
+    }
+
+    /**
+     * @param value
+     * 
+     */
+    public void setMyElement(String value)
+    {
+	this.myElement = value;
     }
 
     /**
@@ -135,14 +163,6 @@ public class Stupid
 	}
 	// Element nicht gefunden
 	throw new Exception("Element ist ungültig");
-    }
-
-    /**
-     * @param value
-     */
-    public void setMyElement(String value)
-    {
-	this.myElement = value;
     }
 
     public Stupid()
@@ -233,8 +253,7 @@ public class Stupid
 
 	// das Xml Tag heraussuchen, in dem "Montag" steht
 	XmlSearch xmlSearch = new XmlSearch();
-	Xml monday = xmlSearch.tagCrawlerFindFirstOf(htmlTableTag, new Xml(Xml.UNSET, "Montag"));
-	Xml position = monday;
+	Xml position = xmlSearch.tagCrawlerFindFirstOf(htmlTableTag, new Xml(Xml.UNSET, "Montag"));
 	Xml tuesday;
 	Xml table;
 	do
@@ -244,10 +263,11 @@ public class Stupid
 
 	    xmlSearch = new XmlSearch();
 	    tuesday = xmlSearch.tagCrawlerFindFirstOf(table, new Xml(Xml.UNSET, "Dienstag"));
-	    if(tuesday == null || tuesday.getType() == null)
+	    if (tuesday == null || tuesday.getType() == null)
 		position = table.getParentTag();
-	} while ((tuesday == null || tuesday.getType() == null) && (position != null && position.getParentTag() != null));
-	
+	} while ((tuesday == null || tuesday.getType() == null)
+		&& (position != null && position.getParentTag() != null));
+
 	xmlSearch = new XmlSearch();
 	Xml tr = xmlSearch.tagCrawlerFindFirstEntryOf(table, Xml.TR);
 	int rows = tr.getParentTag().getChildTags().length;
@@ -372,16 +392,23 @@ public class Stupid
 
 	// das Xml Tag heraussuchen, in dem "Montag" steht
 	XmlSearch xmlSearch = new XmlSearch();
-	Xml monday = xmlSearch.tagCrawlerFindFirstOf(htmlTableTag, new Xml(Xml.UNSET, "Montag"));
+	Xml position = xmlSearch.tagCrawlerFindFirstOf(htmlTableTag, new Xml(Xml.UNSET, "Montag"));
+	Xml tuesday;
+	Xml table;
+	do
+	{
+	    xmlSearch = new XmlSearch();
+	    table = xmlSearch.tagCrawlerFindFirstOf(position, new Xml(Xml.TABLE), true);
 
-	// die tr heraussuchen:
-	// TODO:hier muss eine andere form des crawlers her, der nicht tiefer
-	// als x suchen soll
+	    xmlSearch = new XmlSearch();
+	    tuesday = xmlSearch.tagCrawlerFindFirstOf(table, new Xml(Xml.UNSET, "Dienstag"));
+	    if (tuesday == null || tuesday.getType() == null)
+		position = table.getParentTag();
+	} while ((tuesday == null || tuesday.getType() == null)
+		&& (position != null && position.getParentTag() != null));
+
 	xmlSearch = new XmlSearch();
-	Xml tr = xmlSearch.tagCrawlerFindFirstEntryOf(htmlTableTag, Xml.TR);
-	// TODO: Abfangen wenn nichts gefunden wurde!
-
-	// TODO:das hier ist noch nicht optimal:
+	Xml tr = xmlSearch.tagCrawlerFindFirstEntryOf(table, Xml.TR);
 	int rows = tr.getParentTag().getChildTags().length;
 	int cols = 0;
 	Boolean colSpanFound = false;
@@ -537,6 +564,7 @@ public class Stupid
 	}
 	else
 	{
+
 	    if (typeList[this.myType].index.equalsIgnoreCase("c"))
 	    {
 		// verfügbare Klassen abrufen
@@ -562,7 +590,7 @@ public class Stupid
 
 	ctxt.progressDialog.incrementProgressBy(500);
 
-	setupIsDirty = true;
+	this.isDirty = true;
 
 	Date date = new Date();
 	syncTime = date.getTime();
@@ -594,7 +622,7 @@ public class Stupid
 	Xml time = xmlSearch.tagCrawlerFindFirstOf(xml, new Xml(Xml.SYNCTIME));
 	xmlSearch = new XmlSearch();
 	Xml types = xmlSearch.tagCrawlerFindFirstOf(xml, new Xml(Xml.TYPES));
-
+	
 	if (time.getDataContent() != null)
 	    syncTime = Long.parseLong(time.getDataContent());
 
@@ -669,20 +697,11 @@ public class Stupid
      * @author Tobias Janssen Lädt den angegebenen TimeTable von der GSO Seite
      *         und parsed diesen in den StupidCore
      * 
-     * @param selectedStringDate
-     *            String der das Datum enthält
-     * 
-     * @param selectedElement
-     *            String der das Element enthält
-     * 
-     * @param selectedType
-     *            String der den Type enthält
-     * 
-     * @param ctxt
-     *            MyContext der Applikation
-     * 
-     * @throws Exception
-     *             Wenn xml üngültig ist
+     * @param selectedStringDate	String der das Datum enthält
+     * @param selectedElement		String der das Element enthält
+     * @param selectedType		String der den Type enthält
+     * @param ctxt			MyContext der Applikation
+     * @throws Exception		Wenn xml üngültig ist
      */
     public DownloadFeedback fetchTimeTableFromNet(String selectedStringDate, String selectedElement,
 	    String selectedType, MyContext ctxt) throws Exception
@@ -708,7 +727,7 @@ public class Stupid
 
 	    xml.setDataContent(XmlOPs.readFromURL(url, ctxt.progressDialog, Const.CONNECTIONTIMEOUT));
 	    xml.parseXml(ctxt.progressDialog);
-	    
+
 	}
 	catch (Exception e)
 	{
@@ -830,6 +849,7 @@ public class Stupid
 	    }
 	}
 	weekData.isDirty = true;
+	this.isDirty=true;
 	this.stupidData.add(weekData); // fügt die geparste Woche den Hauptdaten
 				       // hinzu
 	sort();
@@ -926,6 +946,8 @@ public class Stupid
     public int getIndexOfWeekData(Calendar aquiredDate)
     {
 	int weekOfYear = getWeekOfYear(aquiredDate);
+	if (myTimetables == null)
+	    return -2;
 	for (int i = 0; i < myTimetables.length; i++)
 	{
 	    if (weekOfYear == myTimetables[i].date.get(Calendar.WEEK_OF_YEAR))
@@ -1467,7 +1489,7 @@ public class Stupid
 	    break;
 	}
 
-	Calendar requestedWeek = (Calendar) ctxt.stupid.currentDate.clone();
+	Calendar requestedWeek = (Calendar) currentDate.clone();
 	requestedWeek.setTimeInMillis(requestedWeek.getTimeInMillis() + (86400000 * 7 * weekOffset));// den
 												     // weekOffset
 												     // umsetzen
@@ -1483,16 +1505,20 @@ public class Stupid
 
 	// aus dieser Liste mithilfer der selektierten KalenderWoche den
 	// richtigen Index heraussuchen
-	ctxt.weekDataIndexToShow = ctxt.stupid.getIndexOfWeekData(requestedWeek);
+	ctxt.pager.weekDataIndexToShow = getIndexOfWeekData(requestedWeek);
 	// prüfen, ob diese Woche bereits im Datenbestand ist
-	if (ctxt.weekDataIndexToShow == -1)
+	if (ctxt.pager.weekDataIndexToShow == -1)
 	{
 	    // Woche ist nicht lokal verfügbar
 	    // Downloader starten, dieser prüft, ob diese Woche erhältlich ist
 	    // und unternimmt alle weitern Maßnahmen
 	    ctxt.executor.execute(new MainDownloader(ctxt, notAvail, requestedWeek, !forceRefresh, loading));
 	}
-	if (ctxt.weekDataIndexToShow != -1)
+	else if (ctxt.pager.weekDataIndexToShow == -2)
+	{
+	    ctxt.handler.post(new ErrorMessage(ctxt, Const.ERROR_NOTIMETABLE_FOR_REFRESH));
+	}
+	else
 	{
 	    // Woche ist im Datenbestand vorhanden
 	    // Nun prüfen, wie alt diese Daten sind:
@@ -1518,7 +1544,7 @@ public class Stupid
 	    else
 	    {
 		Date date = new Date();
-		if (ctxt.stupid.myTimetables[ctxt.weekDataIndexToShow].syncTime + (ctxt.stupid.myResync * 60 * 1000) < date
+		if (myTimetables[ctxt.pager.weekDataIndexToShow].syncTime + (myResync * 60 * 1000) < date
 			.getTime() || forceRefresh)
 		{
 		    // veraltet neu herunterladen
@@ -1532,7 +1558,7 @@ public class Stupid
 	}
 
     }
-
+    
     /**
      * @author Tobias Janssen
      * 
@@ -1547,5 +1573,286 @@ public class Stupid
     {
 	checkAvailibilityOfWeek(ctxt, false, weekModificator);
     }
+
+    
+    /**
+     * 14.09.12
+     * 
+     * @author Tobias Janssen
+     * 
+     *         Speichert das aktuelle StupidCore-Setup ohne ProgressDialog
+     * 
+     * @param ctxt
+     * @param showDialog
+     */
+    public void saveElements(MyContext ctxt, Boolean showDialog)
+    {
+	SaveElement saveElement = buildSaveElement(ctxt, showDialog);
+	ctxt.executor.execute(saveElement);
+    }
+
+    /**
+     * 14.09.12
+     * 
+     * @author Tobias Janssen
+     * 
+     *         Speichert das aktuelle StupidCore-Setup ohne ProgressDialog
+     * 
+     * @param ctxt
+     * @param postRun
+     * @param showDialog
+     */
+    public void saveElements(MyContext ctxt, Runnable postRun, Boolean showDialog)
+    {
+	SaveElement saveElement = buildSaveElement(ctxt, postRun, showDialog);
+	ctxt.executor.execute(saveElement);
+    }
+    /**
+     * @author Tobias Janssen Generiert ein SaveData Object, das dann ausgeführt
+     *         werden kann
+     */
+    private SaveData buildSaveData(MyContext ctxt, WeekData weekData)
+    {
+	File file = getFileSaveData(ctxt, weekData);
+	return new SaveData(weekData, file, ctxt);
+    }
+    
+    /**
+     * @author Tobias Janssen Generiert ein SaveSetup Object, das dann
+     *         ausgeführt werden kann
+     */
+    private SaveElement buildSaveElement(MyContext ctxt, Boolean showDialog)
+    {
+	File file = getFileSaveElement(ctxt);
+	return new SaveElement(ctxt, file, showDialog);
+    }
+
+    /**
+     * @author Tobias Janssen Generiert ein SaveSetup Object, das dann
+     *         ausgeführt werden kann
+     */
+    private SaveElement buildSaveElement(MyContext ctxt, Runnable postRun, Boolean showDialog)
+    {
+	File file = getFileSaveElement(ctxt);
+	return new SaveElement(ctxt, file, postRun, showDialog);
+    }
+    
+    /**
+     * @author Tobias Janssen Generiert ein SaveData Object, das dann ausgeführt
+     *         werden kann
+     * 
+     * @param ctxt
+     * @return
+     */
+    public File getFileSaveElement(MyContext ctxt)
+    {
+	String filename = ctxt.getSelector()+Const.FILEELEMENT;
+	return new File(ctxt.context.getFilesDir(), filename);
+    }
+    /**
+     * @author Tobias Janssen Generiert ein SaveData Object, das dann ausgeführt
+     *         werden kann
+     * 
+     * @param ctxt
+     * @param weekData
+     * @return
+     */
+    private File getFileSaveData(MyContext ctxt, WeekData weekData)
+    {
+
+	String filename = getWeekOfYearToDisplay(weekData.date) + "_" + weekData.date.get(Calendar.YEAR) + "_"
+		+ Const.FILEDATA;
+	return new File(ctxt.context.getFilesDir() + "/" + weekData.elementId, filename);
+    }
+    
+    /**
+     * @author Tobias Janssen
+     * 
+     *         Liefert die KalenderWoche des angegebenen Datums zurück
+     * 
+     * @param date
+     * @return
+     */
+    private int getWeekOfYearToDisplay(Calendar date)
+    {
+	Calendar copy = (Calendar) date.clone();
+	int currentDay = copy.get(Calendar.DAY_OF_WEEK);
+	if (currentDay < 5)
+	{
+	    copy.setTimeInMillis(date.getTimeInMillis() + (86400000 * (5 - currentDay)));
+	}
+	else if (currentDay > 5)
+	{
+	    copy.setTimeInMillis(date.getTimeInMillis() - +(86400000 * (currentDay - 5)));
+	}
+	int result = 0;
+	result = copy.get(Calendar.WEEK_OF_YEAR);
+	return result;
+    }
+    /**
+     * @author Tobias Janssen
+     * 
+     * @param ctxt
+     * @throws Exception
+     */
+    public void saveFiles(MyContext ctxt) throws Exception
+    {
+	saveFiles(ctxt, false);
+    }
+
+    /**
+     * 
+     * @author Tobias Janssen
+     * 
+     *         Prüft, ob welche Daten im StupidCore dirty sind, und speichert
+     *         diese
+     * 
+     * @param ctxt
+     * @param showDialog
+     * @throws Exception
+     */
+    public void saveFiles(MyContext ctxt, Boolean showDialog) throws Exception
+    {
+	SaveElement saveElements = buildSaveElement(ctxt, showDialog);
+	SaveData saveData;
+	
+	if (this.isDirty)
+	{
+	    ctxt.executor.execute(saveElements);
+	}
+	WeekData weekData;
+	for (int d = 0; d < stupidData.size(); d++)
+	{
+	    weekData = stupidData.get(d);
+	    if (weekData.isDirty)
+	    {
+		saveData = buildSaveData(ctxt, weekData);
+		ctxt.executor.execute(saveData);
+	    }
+	}
+    }
+  
+    
+    /**
+     * @author Tobias Janssen
+     * prüft, ob alle Laufzeitbedürfnisse erfüllt sind
+     * 
+     * @return			Integer mit dem Fehlercode
+     */
+    public int checkStructure(MyContext ctxt)
+    {
+
+	// Prüfen, ob die benötigten Dateien existieren:
+	// Elementen Datei beinhaltet die Listen elemente/typ/wochen
+	File elementFile = getFileSaveElement(ctxt);
+	if (!elementFile.exists())
+	{
+	    return 1;
+	}
+	// die ElementDatei Laden
+	try
+	{
+	    
+	    Xml xml = new Xml("root", FileOPs.readFromFile(elementFile));
+	    clearElements(); // Alle bisherigen Daten entfernen
+	    fetchElementsFromXml(xml, ctxt); // Daten aus dem
+						    // xml.contaner wandeln
+	    ctxt.getPrefs(ctxt.context.getApplicationContext()); // Settings laden
+	}
+	catch (Exception e)
+	{
+	    return 1; // Fehler beim Laden der ElementDatei
+	}
+
+	if (getMyElement().equalsIgnoreCase("")) // prüfen, ob ein Element ausgewählt wurde
+	{
+	    return 3;
+	}
+
+	// Prüfen, ob der Elementenordner existiert
+	File elementDir = new File(ctxt.context.getFilesDir() + "/" + getMyElement());
+	if (!elementDir.exists())
+	    return 6;
+
+	// prüfen, ob daten für die ausgewähltes Element vorhanden sind
+	// zählt wie viele Timetables für die ausgewählt Klasse vorhanden sind
+	File[] files = elementDir.listFiles();
+
+	if (files.length == 0)
+	    return 7;
+		
+	return 0;
+    }
+    
+    /**
+     * 
+     * @author Tobias Janssen
+     * 
+     *         Lädt die Selectoren von der GSO-Seite und parsed diese in die
+     *         availableOnline Arrays
+     * 
+     * @param ctxt
+     * @param postRun
+     */
+    public void fetchOnlineSelectors(MyContext ctxt, Runnable postRun)
+    {
+	try
+	{
+	    // prüfen ob Datenübertragung nur über Wlan zulässig ist:
+	    if (onlyWlan)
+	    {
+		// Es dürfen Daten nur bei bestehender Wlan verbindung geladen
+		// werden
+		// Prüfen, ob Wlan verbindung besteht
+		if (ctxt.isWifiConnected())
+		{
+		    // Verbindung vorhanden
+		    Download download = new Download(ctxt, true, false, postRun);
+		    ctxt.executor.execute(download);
+		}
+		else
+		{
+		    // Keine Wlan Verbindung vorhanden, Fehler-Meldung ausgeben
+		    if(ctxt.mIsRunning)
+			Toast.makeText(ctxt.context, "Keine Wlan Verbindung!", Toast.LENGTH_SHORT).show();
+		}
+	    }
+	    else
+	    {
+		// Es dürfen Daten auch ohne Wlan geladen werden
+		// ctxt.progressDialog = ProgressDialog.show(ctxt.context,
+		// ctxt.context.getString(R.string.setup_message_dlElements_title),
+		// ctxt.context.getString(R.string.setup_message_dlElements_body),
+		// true,false);
+		// stupid.setupIsDirty=true;
+		Download download = new Download(ctxt, true, false, postRun);
+		ctxt.executor.execute(download);
+	    }
+
+	}
+	catch (Exception e)
+	{
+	    if(ctxt.mIsRunning)
+	    {
+		new AlertDialog.Builder(ctxt.context).setTitle("Fehler")
+			.setMessage(ctxt.context.getString(R.string.setup_message_error_dlElements_1))
+			.setPositiveButton("OK", new DialogInterface.OnClickListener()
+			{
+			    public void onClick(DialogInterface dialog, int which)
+			    {
+				// continue with delete
+			    }
+			}).setNegativeButton("Abbrechen", new DialogInterface.OnClickListener()
+			{
+			    public void onClick(DialogInterface dialog, int which)
+			    {
+				// do nothing
+			    }
+			}).show();
+	    }
+
+	}
+    }
+
 
 }

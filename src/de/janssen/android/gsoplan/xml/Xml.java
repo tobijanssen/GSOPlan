@@ -23,6 +23,8 @@ public class Xml
     public static final String SCRIPT = "script";
     public static final String FONT = "font";
     public static final String TABLE = "table";
+    public static final String PROFIL = "profil";
+    
     
     
     private String type;
@@ -150,7 +152,7 @@ public class Xml
     public void parseXml() throws Exception
     {
 	if (this.dataContent.isEmpty())
-	    throw new Exception("Keine Daten gefunden");
+	    throw new Exception(Const.ERROR_XMLFAILURE);
 
 	this.childTags = new Xml[0]; // das Array, das die Tags des Quelltextes
 				     // enthalten wird
@@ -159,7 +161,15 @@ public class Xml
 	do
 	{
 	    // den nächsten Tag abholen & hinzufügen:
-	    this.childTags = AddTagToArray(this.childTags, parseNextXmlTag());
+	    try
+	    {
+		this.childTags = AddTagToArray(this.childTags, parseNextXmlTag());
+	    }
+	    catch(Exception e)
+	    {
+		//Fehler im XML: hier abbrechen
+		break;
+	    }
 
 	} while (this.dataContent.length() > 1);
     }
@@ -220,7 +230,7 @@ public class Xml
 	// prüfen, ob überhaupt ein Tag vorliegt:
 	if (startPoint == -1)
 	{
-	    throw new Exception(Const.errXml);
+	    throw new Exception(Const.ERROR_XMLFAILURE);
 	}
 
 	// der Text davor wird verworfen:
@@ -245,7 +255,7 @@ public class Xml
 	if (endTagPoint == -1)
 	{
 	    // Tag ist nicht vernüftig geclosed worden
-	    throw new Exception(Const.errXml);
+	    throw new Exception(Const.ERROR_XMLFAILURE);
 	}
 
 	String tagContent = dataContent.substring(0, endTagPoint);
@@ -424,7 +434,7 @@ public class Xml
 	}
 	catch (Exception e)
 	{
-	    throw new Exception(Const.errXml);
+	    throw new Exception(Const.ERROR_XMLFAILURE);
 	}
 	int parameterPoint = xmlCode.indexOf("=", 0);
 	if (parameterPoint == -1 && tag.type.equalsIgnoreCase("unknownType"))
@@ -483,7 +493,7 @@ public class Xml
 		}
 		catch (Exception e)
 		{
-		    throw new Exception(Const.errXml);
+		    throw new Exception(Const.ERROR_XMLFAILURE);
 		}
 
 		// abschneiden:

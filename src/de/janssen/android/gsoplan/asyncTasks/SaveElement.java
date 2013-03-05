@@ -9,6 +9,7 @@ package de.janssen.android.gsoplan.asyncTasks;
 import de.janssen.android.gsoplan.MyContext;
 import de.janssen.android.gsoplan.R;
 import de.janssen.android.gsoplan.core.FileOPs;
+import de.janssen.android.gsoplan.core.Stupid;
 import de.janssen.android.gsoplan.xml.XmlOPs;
 import java.io.File;
 import android.app.ProgressDialog;
@@ -48,7 +49,8 @@ public class SaveElement extends AsyncTask<Boolean, Integer, Boolean>
 	    ctxt.progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 	    ctxt.progressDialog.setMessage(ctxt.context.getString(R.string.msg_saving));
 	    ctxt.progressDialog.setCancelable(false);
-	    ctxt.progressDialog.show();
+	    if(ctxt.mIsRunning)
+		ctxt.progressDialog.show();
 	}
 	super.onPreExecute();
     }
@@ -63,9 +65,9 @@ public class SaveElement extends AsyncTask<Boolean, Integer, Boolean>
 		return null;
 	    }
 	    String xmlContent = XmlOPs.convertElementsToXml(ctxt);
-
 	    FileOPs.saveToFile(xmlContent, elementFile);
-	    ctxt.stupid.setupIsDirty = false;
+	    
+	    ctxt.getCurStupid().setIsDirty(false);
 
 	}
 	catch (Exception e)
@@ -81,7 +83,7 @@ public class SaveElement extends AsyncTask<Boolean, Integer, Boolean>
     {
 	if (this.postRun != null)
 	    postRun.run();
-	if (ctxt.progressDialog != null && ctxt.progressDialog.isShowing())
+	if (ctxt.mIsRunning && ctxt.progressDialog != null && ctxt.progressDialog.isShowing())
 	{
 	    ctxt.progressDialog.dismiss();
 	}

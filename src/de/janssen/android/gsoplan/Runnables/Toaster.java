@@ -31,9 +31,11 @@ public class Toaster implements Runnable
     @Override
     public void run()
     {
-	ctxt.progressDialog.dismiss();
-
-	Toast.makeText(ctxt.context, this.toastText, duration).show();
+	if(ctxt.mIsRunning)
+	{
+        	ctxt.progressDialog.dismiss();
+        	Toast.makeText(ctxt.context, this.toastText, duration).show();
+	}
     }
 
 }

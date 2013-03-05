@@ -31,14 +31,14 @@ public class UpdateTimeTableList implements Runnable
 	// prüfen, an welchen index die Daten gefügt wurden
 	if (downloadFeedback.indexOfData != -1)
 	{
-	    int currentPage = ctxt.viewPager.getCurrentItem();
+	    int currentPage = ctxt.pager.viewPager.getCurrentItem();
 	    // prüfen, ob die daten adiiert wurden, oder ob ein Datensatz
 	    // aktualisiert wurde
-	    if (ctxt.stupid.stupidData.size() - 1 == downloadFeedback.indexOfData && !downloadFeedback.refreshData)
+	    if (ctxt.getCurStupid().stupidData.size() - 1 == downloadFeedback.indexOfData && !downloadFeedback.refreshData)
 	    {
 		// append der daten
 		//
-		Tools.appendTimeTableToPager(ctxt.stupid.stupidData.get(downloadFeedback.indexOfData), ctxt);
+		Tools.appendTimeTableToPager(ctxt.getCurStupid().stupidData.get(downloadFeedback.indexOfData), ctxt);
 
 	    }
 	    else
@@ -49,36 +49,36 @@ public class UpdateTimeTableList implements Runnable
 		{
 
 		    // refresh der daten
-		    if (ctxt.weekDataIndexToShow == -1)
+		    if (ctxt.pager.weekDataIndexToShow == -1)
 		    {
-			ctxt.weekDataIndexToShow = downloadFeedback.indexOfData;
+			ctxt.pager.weekDataIndexToShow = downloadFeedback.indexOfData;
 		    }
 
-		    Tools.replaceTimeTableInPager(ctxt.stupid.stupidData.get(ctxt.weekDataIndexToShow), ctxt);
+		    Tools.replaceTimeTableInPager(ctxt.getCurStupid().stupidData.get(ctxt.pager.weekDataIndexToShow), ctxt);
 		}
 		else
 		{
-		    Tools.appendTimeTableToPager(ctxt.stupid.stupidData.get(downloadFeedback.indexOfData), ctxt);
+		    Tools.appendTimeTableToPager(ctxt.getCurStupid().stupidData.get(downloadFeedback.indexOfData), ctxt);
 		}
 
 	    }
-	    ctxt.disableNextPagerOnChangedEvent = true;
+	    ctxt.pager.disableNextPagerOnChangedEvent = true;
 	    if (ctxt.weekView)
 	    {
-		currentPage = Tools.getPage(ctxt.pageIndex, ctxt.stupid.currentDate, Calendar.WEEK_OF_YEAR);
+		currentPage = Tools.getPage(ctxt.pager.pageIndex, ctxt.getCurStupid().currentDate, Calendar.WEEK_OF_YEAR);
 	    }
 	    else
 	    {
-		currentPage = Tools.getPage(ctxt.pageIndex, ctxt.stupid.currentDate, Calendar.DAY_OF_YEAR);
+		currentPage = Tools.getPage(ctxt.pager.pageIndex, ctxt.getCurStupid().currentDate, Calendar.DAY_OF_YEAR);
 	    }
 
-	    ctxt.pageAdapter = new MyPagerAdapter(ctxt.pages, ctxt.headlines);
+	    ctxt.pager.pageAdapter = new MyPagerAdapter(ctxt.pager.pages, ctxt.pager.headlines);
 
-	    ctxt.viewPager.setAdapter(ctxt.pageAdapter);
-	    ctxt.viewPager.setCurrentItem(currentPage, false);
+	    ctxt.pager.viewPager.setAdapter(ctxt.pager.pageAdapter);
+	    ctxt.pager.viewPager.setCurrentItem(currentPage, false);
 
-	    ctxt.pageIndicator.setViewPager(ctxt.viewPager);
-	    ctxt.pageIndicator.notifyDataSetChanged();
+	    ctxt.pager.pageIndicator.setViewPager(ctxt.pager.viewPager);
+	    ctxt.pager.pageIndicator.notifyDataSetChanged();
 
 	    if (ctxt.progressDialog != null)
 	    {

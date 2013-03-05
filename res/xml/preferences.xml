@@ -1,33 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:key="prefscreen" >
 
-    <PreferenceCategory android:title="@string/catergory1_title" >
+    <PreferenceCategory
+        android:key="pref1stCat"
+        android:title="@string/catergory1_title" >
         <ListPreference
             android:defaultValue=""
-            android:key="listType"
+            android:key="listType1"
             android:summary="@string/summary_type"
             android:title="@string/title_type" >
         </ListPreference>
         <ListPreference
             android:defaultValue=""
-            android:key="listElement"
+            android:key="listElement1"
             android:summary="@string/summary_element"
             android:title="@string/title_element" >
         </ListPreference>
+
+        <!-- 2tes Profil -->
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="2ndProfil"
+        android:title="@string/catergory3_title" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="checkboxUseFav"
+            android:summary="@string/summary_usefav"
+            android:title="@string/title_usefav" >
+        </CheckBoxPreference>
+        <ListPreference
+            android:defaultValue=""
+            android:key="listType2"
+            android:summary="@string/summary_type"
+            android:title="@string/title_type" >
+        </ListPreference>
+        <ListPreference
+            android:defaultValue=""
+            android:key="listElement2"
+            android:summary="@string/summary_element"
+            android:title="@string/title_element" >
+        </ListPreference>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/catergory2_title" >
         <ListPreference
             android:defaultValue="10"
             android:key="listResync"
             android:summary="@string/summary_resyncafter"
             android:title="@string/title_resyncafter" >
         </ListPreference>
-    </PreferenceCategory>
-    <PreferenceCategory android:title="@string/catergory2_title" >
         <ListPreference
             android:defaultValue="Tag"
             android:key="listActivity"
             android:summary="@string/summary_first_activity"
             android:title="@string/title_first_activity" >
         </ListPreference>
+
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="boxHide"
@@ -40,14 +68,13 @@
             android:summary="@string/summary_wlan"
             android:title="@string/title_wlan" >
         </CheckBoxPreference>
-		<Preference 
-		    android:title="@string/app_about" >
-		    <intent 
-		        android:action="android.intent.action.VIEW"
-		        android:targetPackage="de.janssen.android.gsoplan"
-		        android:targetClass="de.janssen.android.gsoplan.AboutGSOPlan"
-		    />
-		</Preference>
+
+        <Preference android:title="@string/app_about" >
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:targetClass="de.janssen.android.gsoplan.AboutGSOPlan"
+                android:targetPackage="de.janssen.android.gsoplan" />
+        </Preference>
     </PreferenceCategory>
 
 </PreferenceScreen>

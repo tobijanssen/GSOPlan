@@ -36,20 +36,20 @@ public class SetupPager implements Runnable
 
 	if (ctxt.weekView)
 	{
-	    ctxt.currentPage = Tools.getPage(ctxt.pageIndex, ctxt.stupid.currentDate, Calendar.WEEK_OF_YEAR);
+	    ctxt.pager.currentPage = Tools.getPage(ctxt.pager.pageIndex, ctxt.getCurStupid().currentDate, Calendar.WEEK_OF_YEAR);
 	}
 	else
 	{
-	    ctxt.currentPage = Tools.getPage(ctxt.pageIndex, ctxt.stupid.currentDate, Calendar.DAY_OF_YEAR);
+	    ctxt.pager.currentPage = Tools.getPage(ctxt.pager.pageIndex, ctxt.getCurStupid().currentDate, Calendar.DAY_OF_YEAR);
 	}
-	ctxt.pageAdapter = new MyPagerAdapter(ctxt.pages, ctxt.headlines);
-	ctxt.viewPager = (ViewPager) ctxt.activity.findViewById(R.id.pager);
-	ctxt.viewPager.setAdapter(ctxt.pageAdapter);
-
-	ctxt.pageIndicator = (TitlePageIndicator) ctxt.activity.findViewById(R.id.indicator);
-	ctxt.pageIndicator.setViewPager(ctxt.viewPager);
-	ctxt.disableNextPagerOnChangedEvent = true;
-	ctxt.pageIndicator.setOnPageChangeListener(new OnPageChangeListener()
+	ctxt.pager.pageAdapter = new MyPagerAdapter(ctxt.pager.pages, ctxt.pager.headlines);
+	ctxt.pager.viewPager = (ViewPager) ctxt.activity.findViewById(R.id.pager);
+	ctxt.pager.viewPager.setAdapter(ctxt.pager.pageAdapter);
+	
+	ctxt.pager.pageIndicator = (TitlePageIndicator) ctxt.activity.findViewById(R.id.indicator);
+	ctxt.pager.pageIndicator.setViewPager(ctxt.pager.viewPager);
+	ctxt.pager.disableNextPagerOnChangedEvent = true;
+	ctxt.pager.pageIndicator.setOnPageChangeListener(new OnPageChangeListener()
 	{
 
 	    @Override
@@ -70,25 +70,25 @@ public class SetupPager implements Runnable
 		    {
 			// kein Pageturn gemacht(also ende erreicht)
 			// prüfen, ob anfang, oder ende
-			if (ctxt.viewPager.getCurrentItem() == 0)
+			if (ctxt.pager.viewPager.getCurrentItem() == 0)
 			{
-			    if (ctxt.headlines.size() - 1 == 0)
+			    if (ctxt.pager.headlines.size() - 1 == 0)
 			    {
 				// anfang& ende
 				if (ctxt.weekView)
 				{
-				    Calendar selectedWeek = ctxt.pageIndex.get(0);
-				    ctxt.stupid.currentDate = (Calendar) selectedWeek.clone();
+				    Calendar selectedWeek = ctxt.pager.pageIndex.get(0);
+				    ctxt.getCurStupid().currentDate = (Calendar) selectedWeek.clone();
 
-				    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.NEXTWEEK);
-				    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.LASTWEEK);
+				    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.NEXTWEEK);
+				    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.LASTWEEK);
 				}
 				else
 				{
-				    Calendar selectedDay = ctxt.pageIndex.get(0);
-				    ctxt.stupid.currentDate = (Calendar) selectedDay.clone();
-				    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.NEXTWEEK);
-				    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.LASTWEEK);
+				    Calendar selectedDay = ctxt.pager.pageIndex.get(0);
+				    ctxt.getCurStupid().currentDate = (Calendar) selectedDay.clone();
+				    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.NEXTWEEK);
+				    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.LASTWEEK);
 
 				}
 			    }
@@ -97,17 +97,17 @@ public class SetupPager implements Runnable
 				// anfang
 				if (ctxt.weekView)
 				{
-				    Calendar selectedWeek = ctxt.pageIndex.get(0);
-				    ctxt.stupid.currentDate = (Calendar) selectedWeek.clone();
+				    Calendar selectedWeek = ctxt.pager.pageIndex.get(0);
+				    ctxt.getCurStupid().currentDate = (Calendar) selectedWeek.clone();
 
 				    // ctxt.stupid.checkAvailibilityOfWeek(ctxt,Const.NEXTWEEK);
-				    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.LASTWEEK);
+				    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.LASTWEEK);
 				}
 				else
 				{
-				    Calendar selectedDay = ctxt.pageIndex.get(0);
-				    ctxt.stupid.currentDate = (Calendar) selectedDay.clone();
-				    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.LASTWEEK);
+				    Calendar selectedDay = ctxt.pager.pageIndex.get(0);
+				    ctxt.getCurStupid().currentDate = (Calendar) selectedDay.clone();
+				    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.LASTWEEK);
 
 				}
 			    }
@@ -117,15 +117,15 @@ public class SetupPager implements Runnable
 			    // ende erreicht
 			    if (ctxt.weekView)
 			    {
-				Calendar selectedWeek = ctxt.pageIndex.get(ctxt.pageIndex.size() - 1);
-				ctxt.stupid.currentDate = (Calendar) selectedWeek.clone();
-				ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.NEXTWEEK);
+				Calendar selectedWeek = ctxt.pager.pageIndex.get(ctxt.pager.pageIndex.size() - 1);
+				ctxt.getCurStupid().currentDate = (Calendar) selectedWeek.clone();
+				ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.NEXTWEEK);
 			    }
 			    else
 			    {
-				Calendar selectedDay = ctxt.pageIndex.get(ctxt.pageIndex.size() - 1);
-				ctxt.stupid.currentDate = (Calendar) selectedDay.clone();
-				ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.NEXTWEEK);
+				Calendar selectedDay = ctxt.pager.pageIndex.get(ctxt.pager.pageIndex.size() - 1);
+				ctxt.getCurStupid().currentDate = (Calendar) selectedDay.clone();
+				ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.NEXTWEEK);
 			    }
 			}
 
@@ -145,33 +145,33 @@ public class SetupPager implements Runnable
 	    public void onPageSelected(int position)
 	    {
 
-		Calendar selectedDay = ctxt.pageIndex.get(position);
-		ctxt.stupid.currentDate = (Calendar) selectedDay.clone();
+		Calendar selectedDay = ctxt.pager.pageIndex.get(position);
+		ctxt.getCurStupid().currentDate = (Calendar) selectedDay.clone();
 
 		// prüfen, ob dieses Event unterdrückt werden sollte
-		if (ctxt.disableNextPagerOnChangedEvent)
+		if (ctxt.pager.disableNextPagerOnChangedEvent)
 		{
 		    // wenn ja, den Listener wieder aktivieren
-		    ctxt.disableNextPagerOnChangedEvent = false;
+		    ctxt.pager.disableNextPagerOnChangedEvent = false;
 		}
 		else
 		{
 		    // wenn nicht, kann das event ausgeführt werden
 		    if (ctxt.weekView)
 		    {
-			ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.THISWEEK);
+			ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.THISWEEK);
 		    }
 		    else
 		    {
 			if (selectedDay.get(Calendar.DAY_OF_WEEK) == 6 && lastPage > position)
 			{
 			    // Freitag erreicht und von einem Donnerstag
-			    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.THISWEEK);
+			    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.THISWEEK);
 			}
 			else if (selectedDay.get(Calendar.DAY_OF_WEEK) == 2 && lastPage < position)
 			{
 			    // Anfang erreicht
-			    ctxt.stupid.checkAvailibilityOfWeek(ctxt, Const.THISWEEK);
+			    ctxt.getCurStupid().checkAvailibilityOfWeek(ctxt, Const.THISWEEK);
 			}
 		    }
 		}
@@ -180,8 +180,8 @@ public class SetupPager implements Runnable
 	    }
 
 	});
-	ctxt.viewPager.setCurrentItem(ctxt.currentPage);
-	ctxt.pagerReady = true;
+	ctxt.pager.viewPager.setCurrentItem(ctxt.pager.currentPage);
+	ctxt.pager.pagerReady = true;
 
     }
 

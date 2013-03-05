@@ -1,24 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    
     <string name="app_name">GSOPlan</string>
-    <string name="app_version">Version 1.03a Beta</string>
+    <string name="app_version">Version 1.04 RC 1 Beta</string>
     <string name="app_author">Tobias Janßen</string>
-    <string name="app_version_date">vom 27.01.2013</string>
-    <string name="menu_setup">Einstellungen</string>
+    <string name="app_version_date">vom 03.03.2013</string>
+    
+    
+    <!-- Title -->
     <string name="title_activity_week_plan">GSOPlan - Wochenansicht</string>
     <string name="title_activity_setup">GSOPlan - Einstellungen</string>
     <string name="title_activity_plan">GSOPlan - Tagesansicht</string>
     <string name="title_activity_main">GSOPLAN Starter</string>
     <string name="title_activity_about_gsoplan">Über GSOPlan</string>
+    <!-- /Title -->
+    
+    
+    <!-- Menülabel -->
+    <string name="menu_setup">Einstellungen</string>
     <string name="menu_save">Speichern</string>
     <string name="menu_gotoDate">Gehe zu Datum</string>
     <string name="menu_refresh">Jetzt aktualisieren</string>
     <string name="menu_today">Heute</string>
     <string name="menu_weekPlan">Wochenansicht</string>
     <string name="menu_dayPlan">Tagesansicht</string>
-
+    <string name="menu_favorite">Profil wechseln</string>
+	<!-- /Menülabel -->
+    
     <!-- Meldungen -->
     <string name="msg_weekNotAvailable">Die gewählte Woche ist auf dem GSO-Server nicht verfügbar!</string>
     <string name="msg_foreWeekNotAvailable">Eine Vorwoche ist auf dem GSO-Server nicht mehr verfügbar!</string>
@@ -34,13 +42,16 @@
 
     <!-- Fehler-Meldungen -->
     <string name="setup_message_error_dlElements_1">Beim downloaden der Elemente ist ein Fehler aufgetreten!</string>
-    <!-- siehe unter CONST -->
+    <!-- weitere Erors siehe siehe unter CONST -->
 
 
     <!-- Setup Section -->
 
     <string name="catergory1_title">Stundenplan Einstellungen</string>
     <string name="catergory2_title">App Einstellungen</string>
+    <string name="catergory3_title">2. Profil</string>
+    <string name="title_usefav">2. Profil</string>
+    <string name="summary_usefav">Möchtest Du ein zweites Profil nutzen?</string>
     <string name="title_element">Element</string>
     <string name="summary_element">Legt die Klasse, Lehrer, oder den Raum fest</string>
     <string name="title_readyButton">Fertig</string>
@@ -57,21 +68,19 @@
     <string name="summary_wlan">Datenübertragung nur über WLAN zulassen</string>
     <string name="menu_settings">Settings</string>
     <string name="app_about">Über GSOPlan</string>
-    
-    <string name="app_recent_changes_header">Letzte Änderungen:\n</string>
-    <string name="app_recent_changes_msg">
-        - Error View is not attached to WindowManager sollte nun behoben sein\n\n- Ein Fehler bei der Stundenplan-Konvertierung führte in der KW 08 zu einen Absturz -> behoben\n
-    </string>
-    <string name="app_newVersion_msg">
-        Die Einstellungen wurden bei diesem Update überarbeitet und die bestehenden Daten können nicht übernommen werden.\n 
-    </string>
+    <string name="app_recent_changes_header"></string>
+    <string name="app_recent_changes_msg">        - Aktualisierungsfehler behoben\n\n
+        - Möglichkeit für zweites Profil hinzugefügt\n
+        (Du kannst nun zwischen zwei Klassen usw. umschalten)\n\n
+        - Automatisches Speichern optimiert\n\n
+        - diverse Bugs behoben\n</string>
+    <string name="app_newVersion_msg">        Die Einstellungen wurden bei diesem Update überarbeitet und die bestehenden Daten können nicht übernommen werden.\n </string>
     <string name="app_didyaknow_header">Wusstest Du schon?,</string>
-    <string name="app_didyaknow_msg">
-        	dass Du die Updates mit Hilfe der Zurück-Taste abbrechen kannst!?\n\n
+    <string name="app_didyaknow_msg">        	dass Du die Updates mit Hilfe der Zurück-Taste abbrechen kannst!?\n\n
 			dass Du in den Einstellungen die Wochenansicht als Standart festlegen kannst!?\n\n
-			dass Du mir bei Fehlern + Problemen gerne eine Email schreiben kannst!?
-    </string>
-    <string name="app_msg_info">Ein Hotfix wurde installiert!</string>
+			dass Du mir bei Fehlern + Problemen gerne eine Email schreiben kannst!?\n\n
+			dass die Fehlerberichte sehr hilfreich für mich sind!?</string>
+    <string name="app_msg_info">Die App wurde aktualisiert!</string>
     <string name="app_button_weiter">Weiter…</string>
     <string name="app_rateme">Dir gefällt GSOPlan?\nDann bewerte die App im Play-Store:</string>
     <string name="app_rateme_button">zum Play-Store…</string>

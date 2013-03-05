@@ -13,7 +13,6 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-
 import de.janssen.android.gsoplan.ArrayOperations;
 import de.janssen.android.gsoplan.Const;
 import de.janssen.android.gsoplan.MyContext;
@@ -55,26 +54,26 @@ public class XmlOPs
     public static String convertElementsToXml(MyContext ctxt)
     {
 
-	String result = "<" + Xml.SYNCTIME + ">" + ctxt.stupid.syncTime + "</" + Xml.SYNCTIME + ">\n";
-
+	String result = "<" + Xml.SYNCTIME + ">" + ctxt.getCurStupid().syncTime + "</" + Xml.SYNCTIME + ">\n";
+	
 	result += "<" + Xml.ELEMENTS;
-	for (int i = 0; i < ctxt.stupid.elementList.length; i++)
+	for (int i = 0; i < ctxt.getCurStupid().elementList.length; i++)
 	{
-	    result += " " + ctxt.stupid.elementList[i].description + "='" + ctxt.stupid.elementList[i].index + "'";
+	    result += " " + ctxt.getCurStupid().elementList[i].description + "='" + ctxt.getCurStupid().elementList[i].index + "'";
 	}
 	result += " />\n";
 
 	result += "<" + Xml.WEEKID;
-	for (int i = 0; i < ctxt.stupid.weekList.length; i++)
+	for (int i = 0; i < ctxt.getCurStupid().weekList.length; i++)
 	{
-	    result += " " + ctxt.stupid.weekList[i].description + "='" + ctxt.stupid.weekList[i].index + "'";
+	    result += " " + ctxt.getCurStupid().weekList[i].description + "='" + ctxt.getCurStupid().weekList[i].index + "'";
 	}
 	result += " />\n";
 
 	result += "<" + Xml.TYPES;
-	for (int i = 0; i < ctxt.stupid.typeList.length; i++)
+	for (int i = 0; i < ctxt.getCurStupid().typeList.length; i++)
 	{
-	    result += " " + ctxt.stupid.typeList[i].description + "='" + ctxt.stupid.typeList[i].index + "'";
+	    result += " " + ctxt.getCurStupid().typeList[i].description + "='" + ctxt.getCurStupid().typeList[i].index + "'";
 	}
 	result += " />\n";
 	return result;
@@ -91,29 +90,30 @@ public class XmlOPs
     public static String convertElementsToXml(MyContext ctxt, ProgressDialog pd)
     {
 
-	String result = "<" + Xml.SYNCTIME + ">" + ctxt.stupid.syncTime + "</" + Xml.SYNCTIME + ">\n";
+	String result = "<" + Xml.SYNCTIME + ">" + ctxt.getCurStupid().syncTime + "</" + Xml.SYNCTIME + ">\n";
 
+	
 	result += "<" + Xml.ELEMENTS;
-	for (int i = 0; i < ctxt.stupid.elementList.length; i++)
+	for (int i = 0; i < ctxt.getCurStupid().elementList.length; i++)
 	{
 	    pd.setProgress(pd.getProgress() + 1);
-	    result += " " + ctxt.stupid.elementList[i].description + "='" + ctxt.stupid.elementList[i].index + "'";
+	    result += " " + ctxt.getCurStupid().elementList[i].description + "='" + ctxt.getCurStupid().elementList[i].index + "'";
 	}
 	result += " />\n";
 
 	result += "<" + Xml.WEEKID;
-	for (int i = 0; i < ctxt.stupid.weekList.length; i++)
+	for (int i = 0; i < ctxt.getCurStupid().weekList.length; i++)
 	{
 	    pd.setProgress(pd.getProgress() + 1);
-	    result += " " + ctxt.stupid.weekList[i].description + "='" + ctxt.stupid.weekList[i].index + "'";
+	    result += " " + ctxt.getCurStupid().weekList[i].description + "='" + ctxt.getCurStupid().weekList[i].index + "'";
 	}
 	result += " />\n";
 
 	result += "<" + Xml.TYPES;
-	for (int i = 0; i < ctxt.stupid.typeList.length; i++)
+	for (int i = 0; i < ctxt.getCurStupid().typeList.length; i++)
 	{
 	    pd.setProgress(pd.getProgress() + 1);
-	    result += " " + ctxt.stupid.typeList[i].description + "='" + ctxt.stupid.typeList[i].index + "'";
+	    result += " " + ctxt.getCurStupid().typeList[i].description + "='" + ctxt.getCurStupid().typeList[i].index + "'";
 	}
 	result += " />\n";
 	return result;
@@ -189,16 +189,16 @@ public class XmlOPs
 	}
 	catch (SocketTimeoutException e)
 	{
-	    throw new Exception("Verbindungs-Timeout! Server nicht erreichbar!");
+	    throw new Exception(Const.ERROR_CONNTIMEOUT);
 
 	}
 	catch (IOException e)
 	{
-	    throw new Exception("Keine Verbindung zum Server!");
+	    throw new Exception(Const.ERROR_NOSERVER);
 	}
 	catch (Exception e)
 	{
-	    throw new Exception("Keine Verbindung zum Server!");
+	    throw new Exception(Const.ERROR_NOSERVER);
 	}
 	finally
 	{
@@ -239,7 +239,7 @@ public class XmlOPs
 	}
 	catch (IOException e)
 	{
-	    throw new IOException("Keine Verbindung zum Server!");
+	    throw new IOException(Const.ERROR_NOSERVER);
 	}
     }
 
@@ -283,7 +283,7 @@ public class XmlOPs
 	}
 	catch (Exception e)
 	{
-	    throw new Exception("Fehler bei der XML Konvertierung! Code:0x002 \n");
+	    throw new Exception(Const.ERROR_XMLFAILURE);
 	}
 
 	return stupidData;
@@ -372,4 +372,8 @@ public class XmlOPs
 	return weekData;
     }
 
+    public static String createProfileXml(MyContext ctxt, int index)
+    {
+	return "<" + Xml.PROFIL +">"+ index + "</"+Xml.PROFIL +">\n";
+    }
 }

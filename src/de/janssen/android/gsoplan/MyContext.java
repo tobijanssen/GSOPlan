@@ -7,20 +7,13 @@
 
 package de.janssen.android.gsoplan;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
-import com.viewpagerindicator.TitlePageIndicator;
-import de.janssen.android.gsoplan.core.FileOPs;
 import de.janssen.android.gsoplan.core.Stupid;
 import de.janssen.android.gsoplan.runnables.AppendPage;
 import de.janssen.android.gsoplan.runnables.ErrorMessage;
 import de.janssen.android.gsoplan.runnables.SetupPager;
-import de.janssen.android.gsoplan.view.MyArrayAdapter;
 import de.janssen.android.gsoplan.view.PlanActivity;
 import de.janssen.android.gsoplan.view.WeekPlanActivity;
-import de.janssen.android.gsoplan.xml.Xml;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -28,55 +21,116 @@ import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.DialogInterface.OnClickListener;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
-import android.view.View;
+import android.view.Menu;
 
 public class MyContext
 {
-    public Stupid stupid = new Stupid();
+    public Stupid[] stupid = new Stupid[2];
     public Exception exception;
-    public MyArrayAdapter adapter;
     public Calendar dateBackup;
     public Handler handler;
     public Boolean selfCheckIsRunning = false;
-    public int weekDataIndexToShow;
+    
     public WorkerQueue executor = new WorkerQueue(this);
-    public List<View> pages = new ArrayList<View>();
-    public List<Calendar> pageIndex = new ArrayList<Calendar>();;
-    public List<String> headlines = new ArrayList<String>();
-    public LayoutInflater inflater;
-    public PagerAdapter pageAdapter;
-    public ViewPager viewPager;
-    public Boolean disableNextPagerOnChangedEvent = false;
-    public TitlePageIndicator pageIndicator;
-    public int currentPage;
+    
+    public Pager pager= new Pager();
+    
     public Context context;
     public Activity activity;
     public Boolean weekView = false;
     public Boolean dayView = false;
     public Boolean initialLunch = true;
-    public Boolean pagerReady = false;
+    public LayoutInflater inflater;
     public int[] textSizes;
     private Class<?> defaultActivity;
     public Boolean forceView = false;
     public ProgressDialog progressDialog;
     public Boolean newVersionInfo = false;
     public String newVersionMsg = "";
-
+    private int select = 0;
+    private int selectBkp = 0;
+    private String elementPrefKey = "listElement1";
+    private String typePrefKey = "listType1";
+    public Menu appMenu;
+    public Boolean mIsRunning = false;
+    
     public MyContext(ContextWrapper appctxt, Activity activity)
     {
+	this.stupid[0] = new Stupid();
+	this.stupid[1] = new Stupid();
 	this.context = appctxt;
 	this.activity = activity;
+    }
+    public int getSelector()
+    {
+	return this.select;
     }
 
     public Class<?> getDefaultActivityClass()
     {
 	return this.defaultActivity;
-
+    }
+    
+    public void switchStupidBack()
+    {
+	if(this.selectBkp == 0)
+	    switchStupidTo(0);
+	if(this.selectBkp == 1)
+	    switchStupidTo(1);
+    }
+    
+    public void switchStupidTo(int arg0)
+    {
+	if(arg0 == 1)
+	{
+	    if(selectBkp!=select)
+		selectBkp=select;
+	    this.select=arg0;
+	    elementPrefKey = "listElement2";
+	    typePrefKey = "listType2";
+	}
+	else if(arg0 == 0)
+	{
+	    if(selectBkp!=select)
+		selectBkp=select;
+	    this.select=arg0;
+	    elementPrefKey = "listElement1";
+	    typePrefKey = "listType1";
+	}
+    }
+    
+    public Stupid getCurStupid()
+    {
+	if(select == 0)
+	    return stupid[0];
+	else if(select == 1)
+	    return stupid[1];
+	else
+	    return stupid[0];
+    }
+    
+    public void switchStupid()
+    {
+	if(select == 0)
+	{
+	    this.selectBkp=select;
+	    elementPrefKey = "listElement2";
+	    typePrefKey = "listType2";
+	    select = 1;
+	}
+	else
+	{
+	    this.selectBkp=select;
+	    elementPrefKey = "listElement1";
+	    typePrefKey = "listType1";
+	    select = 0;
+	}
+	    
     }
 
     /**
@@ -118,7 +172,18 @@ public class MyContext
 	else
 	    throw new Exception("Ungültiger Wert! Nur 'tag' & 'woche' sind gültig");
     }
-
+    
+    /**
+     * Liefert den Wert der im Key übergebenen CheckboxPreference zurück
+     * @param key		String, der den Preference-Key enthält
+     * @return			Boolean, default false;
+     */
+    public Boolean getCheckboxPreference(String key)
+    {
+	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+	return prefs.getBoolean(key, false);
+    }
+    
     /**
      * @author Tobias Janssen 
      * lädt die einstellungen der applikation
@@ -134,10 +199,10 @@ public class MyContext
 
 	try
 	{
-	    if (stupid.getMyElement().isEmpty())
+	    if (stupid[select].getMyElement().isEmpty())
 	    {
-		String element = prefs.getString("listElement", "");
-		stupid.setMyElementValid(element);
+		String element = prefs.getString(elementPrefKey, "");
+		stupid[select].setMyElementValid(element);
 	    }
 	}
 	catch (Exception e)
@@ -146,7 +211,7 @@ public class MyContext
 	}
 	try
 	{
-	    stupid.setMyType(prefs.getString("listType", "Klassen"));
+	    stupid[select].setMyType(prefs.getString(typePrefKey, "Klassen"));
 	}
 	catch (Exception e)
 	{
@@ -155,7 +220,7 @@ public class MyContext
 	try
 	{
 	    String value = prefs.getString("listResync", "10");
-	    stupid.setMyResync(Long.parseLong(value));
+	    stupid[select].setMyResync(Long.parseLong(value));
 	}
 	catch (Exception e)
 	{
@@ -170,62 +235,12 @@ public class MyContext
 	    // Resync ist ungültig
 	}
 
-	stupid.hideEmptyHours = prefs.getBoolean("boxHide", false);
-	stupid.onlyWlan = prefs.getBoolean("boxWlan", false);
+	stupid[select].hideEmptyHours = prefs.getBoolean("boxHide", false);
+	stupid[select].onlyWlan = prefs.getBoolean("boxWlan", false);
 
     }
 
-    /**
-     * @author Tobias Janssen
-     * prüft, ob alle Laufzeitbedürfnisse erfüllt sind
-     * 
-     * @return			Integer mit dem Fehlercode
-     */
-    public int checkStructure()
-    {
-
-	// Prüfen, ob die benötigten Dateien existieren:
-	// Elementen Datei beinhaltet die Listen elemente/typ/wochen
-	File elementFile = Tools.getFileSaveElement(this);
-	if (!elementFile.exists())
-	{
-	    return 1;
-	}
-	// die ElementDatei Laden
-	try
-	{
-	    Xml xml = new Xml("root", FileOPs.readFromFile(elementFile));
-	    stupid.clearElements(); // Alle bisherigen Daten entfernen
-	    stupid.fetchElementsFromXml(xml, this); // Daten aus dem
-						    // xml.contaner wandeln
-	    getPrefs(this.context.getApplicationContext()); // Settings laden
-	}
-	catch (Exception e)
-	{
-	    return 1; // Fehler beim Laden der ElementDatei
-	}
-
-	if (stupid.getMyElement().equalsIgnoreCase("")) // prüfen, ob ein
-							// Element ausgewählt
-							// wurde
-	{
-	    return 3;
-	}
-
-	// Prüfen, ob der Elementenordner existiert
-	File elementDir = new File(this.context.getFilesDir() + "/" + stupid.getMyElement());
-	if (!elementDir.exists())
-	    return 6;
-
-	// prüfen, ob daten für die ausgewähltes Element vorhanden sind
-	// zählt wie viele Timetables für die ausgewählt Klasse vorhanden sind
-	File[] files = elementDir.listFiles();
-
-	if (files.length == 0)
-	    return 7;
-
-	return 0;
-    }
+    
     
     /**
      * @author Tobias Janssen
@@ -246,21 +261,27 @@ public class MyContext
      */
     private void selfCheck(int prevErrorCode)
     {
+	//wenn Profil aktiviert, prüfen, was das letzt-genutze war
+	if(this.getCheckboxPreference(Const.CHECKBOXPROFILID))
+	    Tools.loadProfileFile(this);
+	else
+	    this.switchStupidTo(0);
+
 	selfCheckIsRunning = true;
-	switch (checkStructure())
+	switch (getCurStupid().checkStructure(this))
 	{
 	case 0: // Alles in Ordnung
 	    try
 	    {
-		Tools.loadAllDataFiles(this.context, stupid);
+		Tools.loadAllDataFiles(this.context, getCurStupid());
 	    }
 	    catch (Exception e)
 	    {
 		handler.post(new ErrorMessage(this, e.getMessage()));
 	    }
-	    stupid.sort();
+	    getCurStupid().sort();
 	    initViewPager();
-	    stupid.checkAvailibilityOfWeek(this, Const.THISWEEK);
+	    getCurStupid().checkAvailibilityOfWeek(this, Const.THISWEEK);
 	    break;
 
 	case 1: // FILEELEMENT Datei fehlt
@@ -274,8 +295,8 @@ public class MyContext
 	    else
 	    {
 		// Selectoren aus dem Netz laden
-		Tools.fetchOnlineSelectors(this, null);
-		Tools.saveElements(this, new Runnable()
+		getCurStupid().fetchOnlineSelectors(this, null);
+		getCurStupid().saveElements(this, new Runnable()
 		{
 		    @Override
 		    public void run()
@@ -308,14 +329,14 @@ public class MyContext
 	    break;
 	case 6: // Elementenordner existiert nicht
 		// neuen anlegen
-	    java.io.File elementDir = new java.io.File(this.context.getFilesDir(), stupid.getMyElement());
+	    java.io.File elementDir = new java.io.File(this.context.getFilesDir(), stupid[select].getMyElement());
 	    elementDir.mkdir();
 	    initViewPager();
-	    stupid.checkAvailibilityOfWeek(this, Const.THISWEEK);
+	    stupid[select].checkAvailibilityOfWeek(this, Const.THISWEEK);
 	    break;
 	case 7: // Keine Daten für diese Klasse vorhanden
 	    initViewPager();
-	    stupid.checkAvailibilityOfWeek(this, Const.THISWEEK);
+	    stupid[select].checkAvailibilityOfWeek(this, Const.THISWEEK);
 	    break;
 	}
 	selfCheckIsRunning = false;
@@ -329,15 +350,37 @@ public class MyContext
      */
     public void initViewPager()
     {
-	currentPage = 0;
-	for (int i = 0; i < stupid.stupidData.size(); i++)
+
+	pager.currentPage = 0;
+	for (int i = 0; i < stupid[select].stupidData.size(); i++)
 	{
-	    handler.post(new AppendPage(stupid.stupidData.get(i), this));
+	    handler.post(new AppendPage(stupid[select].stupidData.get(i), this));
 	    // Tools.appendTimeTableToPager(stupid.stupidData.get(i), stupid,
 	    // this);
 
 	}
-	handler.post(new SetupPager(this, pageIndex));
+	handler.post(new SetupPager(this, pager.pageIndex));
     }
+    
+    /**
+     * @author Tobias Janssen
+     * 
+     *         Prüft, ob eine Wlan verbindung besteht, und liefert das Ergebnis
+     * 
+     * @param context
+     * @return
+     */
+    public Boolean isWifiConnected()
+    {
+	WifiManager wifi = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+	WifiInfo wifiinfo = wifi.getConnectionInfo();
 
+	if (wifiinfo.getNetworkId() == -1)
+	{
+	    return false;
+	}
+	else
+	    return true;
+    }
+    
 }

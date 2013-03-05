@@ -388,4 +388,6 @@ public class XmlSearch
 	}
 	return xmlResource;
     }
+    
+    
 }

@@ -76,8 +76,8 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 		ctxt.executor.terminateActiveThread();
 	    }
 	});
-	ctxt.progressDialog.show();
-	this.ctxt.stupid.dataIsDirty = true;
+	if(ctxt.mIsRunning)
+	    ctxt.progressDialog.show();
 	super.onPreExecute();
     }
 
@@ -103,14 +103,14 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 	try
 	{
 
-	    int reqWeekOfYear = ctxt.stupid.getWeekOfYear(requestedDate);
+	    int reqWeekOfYear = ctxt.getCurStupid().getWeekOfYear(requestedDate);
 	    // Erstmal davon ausgehen, dass der TimeTable nicht verfügbar ist
 	    
 	    // die neue Liste der verügbaren Wochen durchgehen
-	    for (int i = 0; i < ctxt.stupid.weekList.length && isOnlineAvailableIndex == -1; i++)
+	    for (int i = 0; i < ctxt.getCurStupid().weekList.length && isOnlineAvailableIndex == -1; i++)
 	    {
 		// und prüfen, ob die gesuchte Woche dabei ist
-		String index = ctxt.stupid.weekList[i].index;
+		String index = ctxt.getCurStupid().weekList[i].index;
 		if(index.startsWith("0"))
 		    index=index.substring(1);
 		if (reqWeekOfYear == Integer.decode(index))
@@ -122,7 +122,7 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 		    try
 		    {
 			DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-			Date date = dateFormat.parse(ctxt.stupid.weekList[i].description);
+			Date date = dateFormat.parse(ctxt.getCurStupid().weekList[i].description);
 			Calendar cal = new GregorianCalendar();
 			cal.setTimeInMillis(date.getTime());
 			if (requestedDate.get(Calendar.YEAR) == cal.get(Calendar.YEAR))
@@ -145,11 +145,11 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 	{
 	    // Prüfen, ob eine verbindung aufgebaut werden darf
 	    Boolean connectionAllowed = false;
-	    if (ctxt.stupid.onlyWlan)
+	    if (ctxt.getCurStupid().onlyWlan)
 	    {
 		// es darf nur über wlan eine Verbindung hergestellt werden
 		// prüfen, ob so eine Verbindung besteht
-		if (Tools.isWifiConnected(ctxt.context))
+		if (ctxt.isWifiConnected())
 		{
 		    // es besteht verbindung
 		    connectionAllowed = true;
@@ -185,8 +185,8 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 		    if (this.forcePageTurn)
 		    {
 			Calendar now = new GregorianCalendar();
-			if (ctxt.stupid.currentDate.get(Calendar.DAY_OF_YEAR) != now.get(Calendar.DAY_OF_YEAR))
-			    ctxt.stupid.currentDate = (Calendar) this.requestedDate.clone();
+			if (ctxt.getCurStupid().currentDate.get(Calendar.DAY_OF_YEAR) != now.get(Calendar.DAY_OF_YEAR))
+			    ctxt.getCurStupid().currentDate = (Calendar) this.requestedDate.clone();
 		    }
 		}
 		catch (Exception e)
@@ -199,7 +199,7 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 		try
 		{
 		    // den Index neu erstellen lassen
-		    ctxt.stupid.timeTableIndexer();
+		    ctxt.getCurStupid().timeTableIndexer();
 		}
 		catch (Exception e)
 		{
@@ -217,9 +217,9 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 	    if (ctxt.progressDialog != null)
 		ctxt.progressDialog.dismiss();
 
-	    if (ctxt.stupid.onlyWlan)
+	    if (ctxt.getCurStupid().onlyWlan)
 	    {
-		if (Tools.isWifiConnected(ctxt.context))
+		if (ctxt.isWifiConnected())
 		{
 		    ctxt.handler.post(new Toaster(ctxt, this.errorMessage, Toast.LENGTH_SHORT));
 		}
@@ -262,9 +262,9 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 	try
 	{
 	    Boolean connectionAllowed = false;
-	    if (ctxt.stupid.onlyWlan)
+	    if (ctxt.getCurStupid().onlyWlan)
 	    {
-		if (Tools.isWifiConnected(ctxt.context))
+		if (ctxt.isWifiConnected())
 		{
 		    connectionAllowed = true;
 		}
@@ -288,10 +288,10 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 		case BOTH:
 
 		    ctxt.progressDialog.setMax(80000);
-		    ctxt.stupid.fetchSelectorsFromNet(ctxt);
+		    ctxt.getCurStupid().fetchSelectorsFromNet(ctxt);
 		    ctxt.progressDialog.setProgress(15000);
-		    downloadFeedback = ctxt.stupid.fetchTimeTableFromNet(ctxt.stupid.weekList[weekIndex].description,
-			    ctxt.stupid.getMyElement(), ctxt.stupid.typeList[ctxt.stupid.getMyType()].index, ctxt);
+		    downloadFeedback = ctxt.getCurStupid().fetchTimeTableFromNet(ctxt.getCurStupid().weekList[weekIndex].description,
+			    ctxt.getCurStupid().getMyElement(), ctxt.getCurStupid().typeList[ctxt.getCurStupid().getMyType()].index, ctxt);
 		    ctxt.progressDialog.setProgress(80000);
 		    ctxt.handler.post(new UpdateTimeTableList(ctxt, downloadFeedback));
 
@@ -299,13 +299,13 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 		case ONLYTIMETABLE:
 		    int prgsLength = calculateProgress();
 		    ctxt.progressDialog.setMax(prgsLength);
-		    downloadFeedback = ctxt.stupid.fetchTimeTableFromNet(ctxt.stupid.weekList[weekIndex].description,
-			    ctxt.stupid.getMyElement(), ctxt.stupid.typeList[ctxt.stupid.getMyType()].index, ctxt);
+		    downloadFeedback = ctxt.getCurStupid().fetchTimeTableFromNet(ctxt.getCurStupid().weekList[weekIndex].description,
+			    ctxt.getCurStupid().getMyElement(), ctxt.getCurStupid().typeList[ctxt.getCurStupid().getMyType()].index, ctxt);
 		    ctxt.progressDialog.setProgress(prgsLength);
 		    return downloadFeedback;
 		case ONLYSELECTORS:
 		    ctxt.progressDialog.setMax(15000);
-		    ctxt.stupid.fetchSelectorsFromNet(ctxt);
+		    ctxt.getCurStupid().fetchSelectorsFromNet(ctxt);
 		    ctxt.progressDialog.setProgress(15000);
 		    return new DownloadFeedback(-1, DownloadFeedback.NO_REFRESH);
 		}
@@ -334,7 +334,7 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
 
 	result += 2000; // ca. für convertXMLTableToWeekData
 	result += 1000; // ca. für conerttoMultiDim
-	result += 100 * ctxt.stupid.stupidData.size();
+	result += 100 * ctxt.getCurStupid().stupidData.size();
 	result += 5000;
 	return result;
     }
@@ -348,9 +348,17 @@ public class MainDownloader extends AsyncTask<Boolean, Integer, Boolean>
     @Override
     protected void onPostExecute(Boolean bool)
     {
+	try
+	{
+	    ctxt.getCurStupid().saveFiles(ctxt);
+	}
+	catch (Exception e)
+	{
+
+	}
 	if (this.postExec != null)
 	    postExec.run();
-	if (ctxt.progressDialog != null && ctxt.progressDialog.isShowing())
+	if (ctxt.mIsRunning && ctxt.progressDialog != null && ctxt.progressDialog.isShowing())
 	{
 	    ctxt.progressDialog.dismiss();
 	}
