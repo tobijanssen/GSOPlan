@@ -6,10 +6,17 @@
  */
 package de.janssen.android.gsoplan.asyncTasks;
 
-import android.app.ProgressDialog;
+import java.io.File;
+
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.os.AsyncTask;
 import de.janssen.android.gsoplan.R;
-import de.janssen.android.gsoplan.view.PlanActivity;
+import de.janssen.android.gsoplan.activities.PlanActivity;
+import de.janssen.android.gsoplan.core.StupidOPs;
+import de.janssen.android.gsoplan.core.Tools;
+import de.janssen.android.gsoplan.dataclasses.Const;
+import de.janssen.android.gsoplan.runnables.ErrorMessage;
 
 public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
 {
@@ -29,12 +36,6 @@ public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
     @Override
     protected void onPreExecute()
     {
-	parent.ctxt.progressDialog = new ProgressDialog(parent.ctxt.context);
-	parent.ctxt.progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-	parent.ctxt.progressDialog.setMessage(parent.getString(R.string.msg_start));
-	parent.ctxt.progressDialog.setCancelable(true);
-	if(parent.ctxt.mIsRunning)
-	    parent.ctxt.progressDialog.show();
 	if(preExec != null)
 	    preExec.run();
 	super.onPreExecute();
@@ -42,9 +43,8 @@ public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
 
     protected Boolean doInBackground(Boolean... bool)
     {
-	if (!parent.ctxt.selfCheckIsRunning)
-	    parent.ctxt.selfCheck();
-
+	selfCheck();
+	parent.ctxt.appIsReady=true;
 	return null;
 
     }
@@ -52,10 +52,78 @@ public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
     @Override
     protected void onPostExecute(Boolean result)
     {
-	if (parent.ctxt.mIsRunning && parent.ctxt.progressDialog != null && parent.ctxt.progressDialog.isShowing())
-	{
-	    parent.ctxt.progressDialog.dismiss();
-	}
 	parent.ctxt.executor.scheduleNext();
+    }
+    
+    /**
+     * @author Tobias Janssen
+     * Führt die Laufzeitprüfung durch, und ergreift nötige Maßbahmen im Fehlerfall
+     * 
+     * @param prevErrorCode		Integer der den vorherigen Fehler angibt
+     */
+    private void selfCheck()
+    {
+	//Strukturprüfung durchführen
+	int errorlevel = parent.ctxt.mProfil.stupid.checkStructure(parent.ctxt);
+	switch (errorlevel)
+	{
+	case 0: // Alles in Ordnung
+	    parent.ctxt.initViewPagerWaiting();
+	    try
+	    {
+		parent.ctxt.mProfil.stupid.clearData();
+		Tools.loadAllDataFiles(parent.ctxt.context,parent.ctxt.mProfil, parent.ctxt.mProfil.stupid);
+	    }
+	    catch (Exception e)
+	    {
+		parent.ctxt.handler.post(new ErrorMessage(parent.ctxt, e.getMessage()));
+	    }
+	    parent.ctxt.mProfil.stupid.sort();
+	    parent.ctxt.initViewPager();
+	    break;
+	case 1: // TypesDatei Datei fehlt
+	case 2: // FILEELEMENT Datei fehlt
+	    parent.ctxt.initViewPagerWaiting();
+		// Backend beauftragen diese herunterzu laden
+	    StupidOPs.contactStupidService(parent.ctxt.context, parent.ctxt.msgHandler);
+	    
+	    
+	case 3: // Keine Klasse ausgewählt
+	    parent.ctxt.initViewPagerWaiting();
+	    OnClickListener onClick = new OnClickListener()
+	    {
+
+		@Override
+		public void onClick(DialogInterface dialog, int which)
+		{
+		    Tools.gotoSetup(parent.ctxt, Const.FIRSTSTART, true);
+		}
+	    };
+	    String message = "";
+	    if (parent.ctxt.newVersionReqSetup)
+	    {
+		message = parent.ctxt.context.getString(R.string.msg_newVersionReqSetup);
+	    }
+	    else
+	    {
+		message = parent.ctxt.context.getString(R.string.msg_noElement);
+	    }
+	    parent.ctxt.handler.post(new ErrorMessage(parent.ctxt, message, onClick, "Einstellungen öffnen"));
+	    break;
+	case 6: // Elementenordner existiert nicht
+		// neuen anlegen
+	    parent.ctxt.initViewPagerWaiting();
+
+	    File elementDir = new File(parent.getFilesDir(), parent.ctxt.mProfil.getMyElement());
+	    elementDir.mkdir();
+	    //Backend daten laden lassen:
+	    StupidOPs.contactStupidService(parent, parent.ctxt.msgHandler);
+	    break;
+	case 7: // Keine Daten für diese Klasse vorhanden
+	    parent.ctxt.initViewPagerWaiting();
+	    StupidOPs.contactStupidService(parent, parent.ctxt.msgHandler);
+	    break;
+	}
+	
     }
 }

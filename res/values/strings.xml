@@ -2,15 +2,15 @@
 <resources>
 
     <string name="app_name">GSOPlan</string>
-    <string name="app_version">Version 1.04 RC 1 Beta</string>
+    <string name="app_service_name">GSOPlanService</string>
+    <string name="app_version">Version 1.04</string>
     <string name="app_author">Tobias Janßen</string>
-    <string name="app_version_date">vom 03.03.2013</string>
+    <string name="app_version_date">vom 06.04.2013</string>
     
     
     <!-- Title -->
-    <string name="title_activity_week_plan">GSOPlan - Wochenansicht</string>
     <string name="title_activity_setup">GSOPlan - Einstellungen</string>
-    <string name="title_activity_plan">GSOPlan - Tagesansicht</string>
+    <string name="title_activity_plan">GSOPlan</string>
     <string name="title_activity_main">GSOPLAN Starter</string>
     <string name="title_activity_about_gsoplan">Über GSOPlan</string>
     <!-- /Title -->
@@ -22,45 +22,47 @@
     <string name="menu_gotoDate">Gehe zu Datum</string>
     <string name="menu_refresh">Jetzt aktualisieren</string>
     <string name="menu_today">Heute</string>
-    <string name="menu_weekPlan">Wochenansicht</string>
-    <string name="menu_dayPlan">Tagesansicht</string>
     <string name="menu_favorite">Profil wechseln</string>
 	<!-- /Menülabel -->
     
     <!-- Meldungen -->
-    <string name="msg_weekNotAvailable">Die gewählte Woche ist auf dem GSO-Server nicht verfügbar!</string>
-    <string name="msg_foreWeekNotAvailable">Eine Vorwoche ist auf dem GSO-Server nicht mehr verfügbar!</string>
-    <string name="msg_nextWeekNotAvailable">Die Folgewoche ist auf dem GSO-Server nicht verfügbar!</string>
-    <string name="msg_searchingNewDataSelected">Aktualisiere die gewählte Woche…</string>
-    <string name="msg_searchingNewDataNow">Aktualisiere die angezeigte Woche…</string>
-    <string name="msg_searchingNewDataNext">Aktualisiere die Folgewoche…</string>
-    <string name="msg_searchingNewDataLast">Aktualisiere die Vorwoche…</string>
-    <string name="msg_loadingData">Lade vom GSO-Server…</string>
     <string name="msg_noWlan">Keine Wlan Verbindung!</string>
     <string name="msg_saving">Speichern…</string>
     <string name="msg_start">Bitte warten…</string>
+    <string name="msg_WIFI">Bitte beachten:\n\nWenn Du Datenübertragungen nur über WLAN zulässt, können außerhalb des WLAN-Bereichs keine Daten mehr im Hintergrund synchronisiert werden!</string>
+    <string name="msg_AutoSync">Bitte beachten:\n\nDas Laden von Hintergrunddaten verringert die Akkulaufzeit und kostet Datenkontingent Deines Mobilfunkanbieters!</string>
+    <string name="msg_newVersionReqSetup">Die Einstellungen wurden bei diesem Update überarbeitet und die bestehenden Daten können nicht übernommen werden.\n</string>
+    <string name="msg_noElement">Es ist noch kein Element festlegt!\nBitte wähle in den Einstellungen Dein Element aus!</string>
+    <string name="msg_newFunktionAvailable">Soll die neue Hintergrund- Synchronisation eingeschaltet werden?\n(Du kannst dies später in den Einstellungen ändern!)\n\nDamit erhältst Du eine Benachrichtigung, wenn sich etwas an Deinem Stundenplan ändert!\n\n</string>
 
     <!-- Fehler-Meldungen -->
     <string name="setup_message_error_dlElements_1">Beim downloaden der Elemente ist ein Fehler aufgetreten!</string>
+    <string name="setup_message_error_noElements">Es stehen noch keine Daten vom GSO-Server zur Verfügung!\n\nBitte prüfe Deine Internetverbindung und versuche es erneut!</string>
     <!-- weitere Erors siehe siehe unter CONST -->
 
 
     <!-- Setup Section -->
 
-    <string name="catergory1_title">Stundenplan Einstellungen</string>
-    <string name="catergory2_title">App Einstellungen</string>
-    <string name="catergory3_title">2. Profil</string>
-    <string name="title_usefav">2. Profil</string>
-    <string name="summary_usefav">Möchtest Du ein zweites Profil nutzen?</string>
+    <string name="catergory1_title">Stundenplan</string>
+    <string name="catergory2_title">Synchronisierung</string>
+    <string name="catergory3_title">Profil</string>
     <string name="title_element">Element</string>
     <string name="summary_element">Legt die Klasse, Lehrer, oder den Raum fest</string>
     <string name="title_readyButton">Fertig</string>
     <string name="title_type">Art</string>
     <string name="summary_type">Legt den Typ des Elementes fest</string>
-    <string name="title_resyncafter">Aktualisierungsrate</string>
-    <string name="summary_resyncafter">Nach angegebener Zeit wird automatisch Aktualisiert</string>
-    <string name="title_first_activity">Standart-Ansicht</string>
-    <string name="summary_first_activity">Legt die Ansicht fest, die beim Appstart aufgerufen wird</string>
+    
+    <string name="title_resyncafter">Häufigkeit</string>
+    <string name="summary_resyncafter">Nach angegebener Zeit wird synchronisiert</string>
+    <string name="title_autosync">Hintergrunddaten</string>
+    <string name="summary_autosync">Stundenpläne im Hintergrund immer aktuell halten</string>
+    <string name="title_notify">Benachrichtung</string>
+    <string name="summary_notify">Benachrichtigen, wenn Änderungen am Stundenplan gefunden wurden</string>
+    <string name="title_vibrate">Vibration</string>
+    <string name="summary_vibrate">Vibrieren bei Benachrichtigung</string>
+    <string name="title_sound">Klingelton</string>
+    <string name="summary_sound">Klingelton bei Benachrichtigung</string>
+    
     <string name="title_daybegin">Freistunden ausblenden</string>
     <string name="summary_daybegin">Entfernt Freistunden zu Beginn des Tages</string>
     <string name="setup_message_dlElements_body">Downloade Elementenliste…</string>
@@ -68,19 +70,20 @@
     <string name="summary_wlan">Datenübertragung nur über WLAN zulassen</string>
     <string name="menu_settings">Settings</string>
     <string name="app_about">Über GSOPlan</string>
-    <string name="app_recent_changes_header"></string>
-    <string name="app_recent_changes_msg">        - Aktualisierungsfehler behoben\n\n
-        - Möglichkeit für zweites Profil hinzugefügt\n
-        (Du kannst nun zwischen zwei Klassen usw. umschalten)\n\n
-        - Automatisches Speichern optimiert\n\n
-        - diverse Bugs behoben\n</string>
-    <string name="app_newVersion_msg">        Die Einstellungen wurden bei diesem Update überarbeitet und die bestehenden Daten können nicht übernommen werden.\n </string>
-    <string name="app_didyaknow_header">Wusstest Du schon?,</string>
-    <string name="app_didyaknow_msg">        	dass Du die Updates mit Hilfe der Zurück-Taste abbrechen kannst!?\n\n
-			dass Du in den Einstellungen die Wochenansicht als Standart festlegen kannst!?\n\n
-			dass Du mir bei Fehlern + Problemen gerne eine Email schreiben kannst!?\n\n
-			dass die Fehlerberichte sehr hilfreich für mich sind!?</string>
-    <string name="app_msg_info">Die App wurde aktualisiert!</string>
+    <string name="app_recent_changes_header">Letzte Änderungen:</string>
+    <string name="app_recent_changes_msg">        - Die Tages-/Wochenansicht schaltet nun automatisch um\n
+        - diverse Änderungen\n
+        - diverse Bugs behoben\n\n        
+        Hintergrund-Service hinzugefügt:\n\n
+        - Ermöglicht Benachrichtigung bei Änderung am Stundenplan\n
+        - Lädt automatisch alle verfügbaren Wochen vom GSO-Server\n
+</string>
+    
+
+    <string name="app_didyaknow_header"></string>
+    <string name="app_didyaknow_msg">        	
+</string>
+    <string name="app_msg_info"></string>
     <string name="app_button_weiter">Weiter…</string>
     <string name="app_rateme">Dir gefällt GSOPlan?\nDann bewerte die App im Play-Store:</string>
     <string name="app_rateme_button">zum Play-Store…</string>

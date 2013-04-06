@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.janssen.android.gsoplan"
     android:versionCode="7"
-    android:versionName="1.04 Beta RC 1" >
+    android:versionName="1.04 Beta" >
 
     <!-- aktuelle Play-Store Version android:versionCode="6" -->
     <uses-sdk
@@ -14,15 +14,33 @@
     <!-- für google Analytics -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Light" >
-        <activity
-            android:name="de.janssen.android.gsoplan.MainActivity"
-            android:configChanges="keyboardHidden|orientation"
+        <service 
+		    android:name="de.janssen.android.gsoplan.service.AlarmStarter"
+		    android:icon="@drawable/ic_launcher"
+        	android:label="@string/app_name" >
+        </service>
+        <service 
+            android:name="de.janssen.android.gsoplan.service.MyService"
+            android:icon="@drawable/ic_launcher"
+        	android:label="@string/app_name">
+        </service>
+        
+		<receiver android:name="de.janssen.android.gsoplan.service.SystemStartService" >
+		    <intent-filter>
+		        <action android:name="android.intent.action.BOOT_COMPLETED" />
+		    </intent-filter>
+		</receiver>
+		<activity
+            android:name="de.janssen.android.gsoplan.activities.MainActivity"
+            
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -31,11 +49,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="de.janssen.android.gsoplan.view.PlanActivity"
-            android:configChanges="keyboardHidden|orientation"
+            android:name="de.janssen.android.gsoplan.activities.PlanActivity"
+            
             android:exported="false"
-            android:label="@string/title_activity_plan"
-            android:screenOrientation="portrait" >
+            android:label="@string/title_activity_plan" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -43,8 +60,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="de.janssen.android.gsoplan.view.AppPreferences"
-            android:configChanges="keyboardHidden|orientation"
+            android:name="de.janssen.android.gsoplan.activities.AppPreferences"
+            
             android:exported="false"
             android:label="@string/title_activity_setup"
             android:theme="@style/Theme.CustomPreferences" >
@@ -54,20 +71,9 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="de.janssen.android.gsoplan.view.WeekPlanActivity"
-            android:configChanges="keyboardHidden|orientation"
-            android:exported="false"
-            android:label="@string/title_activity_week_plan"
-            android:screenOrientation="landscape" >
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
         <activity
-            android:name="de.janssen.android.gsoplan.AboutGSOPlan"
+            android:name="de.janssen.android.gsoplan.activities.AboutGSOPlan"
             android:configChanges="keyboardHidden|orientation"
             android:exported="false"
             android:label="@string/title_activity_about_gsoplan"
@@ -78,7 +84,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        
+       
     </application>
 
 </manifest>

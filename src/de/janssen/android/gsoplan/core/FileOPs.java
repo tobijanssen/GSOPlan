@@ -11,8 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
-import de.janssen.android.gsoplan.MyContext;
+import de.janssen.android.gsoplan.Logger;
 import android.app.ProgressDialog;
 
 public class FileOPs
@@ -30,14 +29,19 @@ public class FileOPs
      * 
      * @return den Inhalt der Datei
      */
-    public static String readFromFile(File file) throws Exception
+    public static String readFromFile(Logger logger,File file) throws Exception
     {
 	ready = false;
 	String output = "";
 	try
 	{
 	    FileInputStream fis = new FileInputStream(file);
-
+	    if(!file.canRead())
+	    {
+		logger.log(Logger.Level.WARNING,"Cannot Read File "+file.getName());
+		java.lang.Thread.sleep(2000);
+	    }
+	    
 	    long length = file.length();
 	    // prüfen, ob das file größer als int ist
 	    if (java.lang.Integer.MAX_VALUE < length)
@@ -66,6 +70,7 @@ public class FileOPs
 
 		}
 		fis.close();
+		logger.log(Logger.Level.INFO_2,"Successful Read File "+file.getName()+" with "+ bytesRead+" bytes");
 		ready = true;
 	    }
 	    else
@@ -75,6 +80,7 @@ public class FileOPs
 		fis.read(buffer);
 		output = new String(buffer);
 		fis.close();
+		logger.log(Logger.Level.INFO_2,"Successful Read File "+file.getName()+" with "+ length+" bytes");
 		ready = true;
 	    }
 
@@ -82,16 +88,19 @@ public class FileOPs
 	catch (FileNotFoundException e)
 	{
 	    ready = true;
+	    logger.log(Logger.Level.ERROR,"Laden der Element - Datei fehlgeschlagen: Datei existiert nicht");
 	    throw new FileNotFoundException("Laden der Datei fehlgeschlagen: Datei existiert nicht");
 	}
 	catch (NullPointerException e)
 	{
 	    ready = true;
+	    logger.log(Logger.Level.ERROR,"Laden der Element - Datei fehlgeschlagen: Dateiname fehlerhaft");
 	    throw new NullPointerException("Laden der Datei fehlgeschlagen: Dateiname fehlerhaft");
 	}
 	catch (IOException e)
 	{
 	    ready = true;
+	    logger.log(Logger.Level.ERROR,"Laden der Element - Datei fehlgeschlagen: Dateiname fehlerhaft");
 	    throw new IOException("Laden der Datei fehlgeschlagen: Dateiname fehlerhaft");
 	}
 
@@ -145,15 +154,17 @@ public class FileOPs
     public static void saveToFile(String fileContent, File file) throws Exception
     {
 	ready = false;
-
+	//prüfen, ob ordner existiert
+	String filestring = file.getAbsolutePath();
+	String dirname = filestring.substring(0,filestring.lastIndexOf("/"));
+	File dir = new File(dirname);
+	if(!dir.exists())
+	    dir.mkdir();
+	
 	FileOutputStream fos = new FileOutputStream(file);
 
-	// java.io.File file = new java.io.File(context.getFilesDir()+"/"+dir,
-	// filename);
 	try
 	{
-	    // FileOutputStream fos =
-	    // context.openFileOutput(theFile.getName(),Context.MODE_PRIVATE);
 	    fos.write(fileContent.getBytes());
 	    fos.close();
 	    ready = true;

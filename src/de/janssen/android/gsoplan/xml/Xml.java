@@ -8,22 +8,26 @@ package de.janssen.android.gsoplan.xml;
 
 import android.app.ProgressDialog;
 import de.janssen.android.gsoplan.ArrayOperations;
-import de.janssen.android.gsoplan.Const;
-import de.janssen.android.gsoplan.core.Parameter;
+import de.janssen.android.gsoplan.dataclasses.Const;
+import de.janssen.android.gsoplan.dataclasses.Parameter;
 
 public class Xml
 {
     public static final String SYNCTIME = "syncTime";
     public static final String ELEMENTS = "elements";
+    public static final String ELEMENT = "element";
+    public static final String WEEK = "week";
     public static final String WEEKID = "weekId";
     public static final String TYPES = "types";
+    public static final String TYPE = "type";
     public static final String UNSET = "unset";
     public static final String OPTION = "option";
     public static final String TR = "tr";
     public static final String SCRIPT = "script";
     public static final String FONT = "font";
     public static final String TABLE = "table";
-    public static final String PROFIL = "profil";
+    public static final String PROFIL = "mProfil";
+    public static final String HTMLMOD = "htmlmodified";
     
     
     
@@ -37,23 +41,10 @@ public class Xml
     private int sumerizeId = 0;
     private Xml currentTag;
 
-    private Xml(String type, String dataContent, Parameter[] parameters)
-    {
-	this.type = type;
-	this.dataContent = dataContent;
-	this.parameters = parameters;
-    }
-
     public Xml(String type, String dataContent)
     {
 	this.type = type;
 	this.dataContent = dataContent;
-    }
-
-    private Xml(String type, Parameter[] parameters)
-    {
-	this.type = type;
-	this.parameters = parameters;
     }
 
     public Xml(String type)
@@ -563,7 +554,7 @@ public class Xml
     {
 	for (int x = 0; x < this.parameters.length; x++)
 	{
-	    if (this.parameters[x].getName().equalsIgnoreCase("color"))
+	    if (this.parameters[x] != null && this.parameters[x].getName().equalsIgnoreCase("color"))
 	    {
 		return this.parameters[x].getValue();
 	    }

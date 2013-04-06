@@ -6,7 +6,8 @@
  */
 package de.janssen.android.gsoplan.runnables;
 
-import de.janssen.android.gsoplan.MyContext;
+import de.janssen.android.gsoplan.Logger;
+import de.janssen.android.gsoplan.core.MyContext;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -16,8 +17,10 @@ public class ErrorMessage implements Runnable
 
     private MyContext ctxt;
     private String errorMessage;
-    private OnClickListener onClick;
-    private String positvButtonText = "Ok";
+    private OnClickListener onPositiveClick;
+    private String positveButtonText = "Ok";
+    private OnClickListener onNegativeClick;
+    private String negativeButtonText = "Abbrechen";
 
     
     /**
@@ -27,12 +30,28 @@ public class ErrorMessage implements Runnable
      * @param onClick			OnClickListener für positiven Klick
      * @param positvButtonText		String Positive Button Text
      */
-    public ErrorMessage(MyContext ctxt, String errorMessage, OnClickListener onClick, String positvButtonText)
+    public ErrorMessage(MyContext ctxt, String errorMessage, OnClickListener onClick, String positveButtonText)
     {
 	this.ctxt = ctxt;
 	this.errorMessage = errorMessage;
-	this.onClick = onClick;
-	this.positvButtonText = positvButtonText;
+	this.onPositiveClick = onClick;
+	this.positveButtonText = positveButtonText;
+    }
+    /**
+     * 
+     * @param ctxt
+     * @param errorMessage
+     * @param onPositiveClick
+     * @param positvButtonText
+     */
+    public ErrorMessage(MyContext ctxt, String errorMessage, OnClickListener onPositiveClick, String positveButtonText,OnClickListener onNegativeClick, String negativeButtonText)
+    {
+	this.ctxt = ctxt;
+	this.errorMessage = errorMessage;
+	this.onPositiveClick = onPositiveClick;
+	this.positveButtonText = positveButtonText;
+	this.onNegativeClick = onNegativeClick;
+	this.negativeButtonText = negativeButtonText;
     }
 
     /**
@@ -45,7 +64,7 @@ public class ErrorMessage implements Runnable
     {
 	this.ctxt = ctxt;
 	this.errorMessage = errorMessage;
-	this.onClick = onClick;
+	this.onPositiveClick = onClick;
     }
     /**
      * Erzeugt neue Fehlermeldung
@@ -53,12 +72,12 @@ public class ErrorMessage implements Runnable
      * @param errorMessage		String der die Meldung enthält
      * @param positvButtonText		String Positive Button Text
      */
-    public ErrorMessage(MyContext ctxt, String errorMessage, String positvButtonText)
+    public ErrorMessage(MyContext ctxt, String errorMessage, String positveButtonText)
     {
 	this.ctxt = ctxt;
 	this.errorMessage = errorMessage;
-	this.onClick = null;
-	this.positvButtonText = positvButtonText;
+	this.onPositiveClick = null;
+	this.positveButtonText = positveButtonText;
     }
     /**
      * Erzeugt neue Fehlermeldung
@@ -69,39 +88,46 @@ public class ErrorMessage implements Runnable
     {
 	this.ctxt = ctxt;
 	this.errorMessage = errorMessage;
-	this.onClick = null;
+	this.onPositiveClick = null;
     }
 
     @Override
     public void run()
     {
-	if (ctxt.progressDialog != null && ctxt.progressDialog.isShowing())
-	{
-	    ctxt.progressDialog.dismiss();
-	}
 	if (ctxt.mIsRunning && errorMessage != null && !errorMessage.equalsIgnoreCase(""))
 	{
-	    AlertDialog.Builder dialog = new AlertDialog.Builder(ctxt.context);
-	    dialog.setMessage(errorMessage);
-	    if (onClick == null)
+	    try
 	    {
-		dialog.setPositiveButton(positvButtonText, new OnClickListener()
+		AlertDialog.Builder dialog = new AlertDialog.Builder(ctxt.context);
+		dialog.setMessage(errorMessage);
+		if (onPositiveClick == null)
 		{
-
-		    @Override
-		    public void onClick(DialogInterface dialog, int which)
+		    dialog.setPositiveButton(positveButtonText, new OnClickListener()
 		    {
 
-		    }
+			@Override
+			public void onClick(DialogInterface dialog, int which)
+			{
 
-		});
+			}
+
+		    });
+		}
+		else
+		{
+		    dialog.setPositiveButton(positveButtonText, this.onPositiveClick);
+		}
+		if (onNegativeClick != null)
+		{
+		    dialog.setNegativeButton(negativeButtonText, this.onNegativeClick);
+		}
+
+		dialog.show();
 	    }
-	    else
+	    catch(Exception e)
 	    {
-		dialog.setPositiveButton(positvButtonText, this.onClick);
+		ctxt.logger.log(Logger.Level.ERROR, "Dialog konnte nicht erstellt werden", e);
 	    }
-
-	    dialog.show();
 	}
     }
 }

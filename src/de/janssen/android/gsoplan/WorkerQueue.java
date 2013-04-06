@@ -14,7 +14,6 @@ import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 import android.os.AsyncTask;
 import android.os.AsyncTask.Status;
 
@@ -24,19 +23,19 @@ public class WorkerQueue implements Runnable
     final Queue<AsyncTask<Boolean, Integer, Boolean>> tasks = new ArrayDeque<AsyncTask<Boolean, Integer, Boolean>>();
     final Queue<Boolean> tasksBools = new ArrayDeque<Boolean>();
     private ExecutorService monit;
-    private MyContext ctxt;
     private AsyncTask<Boolean, Integer, Boolean> currentTask;
     private Boolean exitMonitThread;
     private Calendar born;
     private Boolean terminated=false;
 
+
+    
     /**
+     * Erstellt eine neue WorkerQueue
      * @author janssen
-     * @param ctxt		MyContext der Anwendung
      */
-    public WorkerQueue(MyContext ctxt)
+    public WorkerQueue()
     {
-	this.ctxt = ctxt;
 	this.monit = Executors.newSingleThreadExecutor();
 	this.exitMonitThread = false;
 	this.monit.execute(this);
@@ -46,7 +45,7 @@ public class WorkerQueue implements Runnable
      * @author janssen
      * @param newTask		AsyncTask der ausgeführt werden soll
      */
-    public synchronized void execute(final AsyncTask<Boolean, Integer, Boolean> newTask)
+    public synchronized void post(final AsyncTask<Boolean, Integer, Boolean> newTask)
     {
 	if(!terminated)
 	    tasks.add(newTask);
@@ -83,7 +82,7 @@ public class WorkerQueue implements Runnable
 		}
 		catch (Exception e)
 		{
-		    Boolean debugMe = true;
+		    //nichts zu tun
 		}
 	    }
 	}
@@ -177,10 +176,6 @@ public class WorkerQueue implements Runnable
      */
     public void terminateActiveThread()
     {
-	if (ctxt.progressDialog != null && ctxt.progressDialog.isShowing())
-	{
-	    ctxt.progressDialog.dismiss();
-	}
 	if(this.currentTask != null)
 	    this.currentTask.cancel(true);
 	
@@ -198,7 +193,6 @@ public class WorkerQueue implements Runnable
 	this.terminated = true;
 	terminateActiveThread();
 	awaitTermination(2000);
-	ctxt.progressDialog = null;
 	this.exitMonitThread = true;
     }
 }

@@ -31,12 +31,4 @@
       	android:orderInCategory="100"
        	android:showAsAction="collapseActionView"/>
     
-    
-    <item android:id="@+id/menu_weekPlan"
-    	android:icon="@drawable/ic_menu_week"
-        android:title="@string/menu_weekPlan"
-      	android:orderInCategory="100"
-       	android:showAsAction="collapseActionView"/>
-        
-        
 </menu>

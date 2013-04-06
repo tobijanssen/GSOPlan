@@ -1,7 +1,7 @@
 package de.janssen.android.gsoplan.xml;
 
 import de.janssen.android.gsoplan.ArrayOperations;
-import de.janssen.android.gsoplan.core.Parameter;
+import de.janssen.android.gsoplan.dataclasses.Parameter;
 
 public class XmlSearch
 {

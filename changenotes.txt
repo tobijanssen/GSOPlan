@@ -1,9 +1,8 @@
-Change Notes Version 1.04 RC1 Beta:
+Change Notes Version 1.04:
 
 Changes:
         
-	- Fehler behoben wenn keine Daten vorhanden und "Jetzt aktualisieren" ausgführt wurde 
-	- Automatisches Speichern optimiert
-	- Möglichkeit für zweites Profil hinzugefügt
 	- diverse Bugs behoben
+	- diverse Änderungen
+	- Hintergrund Service hinzugefügt
 	
