@@ -6,9 +6,9 @@
         android:orderInCategory="100"
         android:showAsAction="collapseActionView" />
 	
-	<item android:id="@+id/menu_favorite"
+	<item android:id="@+id/menu_profiles"
 	    android:icon="@drawable/ic_menu_cc"
-        android:title="@string/menu_favorite"
+        android:title="@string/menu_profiles"
         android:orderInCategory="100"
         android:showAsAction="collapseActionView" />
     

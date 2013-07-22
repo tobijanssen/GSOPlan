@@ -81,8 +81,36 @@ public class WeekData
 	    y=0;
 	}
 	return result;
-	
-	
+    }
+    
+    /**
+     * Prüft, ob der Stundeplan Abweichungen zu normalen Stundenplänen enthält anhand der Farbe
+     * @param wd
+     */
+    public List<Point> checkForChanges()
+    {
+	List <Point> result = new ArrayList<Point>();
+	int y=0;
+	for(int x=0;x<this.timetable[y].length;x++)
+	{
+	    while(y<this.timetable.length)    
+	    {
+		if(this.timetable[y][x] != null)
+		{
+		    String colorthis = this.timetable[y][x].getColorParameter();
+		    if (!colorthis.equalsIgnoreCase("#000000"))
+		    {
+			// änderung gefunden
+			result.add(new Point(x, y));
+			//der tag kann somit abgehakt werden, denn eine übereinstimmung pro tag ist genug
+			break;
+		    }
+		}
+		y++;
+	    }
+	    y=0;
+	}
+	return result;
     }
 
     /**

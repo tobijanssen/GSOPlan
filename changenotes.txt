@@ -1,8 +1,12 @@
-Change Notes Version 1.04:
+Change Notes Version 1.05:
 
 Changes:
-        
-	- diverse Bugs behoben
-	- diverse Änderungen
-	- Hintergrund Service hinzugefügt
+	einen Bug behoben der zwischen Android SDk Versionen 10 und 16 einen Absturz verursachte
+
+Change Notes Version 1.05:
+
+Changes:
+	- diverse Bugs beseitigt
+	- Profile hinzugefügt
+	- beschleunigtes Laden hinzugefügt
 	

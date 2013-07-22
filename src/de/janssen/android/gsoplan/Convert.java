@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
-
+import de.janssen.android.gsoplan.core.MyContext;
+import de.janssen.android.gsoplan.core.Profil;
 import de.janssen.android.gsoplan.core.Type;
 import de.janssen.android.gsoplan.core.WeekData;
 import de.janssen.android.gsoplan.dataclasses.Const;
@@ -334,5 +335,165 @@ public class Convert
 	}
 
 	return weekData;
+    }
+    
+    /**
+     * Konvertiert die übergebene Profil-Liste in einen XML String
+     * @param ctxt
+     * @param index
+     * @return
+     */
+    public static String toXml(List<Profil> profiles)
+    {
+	String result = "<" + Xml.PROFILES +">\n";
+	for(int i=0;i<profiles.size();i++)
+	{
+        	result += "\t<" + Xml.PROFIL +"\n";
+        	result += "\t\tmyElement='"+profiles.get(i).myElement+"'\n";
+        	result += "\t\tmyTypeIndex='"+profiles.get(i).myTypeIndex+"'\n";
+        	result += "\t\tmyTypeKey='"+profiles.get(i).myTypeKey+"'\n";
+        	result += "\t\tmyTypeName='"+profiles.get(i).myTypeName+"'\n";
+        	result += "\t\tonlyWlan='"+profiles.get(i).onlyWlan+"'\n";
+        	result += "\t\thideEmptyHours='"+profiles.get(i).hideEmptyHours+"'\n";
+        	result += "\t\tautoSync='"+profiles.get(i).autoSync+"'\n";
+        	result += "\t\tnotificate='"+profiles.get(i).notificate+"'\n";
+        	result += "\t\tvibrate='"+profiles.get(i).vibrate+"'\n";
+        	result += "\t\tsound='"+profiles.get(i).sound+"'\n";
+        	result += "\t\tmyResync='"+profiles.get(i).myResync+"'\n";
+        	result += "\t\tmylastResync='"+profiles.get(i).mylastResync+"'\n";
+        	result += "\t>\n";
+        	result +="\t</"+Xml.PROFIL +">\n";
+	}
+	result += "</"+Xml.PROFILES+">\n";
+	return result;
+    }
+    
+    /**
+     * Konvertiert einen Xml String zu einer Profiles Liste
+     * @param xml
+     * @return
+     */
+    public static List<Profil> toProfiles(Xml xml, MyContext ctxt)
+    {
+	XmlSearch search = new XmlSearch();
+	xml = search.tagCrawlerFindFirstEntryOf(xml, Xml.PROFILES);   
+
+	List<Profil> profiles = new ArrayList<Profil>();
+
+	String myElement,myTypeKey,myTypeName;
+	int myTypeIndex;
+	Boolean onlyWlan,hideEmptyHours,autoSync,notificate,vibrate,sound;
+	long myResync, mylastResync;
+	Xml child;
+	
+	for (int ci = 0; ci < xml.getChildTags().length; ci++)
+	{
+	    child = xml.getChildTagAtIndex(ci);
+	    myElement = "";
+	    myTypeKey = "";
+	    myTypeName = "";
+	    myTypeIndex = 0;
+	    onlyWlan = false;
+	    hideEmptyHours = false;
+	    autoSync = false;
+	    notificate = false;
+	    vibrate = false;
+	    sound = false;
+	    myResync = 10;
+	    mylastResync = 0;
+	
+	    for (int i = 0; i < child.getParameters().length; i++)
+	    {
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("myElement"))
+		    myElement = child.getParameterAtIndex(i).getValue();
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("myTypeKey"))
+		    myTypeKey = child.getParameterAtIndex(i).getValue();
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("myTypeName"))
+		    myTypeName = child.getParameterAtIndex(i).getValue();
+
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("myTypeIndex"))
+		{
+		    try
+		    {
+			myTypeIndex = Integer.parseInt(child.getParameterAtIndex(i).getValue());
+		    }
+		    catch (Exception e)
+		    {
+			myTypeIndex = 0;
+		    }
+		}
+
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("onlyWlan"))
+		{
+		    if (child.getParameterAtIndex(i).getValue().equalsIgnoreCase("true"))
+			onlyWlan = true;
+		    else
+			onlyWlan = false;
+		}
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("hideEmptyHours"))
+		{
+		    if (child.getParameterAtIndex(i).getValue().equalsIgnoreCase("true"))
+			hideEmptyHours = true;
+		    else
+			hideEmptyHours = false;
+		}
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("autoSync"))
+		{
+		    if (child.getParameterAtIndex(i).getValue().equalsIgnoreCase("true"))
+			autoSync = true;
+		    else
+			autoSync = false;
+		}
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("notificate"))
+		{
+		    if (child.getParameterAtIndex(i).getValue().equalsIgnoreCase("true"))
+			notificate = true;
+		    else
+			notificate = false;
+		}
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("vibrate"))
+		{
+		    if (child.getParameterAtIndex(i).getValue().equalsIgnoreCase("true"))
+			vibrate = true;
+		    else
+			vibrate = false;
+		}
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("sound"))
+		{
+		    if (child.getParameterAtIndex(i).getValue().equalsIgnoreCase("true"))
+			sound = true;
+		    else
+			sound = false;
+		}
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("myResync"))
+		{
+		    try
+		    {
+			myResync = Long.parseLong(child.getParameterAtIndex(i).getValue());
+		    }
+		    catch (Exception e)
+		    {
+			myResync = 60;
+		    }
+		}
+		if (child.getParameterAtIndex(i).getName().equalsIgnoreCase("myLastResync"))
+		{
+		    try
+		    {
+			mylastResync = Long.parseLong(child.getParameterAtIndex(i).getValue());
+		    }
+		    catch (Exception e)
+		    {
+			mylastResync = 0;
+		    }
+		}
+	    }
+
+	    Profil profil = new Profil(myElement, myTypeIndex, myTypeKey, myTypeName, onlyWlan, hideEmptyHours, autoSync,
+		    notificate, vibrate, sound, myResync, mylastResync, ctxt);
+	    profiles.add(profil);
+	
+	}
+	return profiles;
     }
 }

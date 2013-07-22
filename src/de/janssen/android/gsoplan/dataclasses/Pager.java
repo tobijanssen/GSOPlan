@@ -74,6 +74,11 @@ public class Pager
 	this.hideEmptyHours=hideEmptyHours;
     }
     
+    public int size()
+    {
+	return pages.size();
+    }
+    
     /**
      * Initialisiert den Pager mit dem übergebenem Datum
      * @param date
@@ -85,7 +90,9 @@ public class Pager
 	    int currentPage = getPage(date);
 	    pageAdapter = new MyPagerAdapter(pages, headlines);
 	    viewPager.setAdapter(pageAdapter);
+	    
 	    pageIndicator.setViewPager(viewPager);
+	    pageIndicator.invalidate();
 	    viewPager.setCurrentItem(currentPage, false);
 	    
 	}
@@ -896,7 +903,7 @@ public class Pager
     
     public int getPage(Calendar currentDate)
     {
-	return getPage(currentDate, 0);
+	return getPage(currentDate, size()-1);
     }
     
     /**

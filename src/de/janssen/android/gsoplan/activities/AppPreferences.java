@@ -92,7 +92,6 @@ public class AppPreferences extends PreferenceActivity implements Runnable
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
-	getMenuInflater().inflate(R.menu.activity_preferences, menu);
 	return true;
     }
 
@@ -101,10 +100,12 @@ public class AppPreferences extends PreferenceActivity implements Runnable
     {
 	switch (item.getItemId())
 	{
+	
 	default:
 	    return super.onOptionsItemSelected(item);
 	}
     }
+    
 
     /**
      * Prüft, ob die Selectoren bereits in einer Datei vorliegen, um bei nicht
@@ -126,6 +127,7 @@ public class AppPreferences extends PreferenceActivity implements Runnable
 	    {
 		Xml xml = new Xml("root", FileOPs.readFromFile(ctxt.logger, typesFile));
 		ctxt.mProfil.types = Convert.toTypesList(xml);
+		
 	    }
 	    catch (Exception e)
 	    {
@@ -318,7 +320,7 @@ public class AppPreferences extends PreferenceActivity implements Runnable
     public void finish()
     {
 	super.finish();
-
+	
 	try
 	{
 	    ctxt.executor.awaitTermination(30 * 1000);
@@ -406,6 +408,7 @@ public class AppPreferences extends PreferenceActivity implements Runnable
 		setupCheckbox("boxNotify", (Object)ctxt.mProfil.notificate);
 		setupCheckbox("boxVibrate", (Object)ctxt.mProfil.vibrate);
 		setupCheckbox("boxSound", (Object)ctxt.mProfil.sound);
+		setupCheckbox("boxFastLoad", (Object)ctxt.mProfil.fastLoad);
 	    }
 
 	});

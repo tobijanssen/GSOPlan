@@ -25,6 +25,7 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
+import de.janssen.android.gsoplan.dataclasses.ProfilManager;
 
 public class MainActivity extends Activity
 {
@@ -37,8 +38,8 @@ public class MainActivity extends Activity
     {
 	super.onCreate(savedInstanceState);
 	ctxt = new MyContext(this);
-	ctxt.mIsRunning=true;
-	//Extra Daten abholen
+	ctxt.mIsRunning = true;
+	// Extra Daten abholen
 	extras = getIntent().getExtras();
 	setContentView(R.layout.activity_main);
 	loadData();
@@ -72,67 +73,89 @@ public class MainActivity extends Activity
 	    continueAppStart();
 
 	}
-	
+
     }
 
     @Override
     protected void onStop()
     {
-	ctxt.mIsRunning=false;
+	ctxt.mIsRunning = false;
 	super.onStop();
     }
 
     public void continueAppStart(View view)
     {
-	new ErrorMessage(
-		ctxt,this.getString(R.string.msg_newFunktionAvailable)
-			+ ctxt.context.getString(R.string.msg_AutoSync), new OnClickListener()
-		{
+	boolean resync = false;
+	try
+	{
+	    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctxt.context);
+	    resync = prefs.getBoolean("boxAutoSync", false);
+	}
+	catch (Exception e)
+	{
+	}
 
-		    @Override
-		    public void onClick(DialogInterface dialog, int which)
+	if (!resync)
+	{
+	    new ErrorMessage(ctxt, this.getString(R.string.msg_newFunktionAvailable) + ctxt.context.getString(R.string.msg_AutoSync),
+		    new OnClickListener()
 		    {
-			//ja, bitte aktivieren
-			SharedPreferences prefs;
-			try
+
+			@Override
+			public void onClick(DialogInterface dialog, int which)
 			{
-			    prefs = PreferenceManager.getDefaultSharedPreferences(ctxt.context);
-			    SharedPreferences.Editor editor = prefs.edit();
-			    editor.putBoolean("boxAutoSync", true);
-			    editor.putString("listResync", "60");
-			    editor.apply();
+			    // ja, bitte aktivieren
+			    SharedPreferences prefs;
+			    try
+			    {
+				ProfilManager pm = new ProfilManager(ctxt);
+				prefs = PreferenceManager.getDefaultSharedPreferences(ctxt.context);
+				SharedPreferences.Editor editor = prefs.edit();
+				editor.putBoolean("boxAutoSync", true);
+				editor.putString("listResync", "60");
+				editor.apply();
+				ctxt.mProfil.autoSync = true;
+				ctxt.mProfil.myResync = 60;
+				pm.profiles.get(pm.currentProfilIndex).loadPrefs();
+				pm.saveAllProfiles();
+			    }
+			    catch (Exception e)
+			    {
+				ctxt.logger.log(Logger.Level.ERROR, "Error loading Preferences", e);
+			    }
+			    Intent service = new Intent(MainActivity.this, AlarmStarter.class);
+			    MainActivity.this.startService(service);
+
+			    Intent intent = new Intent(MainActivity.this, de.janssen.android.gsoplan.activities.PlanActivity.class);
+			    MainActivity.this.startActivity(intent);
+			    MainActivity.this.finish();
+
 			}
-			catch (Exception e)
-			{
-			    ctxt.logger.log(Logger.Level.ERROR, "Error loading Preferences", e);
-			}
-			Intent service = new Intent(MainActivity.this, AlarmStarter.class);
-			MainActivity.this.startService(service);
-			
-			Intent intent = new Intent(MainActivity.this, de.janssen.android.gsoplan.activities.PlanActivity.class);
-			MainActivity.this.startActivity(intent);
-			MainActivity.this.finish();
 
-		    }
-
-		}, "Ja, bitte!", new OnClickListener()
-		{
-
-		    @Override
-		    public void onClick(DialogInterface dialog, int which)
+		    }, "Ja, bitte!", new OnClickListener()
 		    {
-			Intent intent = new Intent(MainActivity.this, de.janssen.android.gsoplan.activities.PlanActivity.class);
-			MainActivity.this.startActivity(intent);
-			MainActivity.this.finish();
-		    }
-		}, "Nein, jetzt noch nicht!").run();
-	
+
+			@Override
+			public void onClick(DialogInterface dialog, int which)
+			{
+			    Intent intent = new Intent(MainActivity.this, de.janssen.android.gsoplan.activities.PlanActivity.class);
+			    MainActivity.this.startActivity(intent);
+			    MainActivity.this.finish();
+			}
+		    }, "Nein, jetzt noch nicht!").run();
+	}
+	else
+	{
+	    Intent intent = new Intent(MainActivity.this, de.janssen.android.gsoplan.activities.PlanActivity.class);
+	    MainActivity.this.startActivity(intent);
+	    MainActivity.this.finish();
+	}
 
     }
 
     public void continueAppStart()
     {
-	Intent intent =	new Intent(this, de.janssen.android.gsoplan.activities.PlanActivity.class);
+	Intent intent = new Intent(this, de.janssen.android.gsoplan.activities.PlanActivity.class);
 
 	if (extras != null)
 	{
@@ -144,10 +167,9 @@ public class MainActivity extends Activity
 	    MainActivity.this.startService(service);
 	}
 	MainActivity.this.startActivity(intent);
-	
+
 	MainActivity.this.finish();
-		
-	    
+
     }
-    
+
 }

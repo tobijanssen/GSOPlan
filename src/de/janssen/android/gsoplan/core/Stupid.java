@@ -18,7 +18,6 @@ import de.janssen.android.gsoplan.dataclasses.TimeTableIndex;
 import de.janssen.android.gsoplan.xml.Xml;
 import android.content.Context;
 
-
 public class Stupid
 {
     
@@ -233,7 +232,7 @@ public class Stupid
      * @author Tobias Janssen 
      * @param cal
      * @param ctxt
-     * @param mProfil
+     * @param getProfil()
      * @return
      */
     public File getFileData(Calendar cal, Context ctxt, Profil mProfil)
@@ -248,7 +247,7 @@ public class Stupid
      * @author Tobias Janssen 
      * @param ctxt
      * @param weekData
-     * @param mProfil
+     * @param getProfil()
      * @return
      */
     public File getFileData(Context ctxt, WeekData weekData, Profil mProfil)
@@ -307,7 +306,7 @@ public class Stupid
 	{
 	    return 1; // Fehler beim Laden der TypeDatei
 	}
-	if(ctxt.mProfil.myTypeName == null)
+	if(ctxt.mProfil.myTypeName == null || ctxt.mProfil.myTypeName.equalsIgnoreCase(""))
 	{
 	    //return kein typ festgelegt
 	    return 3;
@@ -338,7 +337,7 @@ public class Stupid
     /**
      * Lädt alle online verfügbaren aber lokale Daten-Datein
      * @author Tobias Janssen 
-     * @param mProfil
+     * @param getProfil()
      * @param ctxt
      * @throws Exception
      */
@@ -365,5 +364,16 @@ public class Stupid
 	    throw e;
 	}
 
+    }
+    
+    public Boolean isDateAvailable(Calendar date)
+    {
+	for(int i=0; i<stupidData.size();i++)
+	{
+	    int weekOfYear=stupidData.get(i).date.get(Calendar.WEEK_OF_YEAR);
+	    if(weekOfYear == date.get(Calendar.WEEK_OF_YEAR) && stupidData.get(i).date.get(Calendar.YEAR) == date.get(Calendar.YEAR))
+		return true;
+	}
+	return false;
     }
 }

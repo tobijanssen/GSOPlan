@@ -37,7 +37,7 @@ public class StupidOPs
      * @author Tobias Janssen
      * @param logger
      * @param htmlResponse
-     * @param mProfil
+     * @param getProfil()
      * @throws Exception
      */
     public static void syncTypeList(Logger logger, HtmlResponse htmlResponse,Profil mProfil) throws Exception
@@ -219,7 +219,7 @@ public class StupidOPs
 	    wd.setSyncDate();
 	    if(!htmlResponse.dataReceived)
 	    {
-		logger.log(Logger.Level.INFO_2,"No Data received!");
+		logger.log(Logger.Level.INFO_1,"No Data received!");
 		return result;
 	    
 	    }
@@ -323,8 +323,7 @@ public class StupidOPs
 	weekData.typeId = selectedType;
 	weekData.addParameter("typeId", selectedType);
 
-	// prüfen, ob bereits die Woche für die Klasse und den typ vorliegt:
-	
+	// prüfen, ob bereits die Woche für die Klasse und den typ vorliegt:	
 	List<Point> r = new ArrayList<Point>();
 	long existSyncTime = 0;
 	WeekData existWeekData = new WeekData(stupid);
@@ -334,9 +333,7 @@ public class StupidOPs
 	    existWeekData = stupid.stupidData.get(y);
 	    // prüfen, ob das bestehende Element, dem neu hinzuzufügenden
 	    // entspricht(klasse,KW,Typ)
-	    if (existWeekData.elementId.equalsIgnoreCase(shownElement)
-		    && existWeekData.weekId.equalsIgnoreCase(selectedDateIndex)
-		    && existWeekData.typeId.equalsIgnoreCase(selectedType))
+	    if (existWeekData.elementId.equalsIgnoreCase(shownElement) && existWeekData.weekId.equalsIgnoreCase(selectedDateIndex)&& existWeekData.typeId.equalsIgnoreCase(selectedType))
 	    {
 		// ja,es ist eine gleiche Woche bereits vorhanden
 		// prüfen, ob die alte syncTime älter ist als die neue
@@ -348,6 +345,12 @@ public class StupidOPs
 		    stupid.stupidData.set(y, weekData);
 		}
 	    }
+	}
+	//prüfen, ob es sich dabei um eine neue Woche handelt
+	if(!htmlResponse.alreadyInCache && r.isEmpty())
+	{
+	    // Prüfen, ob an diesem neuen Datensatz Änderungen vorliegen
+	    r = weekData.checkForChanges();
 	}
 	for(int i=0;i<r.size();i++)
 	    result.add(r.get(i));
@@ -935,7 +938,9 @@ public class StupidOPs
 	{
 	    Messenger messenger = new Messenger(handler);
 	    intent.putExtra("MESSENGER", messenger);
+	    
 	}
+	intent.putExtra("fromFrontend", true);
 	ctxt.startService(intent);
     }
 }

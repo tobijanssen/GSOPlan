@@ -8,12 +8,13 @@
 package de.janssen.android.gsoplan.core;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import de.janssen.android.gsoplan.Convert;
 import de.janssen.android.gsoplan.Logger;
 import de.janssen.android.gsoplan.activities.AppPreferences;
 import de.janssen.android.gsoplan.dataclasses.Const;
-import de.janssen.android.gsoplan.xml.XmlOPs;
 import de.janssen.android.gsoplan.xml.Xml;
 import de.janssen.android.gsoplan.xml.XmlSearch;
 import android.content.Context;
@@ -159,7 +160,25 @@ public class Tools
 	{
 	    File dir = new File(context.getFilesDir() + "/" + mProfil.myElement);
 	    File[] files = dir.listFiles();
-	    for (int f = 0; f < files.length; f++)
+	    int start = 0;
+	    if(mProfil.fastLoad)
+	    {
+		try
+		{
+		    // Sortieren, damit die ältetsten abgeschnitten werden
+		    files = sortFiles(files);
+
+		    // maximal 8 Dateien(Wochen) laden
+		    if (files.length > 8)
+			start = files.length - 8;
+		}
+		catch (Exception e)
+		{
+		    // Sortieren hat nicht geklappt
+		    start = 0;
+		}
+	    }
+	    for (int f = start; f < files.length; f++)
 	    {
 		loadNAppendFile(context, stupid, files[f]);
 	    }
@@ -171,24 +190,62 @@ public class Tools
 
     }
     
-    
-    /**
-     * Speichert das aktuelle Profil
-     * @param ctxt
-     */
-    public static void saveProfilSameThread(MyContext ctxt, int index)
+    private static File[] sortFiles(File[] files)
     {
-	try
+	List<File> listOut = new ArrayList<File>();
+	List<File> listIn = new ArrayList<File>();
+	for(int i=0;i<files.length;i++)
 	{
-	    File dir = new java.io.File(ctxt.context.getFilesDir() + "/");
-	    File mProfilFile = new File(dir, "mProfil.xml");
-	    String xmlContent = XmlOPs.createProfileXml(ctxt, index);
-	    FileOPs.saveToFile(xmlContent, mProfilFile);
+	    listIn.add(files[i]);
 	}
-	catch (Exception e)
+	if(listIn.size() == 0)
+	    return new File[0];
+
+	int location = 0;
+	File current = listIn.get(location);
+	File next;
+	int indexToRemove = 0;
+	while(listIn.size() != 0)
 	{
 	    
+	    while (location != listIn.size() - 1)
+	    {
+		location++;
+		next = listIn.get(location);
+		if (listIn.size() == 1)
+		    listOut.add(next);
+		else
+		{
+		    String[] file1 = current.getName().split("_");
+		    String[] file2 = next.getName().split("_");
+		    if (Integer.parseInt(file1[1]) > Integer.parseInt(file2[1]))
+		    {
+			current = next;
+			indexToRemove = location;
+		    }
+		    else if(Integer.parseInt(file1[1]) == Integer.parseInt(file2[1]))
+		    {
+			if(Integer.parseInt(file1[0]) > Integer.parseInt(file2[0]))
+			{
+			    current = next;
+			    indexToRemove = location;
+			}
+		    }
+			
+		}
+	    }
+	    listOut.add(current);
+	    listIn.remove(indexToRemove);
+	    location = 0;
+	    indexToRemove = location;
+	    if(listIn.size() > 0)
+		current = listIn.get(location);
+	    
+	    
 	}
+	File[] result = new File[listOut.size()];
+	result = listOut.toArray(result);
+	return result;
     }
     
 
@@ -230,7 +287,7 @@ public class Tools
     {
 
 	Intent intent = new Intent(ctxt.activity, AppPreferences.class);
-	ctxt.activity.startActivityForResult(intent, 1);
+	ctxt.activity.startActivityForResult(intent, 0);
 	return true;
     }
 
@@ -246,7 +303,7 @@ public class Tools
 
 	Intent intent = new Intent(ctxt.activity, AppPreferences.class);
 	intent.putExtra(putExtraName, value);
-	ctxt.activity.startActivityForResult(intent, 1);
+	ctxt.activity.startActivityForResult(intent, 0);
 	return true;
     }
 

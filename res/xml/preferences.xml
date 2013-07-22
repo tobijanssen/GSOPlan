@@ -65,6 +65,12 @@
             android:summary="@string/summary_wlan"
             android:title="@string/title_wlan" >
         </CheckBoxPreference>
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="boxFastLoad"
+            android:summary="@string/summary_fastload"
+            android:title="@string/title_fastload" >
+        </CheckBoxPreference>
 
         <Preference android:title="@string/app_about" >
             <intent

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.janssen.android.gsoplan"
-    android:versionCode="7"
-    android:versionName="1.04 Beta" >
+    android:versionCode="9"
+    android:versionName="1.05a Beta" >
 
-    <!-- aktuelle Play-Store Version android:versionCode="6" -->
+    <!-- aktuelle Play-Store Version android:versionCode="8" -->
     <uses-sdk
         android:minSdkVersion="10"
         android:targetSdkVersion="17" />
@@ -22,25 +22,26 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Light" >
-        <service 
-		    android:name="de.janssen.android.gsoplan.service.AlarmStarter"
-		    android:icon="@drawable/ic_launcher"
-        	android:label="@string/app_name" >
+        <service
+            android:name="de.janssen.android.gsoplan.service.AlarmStarter"
+            android:icon="@drawable/ic_launcher"
+            android:label="@string/app_name" >
         </service>
-        <service 
+        <service
             android:name="de.janssen.android.gsoplan.service.MyService"
             android:icon="@drawable/ic_launcher"
-        	android:label="@string/app_name">
+            android:label="@string/app_name" >
         </service>
-        
-		<receiver android:name="de.janssen.android.gsoplan.service.SystemStartService" >
-		    <intent-filter>
-		        <action android:name="android.intent.action.BOOT_COMPLETED" />
-		    </intent-filter>
-		</receiver>
-		<activity
+
+        <receiver android:name="de.janssen.android.gsoplan.service.SystemStartService" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <activity
             android:name="de.janssen.android.gsoplan.activities.MainActivity"
-            
+            android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -50,7 +51,6 @@
         </activity>
         <activity
             android:name="de.janssen.android.gsoplan.activities.PlanActivity"
-            
             android:exported="false"
             android:label="@string/title_activity_plan" >
             <intent-filter>
@@ -61,7 +61,7 @@
         </activity>
         <activity
             android:name="de.janssen.android.gsoplan.activities.AppPreferences"
-            
+            android:configChanges="keyboardHidden|orientation"
             android:exported="false"
             android:label="@string/title_activity_setup"
             android:theme="@style/Theme.CustomPreferences" >
@@ -71,7 +71,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name="de.janssen.android.gsoplan.activities.AboutGSOPlan"
             android:configChanges="keyboardHidden|orientation"
@@ -84,7 +83,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-       
+        <activity
+            android:name="de.janssen.android.gsoplan.activities.ProfilActivity"
+            android:configChanges="keyboardHidden|orientation"
+            android:label="@string/title_activity_profil" >
+        </activity>
     </application>
 
 </manifest>

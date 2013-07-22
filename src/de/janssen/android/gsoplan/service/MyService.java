@@ -22,7 +22,13 @@ public class MyService extends IntentService implements Runnable
     protected void onHandleIntent(Intent intent)
     {
 	this.intent=intent;
-	new BackgroundSync(this,this).execute(Boolean.FALSE,Boolean.FALSE,Boolean.FALSE);
+	Bundle extras = intent.getExtras();
+	Boolean fromFrontend =false;
+	if (extras != null)
+	{
+	    fromFrontend = extras.getBoolean("fromFrontend", false);
+	}
+	new BackgroundSync(this,this,fromFrontend).execute(Boolean.FALSE,Boolean.FALSE,Boolean.FALSE);
     }
 
     @Override
@@ -39,7 +45,7 @@ public class MyService extends IntentService implements Runnable
 		msg.arg1 = Activity.RESULT_OK;
 		try
 		{
-		    logger.log(Logger.Level.INFO_2, "Starting MessageHandler(Refresh)");
+		    logger.log(Logger.Level.INFO_1, "Starting MessageHandler(Refresh)");
 		    messenger.send(msg);
 		}
 		catch (android.os.RemoteException e1)
@@ -50,7 +56,7 @@ public class MyService extends IntentService implements Runnable
 	    }
 	    else
 	    {
-		logger.log(Logger.Level.INFO_2, "Starting BROADCASTREFRESH");
+		logger.log(Logger.Level.INFO_1, "Starting BROADCASTREFRESH");
 		
 		Intent intent = new Intent(Const.BROADCASTREFRESH);
 		intent.putExtra("message", Activity.RESULT_OK);

@@ -11,6 +11,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+
 import de.janssen.android.gsoplan.Logger;
 import android.app.ProgressDialog;
 
@@ -70,7 +75,7 @@ public class FileOPs
 
 		}
 		fis.close();
-		logger.log(Logger.Level.INFO_2,"Successful Read File "+file.getName()+" with "+ bytesRead+" bytes");
+		logger.log(Logger.Level.INFO_1,"Successful Read File "+file.getName()+" with "+ bytesRead+" bytes");
 		ready = true;
 	    }
 	    else
@@ -80,7 +85,7 @@ public class FileOPs
 		fis.read(buffer);
 		output = new String(buffer);
 		fis.close();
-		logger.log(Logger.Level.INFO_2,"Successful Read File "+file.getName()+" with "+ length+" bytes");
+		logger.log(Logger.Level.INFO_1,"Successful Read File "+file.getName()+" with "+ length+" bytes");
 		ready = true;
 	    }
 
@@ -176,4 +181,80 @@ public class FileOPs
 	}
 	ready = true;
     }
+    
+    /**
+     * 
+     * @param obj
+     * @param file
+     * @throws Exception
+     */
+    public static void saveObject(Object obj, File file) throws Exception
+    {
+	OutputStream fos = null;
+	if(!file.exists())
+	    file.createNewFile();
+	try
+	{
+	  fos = new FileOutputStream( file );
+	  ObjectOutputStream o = new ObjectOutputStream( fos );
+	  o.writeObject(obj);
+	  o.close();
+	}
+	catch( IOException e )
+	{ 
+	    throw e; 
+	}
+	finally 
+	{ 
+	    try 
+	    { 
+		fos.close(); 
+	    } 
+	    catch ( Exception e )
+	    { 
+		throw e;
+	    }
+	}
+	
+    }
+    
+    /**
+     * 
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    public static Object loadObject(File file) throws Exception
+    {
+	
+	InputStream fis = null;
+	Object result =null;
+	try
+	{
+	  fis = new FileInputStream( file );
+	  ObjectInputStream o = new ObjectInputStream( fis );
+	  result = o.readObject();
+	  o.close();
+	}
+	catch ( IOException e ) 
+	{ 
+	    throw e; 
+	}
+	catch ( Exception e ) 
+	{ 
+	    throw e; 
+	}
+	finally 
+	{
+	    try 
+	    { 
+		fis.close(); 
+	    } catch ( Exception e ) 
+	    { 
+		throw e;
+	    } 
+	}
+	return result;
+    }
+    
 }

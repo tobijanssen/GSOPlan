@@ -21,6 +21,7 @@ public class ErrorMessage implements Runnable
     private String positveButtonText = "Ok";
     private OnClickListener onNegativeClick;
     private String negativeButtonText = "Abbrechen";
+    private String title = "";
 
     
     /**
@@ -52,6 +53,33 @@ public class ErrorMessage implements Runnable
 	this.positveButtonText = positveButtonText;
 	this.onNegativeClick = onNegativeClick;
 	this.negativeButtonText = negativeButtonText;
+    }
+    public ErrorMessage(MyContext ctxt, String title, String errorMessage, OnClickListener onPositiveClick, String positveButtonText,OnClickListener onNegativeClick, String negativeButtonText)
+    {
+	this.ctxt = ctxt;
+	this.title = title;
+	this.errorMessage = errorMessage;
+	this.onPositiveClick = onPositiveClick;
+	this.positveButtonText = positveButtonText;
+	this.onNegativeClick = onNegativeClick;
+	this.negativeButtonText = negativeButtonText;
+    }
+    
+    public ErrorMessage(MyContext ctxt, String title, String errorMessage, OnClickListener onPositiveClick, String positveButtonText)
+    {
+	this.ctxt = ctxt;
+	this.title = title;
+	this.errorMessage = errorMessage;
+	this.onPositiveClick = onPositiveClick;
+	this.positveButtonText = positveButtonText;
+    }
+    
+    public ErrorMessage(MyContext ctxt, String title, String errorMessage, String positveButtonText)
+    {
+	this.ctxt = ctxt;
+	this.title = title;
+	this.errorMessage = errorMessage;
+	this.positveButtonText = positveButtonText;
     }
 
     /**
@@ -100,6 +128,8 @@ public class ErrorMessage implements Runnable
 	    {
 		AlertDialog.Builder dialog = new AlertDialog.Builder(ctxt.context);
 		dialog.setMessage(errorMessage);
+		if(!title.equalsIgnoreCase(""))
+		    dialog.setTitle(title);
 		if (onPositiveClick == null)
 		{
 		    dialog.setPositiveButton(positveButtonText, new OnClickListener()

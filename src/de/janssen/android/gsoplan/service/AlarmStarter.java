@@ -2,14 +2,15 @@ package de.janssen.android.gsoplan.service;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+
+import de.janssen.android.gsoplan.core.MyContext;
+import de.janssen.android.gsoplan.dataclasses.ProfilManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
 
 
 public class AlarmStarter extends Service
@@ -23,23 +24,23 @@ public class AlarmStarter extends Service
 	PendingIntent pintent = PendingIntent.getService(this, 0, worker, 0);
 	Calendar cal = new GregorianCalendar(); 
 	AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+	long resync = 60;	//default Alle 60 Minuten
+	Boolean sync = false;
+	MyContext ctxt = new MyContext(this);
 	
-	
-	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-	long resync = 30;	//Default-Resync
-	Boolean autoSync = false;
-	try
+	//das Profil heraussuchen, das den kürzestsen resync hat
+	//und prüfen, ob überhaupt gesynct werden soll
+	ProfilManager pm = new ProfilManager(ctxt);
+	for(int i=0;i<pm.profiles.size();i++)
 	{
-	    String value = prefs.getString("listResync", "10");
-	    resync = Long.parseLong(value);
-	    autoSync = prefs.getBoolean("boxAutoSync", false);
+	    if(pm.profiles.get(i).myResync < resync)
+		resync = pm.profiles.get(i).myResync;
+	    if(pm.profiles.get(i).autoSync)
+		sync=true;
 	}
-	catch (Exception e)
-	{
-	    // Resync ist ungültig
-	}
-	// Starte wie in Einstellunegen festgelegt
-	if(autoSync)
+	//den Resync um 2 Minuten verlängern
+	resync+=2;
+	if(sync)
 	    alarm.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), resync*60*1000, pintent);
 	else
 	    alarm.cancel(pintent);

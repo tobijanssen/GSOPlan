@@ -7,9 +7,7 @@
 
 package de.janssen.android.gsoplan.core;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import com.viewpagerindicator.TitlePageIndicator;
 import de.janssen.android.gsoplan.Logger;
 import de.janssen.android.gsoplan.R;
@@ -32,7 +30,7 @@ import android.widget.Toast;
 
 public class MyContext
 {
-    private List<Profil> profilList = new ArrayList<Profil>();
+    //public List<Profil> profilList = new ArrayList<Profil>();
     public Calendar dateBackup;
     public Handler handler = new Handler();
     public Logger logger;
@@ -45,7 +43,6 @@ public class MyContext
     public int[] textSizes;
     public Boolean newVersionReqSetup = false;
     public String newVersionMsg = "";
-    private int select = 0;
     public Profil mProfil;
     public Menu appMenu;
     public Boolean mIsRunning = false;
@@ -60,6 +57,8 @@ public class MyContext
 	this.logger = new Logger(this.context);
 	this.activity = activity;
 	this.mProfil = new Profil(this);
+	this.mProfil.loadPrefs();
+	
 	this.inflater = LayoutInflater.from(context);
 	
 	MyContext.this.vp = (ViewPager) MyContext.this.activity.findViewById(R.id.pager);
@@ -67,17 +66,16 @@ public class MyContext
 	MyContext.this.pager = new Pager(context, vp, tpi, inflater, Const.TEXTSIZEOFHEADLINES, logger,mProfil.hideEmptyHours);
     }
     
+    
     public MyContext(Context appctxt)
     {
 	this.context = appctxt;
 	this.logger = new Logger(this.context);
 	this.mProfil = new Profil(this);
+	this.mProfil.loadPrefs();
+
     }
     
-    public int getSelector()
-    {
-	return this.select;
-    }
 
     public Stupid getCurStupid()
     {
@@ -95,18 +93,8 @@ public class MyContext
 	return prefs.getBoolean(key, false);
     }
     
-    
 
-    
-    
-
-
-
-    
-    
-  
-
-    /*
+    /**
      * Datum: 11.10.12
      * 
      * @author Tobias Janssen Initialisiert den viewPager, der die Tage des
@@ -131,7 +119,7 @@ public class MyContext
 	});
     }
     
-    /*
+    /**
      * Datum: 11.10.12
      * 
      * @author Tobias Janssen Initialisiert den viewPager, der die Tage des
@@ -212,7 +200,7 @@ public class MyContext
 		    {
 			// Struktur prüfen laden
 			mProfil.stupid.checkStructure(MyContext.this);
-			logger.log(Logger.Level.INFO_2, "Reload aller Dateien");
+			logger.log(Logger.Level.INFO_1, "Reload aller Dateien");
 			// daten neu aus Datei laden
 			Tools.loadAllDataFiles(context, mProfil, mProfil.stupid);
 			
@@ -222,7 +210,7 @@ public class MyContext
 			logger.log(Logger.Level.ERROR, "Reload der Daten fehlgeschlagen", e);
 		    }
 		    refreshView();
-		    logger.log(Logger.Level.INFO_2, "Pager Erfolgreich aktualisiert");
+		    logger.log(Logger.Level.INFO_1, "Pager Erfolgreich aktualisiert");
 		}
 		else
 		{
@@ -247,5 +235,8 @@ public class MyContext
 	}
 	pager.init(mProfil.stupid.currentDate);
     }
+    
+
+    
     
 }

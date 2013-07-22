@@ -6,18 +6,22 @@
  */
 package de.janssen.android.gsoplan.activities;
 
+import java.io.File;
 import java.util.Calendar;
+import de.janssen.android.gsoplan.dataclasses.ProfilManager;
 import java.util.GregorianCalendar;
 import com.google.analytics.tracking.android.EasyTracker;
 import de.janssen.android.gsoplan.Logger;
 import de.janssen.android.gsoplan.R;
 import de.janssen.android.gsoplan.asyncTasks.PlanActivityLuncher;
+import de.janssen.android.gsoplan.core.FileOPs;
 import de.janssen.android.gsoplan.core.MyContext;
 import de.janssen.android.gsoplan.core.StupidOPs;
 import de.janssen.android.gsoplan.core.Tools;
 import de.janssen.android.gsoplan.dataclasses.Const;
 import android.os.Bundle;
 import android.os.Message;
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.DatePickerDialog;
@@ -26,6 +30,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,7 +42,7 @@ public class PlanActivity extends Activity
 {
 
     public MyContext ctxt;
-    
+    private int orientation;
 
     /**
      * @author janssen
@@ -98,20 +103,40 @@ public class PlanActivity extends Activity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
-	//TODO: refactor this:
-	ctxt.handler.post(new Runnable(){
-		
+	switch (requestCode)
+	{
+	case 0:
+
+	    ctxt.handler.post(new Runnable()
+	    {
+
 		@Override
 		public void run()
 		{
-		    //ctxt.switchStupid();
-		    Tools.saveProfilSameThread(ctxt, ctxt.getSelector());
-		    
+		    ProfilManager pm = new ProfilManager(PlanActivity.this.ctxt);
+		    pm.profiles.get(pm.currentProfilIndex).loadPrefs();
+		    pm.applyProfilIndex();
+		    pm.saveAllProfiles();
 		    Intent intent = new Intent(ctxt.activity, PlanActivity.class);
 		    ctxt.activity.startActivity(intent);
 		    finish();
 		}
 	    });
+	    break;
+	case 1:
+	    ctxt.handler.post(new Runnable()
+	    {
+
+		@Override
+		public void run()
+		{
+		    Intent intent = new Intent(ctxt.activity, PlanActivity.class);
+		    ctxt.activity.startActivity(intent);
+		    finish();
+		}
+	    });
+	    break;
+	}
     }
 
     @Override
@@ -129,7 +154,7 @@ public class PlanActivity extends Activity
 	{
 	    // Get extra data included in the Intent
 	    int message = intent.getIntExtra("message",Activity.RESULT_CANCELED);
-	    ctxt.logger.log(Logger.Level.INFO_2,"WeekPlanActivity received message, (-1: Refresh) Message: " + message);
+	    ctxt.logger.log(Logger.Level.INFO_1,"PlanActivity received refresh message");
 	    if(message == Activity.RESULT_OK )
 	    {
 		Message msg = new Message();
@@ -138,7 +163,8 @@ public class PlanActivity extends Activity
 	    }
 	}
     };
-    @Override
+    @SuppressLint("NewApi")
+	@Override
     public void onCreate(Bundle savedInstanceState)
     {
 	super.onCreate(savedInstanceState);
@@ -152,6 +178,21 @@ public class PlanActivity extends Activity
 
 	setContentView(R.layout.activity_plan);
 	this.ctxt =  new MyContext(this, this);
+	Configuration c = getResources().getConfiguration();
+	this.orientation = c.orientation;
+	try
+	{
+	    File f = new File(this.getCacheDir(),"date.bin");
+	    if(f.exists() && f.canRead())
+	    {
+		ctxt.mProfil.stupid.currentDate = (Calendar) FileOPs.loadObject(f);
+		f.delete();
+	    }
+	}
+	catch (Exception e)
+	{    
+	    ctxt.logger.log(Logger.Level.ERROR, e.getMessage());   
+	}
 	LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
 	lbm.registerReceiver(mMessageReceiver, new IntentFilter(Const.BROADCASTREFRESH));
 	Bundle extras = getIntent().getExtras();
@@ -167,6 +208,20 @@ public class PlanActivity extends Activity
 		nm.cancel(noticationId);
 		String weekIndex = extras.getString("weekIndex");
 		extras.remove("weekIndex");
+		int profilIndex = extras.getInt("profilIndex");
+		extras.remove("profilIndex");
+		
+		//alle Profile laden
+		ProfilManager pm = new ProfilManager(ctxt);
+		pm.profiles.get(pm.currentProfilIndex).setPrefs();
+		if(profilIndex > pm.profiles.size()-1)
+		    profilIndex = 0;
+		else
+		    pm.currentProfilIndex = profilIndex;
+		pm.applyProfilIndex();
+		ctxt.mProfil.loadPrefs();
+		
+		
 		ctxt.mProfil.stupid.currentDate = new GregorianCalendar();
 		if(weekIndex !=null)
 		{
@@ -220,6 +275,7 @@ public class PlanActivity extends Activity
 		}
 		
 	    }
+	    
 	    ctxt.newVersionReqSetup = extras.getBoolean("newVersionInfo", false);
 	}
 	// Wenn ActionBar verfügbar ist,
@@ -230,20 +286,9 @@ public class PlanActivity extends Activity
 	    if(ctxt.mIsRunning)
 		actionBar.show();
 	}
-	ctxt.executor.post(new PlanActivityLuncher(this));
-    }
-
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu)
-    {
-	//TODO: refactor this:
-	//prüfen, ob ein zweites mProfil genutz werden soll
-	if(!ctxt.getCheckboxPreference(Const.CHECKBOXPROFILID))
-	{
-	    //wenn nicht die option dazu entfernen
-	    menu.removeItem(R.id.menu_favorite);
-	}
-	return super.onPrepareOptionsMenu(menu);
+	
+	
+	ctxt.executor.post(new PlanActivityLuncher(PlanActivity.this));
     }
 
     @Override
@@ -254,9 +299,27 @@ public class PlanActivity extends Activity
 	return true;
     }
 
+
+
+
     @Override
     protected void onDestroy()
     {
+	Configuration c = getResources().getConfiguration();
+	if(c.orientation != this.orientation ) 
+	{
+	    try
+	    {
+		File file = new File(this.getCacheDir(), "date.bin");
+		FileOPs.saveObject(ctxt.pager.getDateOfCurrentPage(), file);
+	    }
+	    catch (Exception e)
+	    {
+		ctxt.logger.log(Logger.Level.ERROR, e.getMessage());
+	    }
+	}
+	
+	
 	// Alle Hintergrundprozesse beenden
 	ctxt.executor.terminateAllThreads();
 	super.onDestroy();
@@ -282,22 +345,10 @@ public class PlanActivity extends Activity
 	    ctxt.getCurStupid().currentDate = new GregorianCalendar();
 	    ctxt.pager.setPage(ctxt.getCurStupid().currentDate);
 	    return true;
-	case R.id.menu_favorite:
-	    
-	    ctxt.handler.post(new Runnable(){
-		
-		@Override
-		public void run()
-		{
-		   //ctxt.switchStupid();
-		    Tools.saveProfilSameThread(ctxt, ctxt.getSelector());
-		    
-		    Intent intent = new Intent(ctxt.activity, PlanActivity.class);
-		    ctxt.activity.startActivity(intent);
-		    finish();
-		}
-	    });
-
+	case R.id.menu_profiles:
+	    //ProfilActivity starten
+	    Intent intent = new Intent(this,ProfilActivity.class);
+	    startActivityForResult(intent, 1);
 	    return true;
 	default:
 	    return super.onOptionsItemSelected(item);
@@ -312,17 +363,15 @@ public class PlanActivity extends Activity
 	if(ctxt.appIsReady)
 	{
 	    ctxt.mIsRunning = true;
-
+	    ctxt.initViewPagerWaiting();
 	    LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
 	    lbm.registerReceiver(mMessageReceiver, new IntentFilter(Const.BROADCASTREFRESH));
 	    Message msg = new Message();
 	    msg.arg1 = Activity.RESULT_OK;
 	    ctxt.msgHandler.handleMessage(msg);
 	}
-	
-	
-	
     }
+    
     @Override
     protected void onPause()
     {
@@ -335,7 +384,6 @@ public class PlanActivity extends Activity
     protected void onStop()
     {
 	super.onStop();
-	
 	EasyTracker.getInstance().activityStop(this);
     }
     

@@ -11,7 +11,7 @@ Update:
 2. Sind die Stundenplan-Daten noch da?
 
 Neuinstallation
-1. Wird korrekt darauf hingewiesen, dass das Setup gestaltet wird?
+1. Wird korrekt darauf hingewiesen, dass das Setup gestartet wird?
 2. Wird das Setup gestartet, und wird nach Auswahl der benötigten Elemente nicht erneut aufgerufen?
 
 Einstellungen:
@@ -21,8 +21,7 @@ Einstellungen:
 2.1 Werden nach zurückkehren die Daten im Stundenplan neu geladen
 3. Funktioniert nur WLan
 4. Funktioniert Stunden ausblenen
-5. Funktioniert die Standart Ansicht festlegung?
-6. Werden bei Über GSOPlan korrekte Daten angezeigt?
+5. Werden bei Über GSOPlan korrekte Daten angezeigt?
 
 Datums-Auswahl:
 
@@ -51,6 +50,7 @@ Ansichten:
 1. Funktioniert die Tagesansicht
 2. Funktioniert die Wochenansicht
 3. Funktionieren Abbrechbare Updates
+4. Führt ein Screen-Rotate bei geöffneten Dialogs zu einem Absturz?
 
 Beenden:
 1. Testen, ob Ordnungsgemäß beendet wird:
@@ -67,5 +67,6 @@ PRE-REALEASE:
 1. Stimmt die Versions Nummer:
 1.1 im Manifest
 1.2 im string.xml
+2. Ist der Logger deaktiviert?
 
 

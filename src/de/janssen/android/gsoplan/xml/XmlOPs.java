@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import de.janssen.android.gsoplan.core.MyContext;
 import de.janssen.android.gsoplan.dataclasses.Const;
 import de.janssen.android.gsoplan.dataclasses.HtmlResponse;
 
@@ -167,15 +166,5 @@ public class XmlOPs
 	}
     }
 
-    public static String createProfileXml(MyContext ctxt, int index)
-    {
-	String result = "<" + Xml.PROFIL +">"+ index + "</"+Xml.PROFIL +">\n";
-	result += "<" + Xml.TYPES;
-	for (int i = 0; i < ctxt.mProfil.types.list.size(); i++)
-	{
-	    result += " " + ctxt.mProfil.types.list.get(i).typeName + "='" + ctxt.mProfil.types.list.get(i).type + "'";
-	}
-	result += " />\n";
-	return result;
-    }
+    
 }

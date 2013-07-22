@@ -7,7 +7,7 @@
 package de.janssen.android.gsoplan.asyncTasks;
 
 import java.io.File;
-
+import java.util.GregorianCalendar;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.os.AsyncTask;
@@ -43,17 +43,14 @@ public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
 
     protected Boolean doInBackground(Boolean... bool)
     {
+	parent.ctxt.initViewPagerWaiting();
 	selfCheck();
 	parent.ctxt.appIsReady=true;
-	return null;
-
-    }
-
-    @Override
-    protected void onPostExecute(Boolean result)
-    {
 	parent.ctxt.executor.scheduleNext();
+	return null;
     }
+
+
     
     /**
      * @author Tobias Janssen
@@ -68,7 +65,7 @@ public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
 	switch (errorlevel)
 	{
 	case 0: // Alles in Ordnung
-	    parent.ctxt.initViewPagerWaiting();
+	    
 	    try
 	    {
 		parent.ctxt.mProfil.stupid.clearData();
@@ -79,17 +76,21 @@ public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
 		parent.ctxt.handler.post(new ErrorMessage(parent.ctxt, e.getMessage()));
 	    }
 	    parent.ctxt.mProfil.stupid.sort();
+	    //prüfen, ob der heutige Tag in den Daten vorhanden ist:
+	    if(!parent.ctxt.mProfil.stupid.isDateAvailable(new GregorianCalendar()))
+	    {
+		StupidOPs.contactStupidService(parent.ctxt.context, parent.ctxt.msgHandler);
+	    }
 	    parent.ctxt.initViewPager();
+	   
 	    break;
 	case 1: // TypesDatei Datei fehlt
 	case 2: // FILEELEMENT Datei fehlt
-	    parent.ctxt.initViewPagerWaiting();
 		// Backend beauftragen diese herunterzu laden
 	    StupidOPs.contactStupidService(parent.ctxt.context, parent.ctxt.msgHandler);
 	    
 	    
 	case 3: // Keine Klasse ausgewählt
-	    parent.ctxt.initViewPagerWaiting();
 	    OnClickListener onClick = new OnClickListener()
 	    {
 
@@ -112,7 +113,6 @@ public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
 	    break;
 	case 6: // Elementenordner existiert nicht
 		// neuen anlegen
-	    parent.ctxt.initViewPagerWaiting();
 
 	    File elementDir = new File(parent.getFilesDir(), parent.ctxt.mProfil.getMyElement());
 	    elementDir.mkdir();
@@ -120,7 +120,6 @@ public class PlanActivityLuncher extends AsyncTask<Boolean, Integer, Boolean>
 	    StupidOPs.contactStupidService(parent, parent.ctxt.msgHandler);
 	    break;
 	case 7: // Keine Daten für diese Klasse vorhanden
-	    parent.ctxt.initViewPagerWaiting();
 	    StupidOPs.contactStupidService(parent, parent.ctxt.msgHandler);
 	    break;
 	}

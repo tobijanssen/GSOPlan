@@ -26,7 +26,8 @@ public class Xml
     public static final String SCRIPT = "script";
     public static final String FONT = "font";
     public static final String TABLE = "table";
-    public static final String PROFIL = "mProfil";
+    public static final String PROFILES = "profiles";
+    public static final String PROFIL = "profil";
     public static final String HTMLMOD = "htmlmodified";
     
     
@@ -143,11 +144,12 @@ public class Xml
     public void parseXml() throws Exception
     {
 	if (this.dataContent.isEmpty())
-	    throw new Exception(Const.ERROR_XMLFAILURE);
+	    throw new Exception(Const.ERROR_XMLFAILURE + "dataContent is Empty");
 
 	this.childTags = new Xml[0]; // das Array, das die Tags des Quelltextes
 				     // enthalten wird
 
+	
 	// jetzt alle tags auslesen, bis alle Tags wieder geschlossen sind:
 	do
 	{
@@ -250,6 +252,10 @@ public class Xml
 	}
 
 	String tagContent = dataContent.substring(0, endTagPoint);
+	//escape-zeichen aus dem Tag entfernen
+	tagContent=tagContent.replaceAll("\n", " ");
+	tagContent=tagContent.replaceAll("\t", " ");
+	tagContent=tagContent.replaceAll("\r", " ");
 	dataContent = dataContent.substring(endTagPoint);
 
 	Xml tag;

@@ -20,7 +20,7 @@ public class Logger
     private Context ctxt;
     private Calendar cal;
     private Level debugLogLevel = Level.OFF;	//Hier festlegen in welchem LogLevel sich die Anwendung befindet 
-    private Boolean stackTraces = false;
+    private Boolean stackTraces = true;
     
     public enum Level{DEBUG,INFO_1,INFO_2,WARNING,ERROR, OFF};
     
@@ -93,7 +93,7 @@ public class Logger
 		File logFile = new File(ctxt.getFilesDir(), "log.txt");
 		FileWriter fw;
 		fw = new FileWriter(logFile, true);
-		fw.append(getCurrentDate() + message + "\n");
+		fw.append(getCurrentDate() + message+" ");
 		fw.append(exception.getMessage() + "\n");
 		if(this.stackTraces)
 		    fw.append("Stack-Trace:\n\n"+Log.getStackTraceString(exception)+"\n");
